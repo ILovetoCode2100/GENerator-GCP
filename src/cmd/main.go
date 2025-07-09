@@ -121,6 +121,14 @@ func main() {
 	rootCmd.AddCommand(newCreateStepSwitchNextTabCmd())
 	rootCmd.AddCommand(newCreateStepSwitchParentFrameCmd())
 	rootCmd.AddCommand(newCreateStepSwitchPrevTabCmd())
+	
+	// High-priority execution and analysis commands
+	rootCmd.AddCommand(newExecuteGoalCmd())
+	rootCmd.AddCommand(newMonitorExecutionCmd())
+	rootCmd.AddCommand(newGetExecutionAnalysisCmd())
+	rootCmd.AddCommand(newManageTestDataCmd())
+	rootCmd.AddCommand(newCreateEnvironmentCmd())
+	
 	// Use enhanced version that handles auto-creation behavior
 	rootCmd.AddCommand(newCreateStructureEnhancedCmd())
 	
