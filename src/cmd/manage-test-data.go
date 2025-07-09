@@ -83,7 +83,7 @@ Examples:
 			} else if exportCsvFlag != "" {
 				return exportTestDataToCSV(client, exportCsvFlag, tableIDFlag, cfg.Output.DefaultFormat)
 			} else if tableIDFlag != "" {
-				return getTestDataTable(client, tableIDFlag, cfg.Output.Format)
+				return getTestDataTable(client, tableIDFlag, cfg.Output.DefaultFormat)
 			} else {
 				return fmt.Errorf("no operation specified. Use --create-table, --import-csv, --export-csv, or --table-id")
 			}
