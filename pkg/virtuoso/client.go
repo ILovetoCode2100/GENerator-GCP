@@ -1839,3 +1839,344 @@ func (c *Client) ValidateCheckpoint(checkpointID int) error {
 	
 	return nil
 }
+
+// Execution represents a goal execution
+type Execution struct {
+	ID          string                 `json:"id"`
+	GoalID      int                    `json:"goalId"`
+	SnapshotID  int                    `json:"snapshotId"`
+	Status      string                 `json:"status"`
+	StartTime   time.Time              `json:"startTime"`
+	EndTime     *time.Time             `json:"endTime,omitempty"`
+	Duration    int                    `json:"duration,omitempty"`
+	Progress    *ExecutionProgress     `json:"progress,omitempty"`
+	ResultsURL  string                 `json:"resultsUrl,omitempty"`
+	ReportURL   string                 `json:"reportUrl,omitempty"`
+	Meta        map[string]interface{} `json:"meta,omitempty"`
+}
+
+// ExecutionProgress represents execution progress details
+type ExecutionProgress struct {
+	CompletedSteps    int     `json:"completedSteps"`
+	TotalSteps        int     `json:"totalSteps"`
+	CompletedJourneys int     `json:"completedJourneys"`
+	TotalJourneys     int     `json:"totalJourneys"`
+	CurrentJourney    string  `json:"currentJourney"`
+	SuccessRate       float64 `json:"successRate"`
+	FailedSteps       int     `json:"failedSteps"`
+	PercentComplete   float64 `json:"percentComplete"`
+}
+
+// ExecutionAnalysis represents detailed execution analysis
+type ExecutionAnalysis struct {
+	ExecutionID string                 `json:"executionId"`
+	Summary     *ExecutionSummary      `json:"summary"`
+	Failures    []ExecutionFailure     `json:"failures"`
+	Performance *ExecutionPerformance  `json:"performance,omitempty"`
+	AIInsights  []string               `json:"aiInsights,omitempty"`
+	Meta        map[string]interface{} `json:"meta,omitempty"`
+}
+
+// ExecutionSummary represents execution summary statistics
+type ExecutionSummary struct {
+	TotalSteps     int     `json:"totalSteps"`
+	PassedSteps    int     `json:"passedSteps"`
+	FailedSteps    int     `json:"failedSteps"`
+	SkippedSteps   int     `json:"skippedSteps"`
+	SuccessRate    float64 `json:"successRate"`
+	Duration       string  `json:"duration"`
+	TotalJourneys  int     `json:"totalJourneys"`
+	PassedJourneys int     `json:"passedJourneys"`
+	FailedJourneys int     `json:"failedJourneys"`
+}
+
+// ExecutionFailure represents a failed step with details
+type ExecutionFailure struct {
+	StepID       int    `json:"stepId"`
+	JourneyName  string `json:"journeyName"`
+	CheckpointID int    `json:"checkpointId"`
+	Action       string `json:"action"`
+	Error        string `json:"error"`
+	Screenshot   string `json:"screenshot,omitempty"`
+	AISuggestion string `json:"aiSuggestion,omitempty"`
+	Timestamp    string `json:"timestamp"`
+}
+
+// ExecutionPerformance represents performance metrics
+type ExecutionPerformance struct {
+	AverageStepTime   int `json:"averageStepTime"`
+	SlowestStepTime   int `json:"slowestStepTime"`
+	FastestStepTime   int `json:"fastestStepTime"`
+	NetworkRequests   int `json:"networkRequests"`
+	JavaScriptErrors  int `json:"javascriptErrors"`
+	PageLoadTime      int `json:"pageLoadTime"`
+}
+
+// ExecuteGoal executes a goal and returns execution details
+func (c *Client) ExecuteGoal(goalID, snapshotID int) (*Execution, error) {
+	body := map[string]interface{}{
+		"goalId":     goalID,
+		"snapshotId": snapshotID,
+	}
+	
+	var response struct {
+		Success bool      `json:"success"`
+		Item    Execution `json:"item"`
+		Error   string    `json:"error,omitempty"`
+	}
+	
+	resp, err := c.httpClient.R().
+		SetBody(body).
+		SetResult(&response).
+		Post(fmt.Sprintf("/goals/%d/snapshots/%d/execute", goalID, snapshotID))
+	
+	if err != nil {
+		return nil, fmt.Errorf("execute goal request failed: %w", err)
+	}
+	
+	if resp.IsError() {
+		if response.Error != "" {
+			return nil, fmt.Errorf("execute goal failed: %s", response.Error)
+		}
+		return nil, fmt.Errorf("execute goal failed with status %d: %s", resp.StatusCode(), resp.String())
+	}
+	
+	if !response.Success {
+		return nil, fmt.Errorf("execute goal failed: API returned success=false")
+	}
+	
+	return &response.Item, nil
+}
+
+// GetExecutionStatus gets the current status of an execution
+func (c *Client) GetExecutionStatus(executionID string) (*Execution, error) {
+	var response struct {
+		Success bool      `json:"success"`
+		Item    Execution `json:"item"`
+		Error   string    `json:"error,omitempty"`
+	}
+	
+	resp, err := c.httpClient.R().
+		SetResult(&response).
+		Get(fmt.Sprintf("/executions/%s", executionID))
+	
+	if err != nil {
+		return nil, fmt.Errorf("get execution status request failed: %w", err)
+	}
+	
+	if resp.IsError() {
+		if response.Error != "" {
+			return nil, fmt.Errorf("get execution status failed: %s", response.Error)
+		}
+		return nil, fmt.Errorf("get execution status failed with status %d: %s", resp.StatusCode(), resp.String())
+	}
+	
+	if !response.Success {
+		return nil, fmt.Errorf("get execution status failed: API returned success=false")
+	}
+	
+	return &response.Item, nil
+}
+
+// GetExecutionAnalysis gets detailed analysis of an execution
+func (c *Client) GetExecutionAnalysis(executionID string, includeAI bool) (*ExecutionAnalysis, error) {
+	var response struct {
+		Success bool              `json:"success"`
+		Item    ExecutionAnalysis `json:"item"`
+		Error   string            `json:"error,omitempty"`
+	}
+	
+	req := c.httpClient.R().SetResult(&response)
+	
+	if includeAI {
+		req = req.SetQueryParam("includeAI", "true")
+	}
+	
+	resp, err := req.Get(fmt.Sprintf("/executions/analysis/%s", executionID))
+	
+	if err != nil {
+		return nil, fmt.Errorf("get execution analysis request failed: %w", err)
+	}
+	
+	if resp.IsError() {
+		if response.Error != "" {
+			return nil, fmt.Errorf("get execution analysis failed: %s", response.Error)
+		}
+		return nil, fmt.Errorf("get execution analysis failed with status %d: %s", resp.StatusCode(), resp.String())
+	}
+	
+	if !response.Success {
+		return nil, fmt.Errorf("get execution analysis failed: API returned success=false")
+	}
+	
+	return &response.Item, nil
+}
+
+// TestData represents a test data table
+type TestData struct {
+	ID          string                 `json:"id"`
+	Name        string                 `json:"name"`
+	Description string                 `json:"description,omitempty"`
+	Columns     []string               `json:"columns"`
+	RowCount    int                    `json:"rowCount"`
+	CreatedAt   time.Time              `json:"createdAt"`
+	UpdatedAt   time.Time              `json:"updatedAt"`
+	Meta        map[string]interface{} `json:"meta,omitempty"`
+}
+
+// TestDataRow represents a single row of test data
+type TestDataRow struct {
+	ID      string                 `json:"id"`
+	TableID string                 `json:"tableId"`
+	Data    map[string]interface{} `json:"data"`
+}
+
+// CreateTestDataTable creates a new test data table
+func (c *Client) CreateTestDataTable(name, description string, columns []string) (*TestData, error) {
+	body := map[string]interface{}{
+		"name":        name,
+		"description": description,
+		"columns":     columns,
+	}
+	
+	var response struct {
+		Success bool     `json:"success"`
+		Item    TestData `json:"item"`
+		Error   string   `json:"error,omitempty"`
+	}
+	
+	resp, err := c.httpClient.R().
+		SetBody(body).
+		SetResult(&response).
+		Post("/testdata/tables/create")
+	
+	if err != nil {
+		return nil, fmt.Errorf("create test data table request failed: %w", err)
+	}
+	
+	if resp.IsError() {
+		if response.Error != "" {
+			return nil, fmt.Errorf("create test data table failed: %s", response.Error)
+		}
+		return nil, fmt.Errorf("create test data table failed with status %d: %s", resp.StatusCode(), resp.String())
+	}
+	
+	if !response.Success {
+		return nil, fmt.Errorf("create test data table failed: API returned success=false")
+	}
+	
+	return &response.Item, nil
+}
+
+// GetTestDataTable gets details of a test data table
+func (c *Client) GetTestDataTable(tableID string) (*TestData, error) {
+	var response struct {
+		Success bool     `json:"success"`
+		Item    TestData `json:"item"`
+		Error   string   `json:"error,omitempty"`
+	}
+	
+	resp, err := c.httpClient.R().
+		SetResult(&response).
+		Get(fmt.Sprintf("/testdata/tables/%s", tableID))
+	
+	if err != nil {
+		return nil, fmt.Errorf("get test data table request failed: %w", err)
+	}
+	
+	if resp.IsError() {
+		if response.Error != "" {
+			return nil, fmt.Errorf("get test data table failed: %s", response.Error)
+		}
+		return nil, fmt.Errorf("get test data table failed with status %d: %s", resp.StatusCode(), resp.String())
+	}
+	
+	if !response.Success {
+		return nil, fmt.Errorf("get test data table failed: API returned success=false")
+	}
+	
+	return &response.Item, nil
+}
+
+// ImportTestDataFromCSV imports test data from a CSV file
+func (c *Client) ImportTestDataFromCSV(tableID string, csvData [][]string) error {
+	body := map[string]interface{}{
+		"tableId": tableID,
+		"data":    csvData,
+		"format":  "csv",
+	}
+	
+	var response struct {
+		Success bool   `json:"success"`
+		Error   string `json:"error,omitempty"`
+	}
+	
+	resp, err := c.httpClient.R().
+		SetBody(body).
+		SetResult(&response).
+		Post(fmt.Sprintf("/testdata/tables/%s/import", tableID))
+	
+	if err != nil {
+		return fmt.Errorf("import test data request failed: %w", err)
+	}
+	
+	if resp.IsError() {
+		if response.Error != "" {
+			return fmt.Errorf("import test data failed: %s", response.Error)
+		}
+		return fmt.Errorf("import test data failed with status %d: %s", resp.StatusCode(), resp.String())
+	}
+	
+	if !response.Success {
+		return fmt.Errorf("import test data failed: API returned success=false")
+	}
+	
+	return nil
+}
+
+// Environment represents a test environment
+type Environment struct {
+	ID          string                 `json:"id"`
+	Name        string                 `json:"name"`
+	Description string                 `json:"description,omitempty"`
+	Variables   map[string]interface{} `json:"variables"`
+	CreatedAt   time.Time              `json:"createdAt"`
+	UpdatedAt   time.Time              `json:"updatedAt"`
+}
+
+// CreateEnvironment creates a new test environment
+func (c *Client) CreateEnvironment(name, description string, variables map[string]interface{}) (*Environment, error) {
+	body := map[string]interface{}{
+		"name":        name,
+		"description": description,
+		"variables":   variables,
+	}
+	
+	var response struct {
+		Success bool        `json:"success"`
+		Item    Environment `json:"item"`
+		Error   string      `json:"error,omitempty"`
+	}
+	
+	resp, err := c.httpClient.R().
+		SetBody(body).
+		SetResult(&response).
+		Post("/environments")
+	
+	if err != nil {
+		return nil, fmt.Errorf("create environment request failed: %w", err)
+	}
+	
+	if resp.IsError() {
+		if response.Error != "" {
+			return nil, fmt.Errorf("create environment failed: %s", response.Error)
+		}
+		return nil, fmt.Errorf("create environment failed with status %d: %s", resp.StatusCode(), resp.String())
+	}
+	
+	if !response.Success {
+		return nil, fmt.Errorf("create environment failed: API returned success=false")
+	}
+	
+	return &response.Item, nil
+}
