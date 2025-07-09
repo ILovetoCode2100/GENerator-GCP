@@ -1,0 +1,47 @@
+# API CLI Default Configuration
+# Copy this file to ~/.api-cli.yaml and customize
+
+# API base URL (can be overridden with --base-url flag)
+base_url: https://api.example.com/v1
+
+# API authentication key (can be overridden with --api-key flag)
+# For security, prefer using environment variable: API_CLI_API_KEY
+# api_key: your-api-key-here
+
+# Request timeout in seconds
+timeout: 30
+
+# Output format: json, yaml, or table
+output: json
+
+# Verbose logging
+verbose: false
+
+# HTTP retry configuration
+retries:
+  max_attempts: 3
+  wait_time: 1s
+  max_wait_time: 10s
+
+# Custom headers (if needed)
+# headers:
+#   X-Custom-Header: value
+#   X-Another-Header: value
+
+# Proxy configuration (if needed)
+# proxy: http://proxy.example.com:8080
+
+# TLS/SSL settings
+# tls:
+#   insecure_skip_verify: false
+#   client_cert: /path/to/cert.pem
+#   client_key: /path/to/key.pem
+
+# Environment-specific configurations
+# environments:
+#   production:
+#     base_url: https://api.example.com/v1
+#   staging:
+#     base_url: https://staging-api.example.com/v1
+#   development:
+#     base_url: http://localhost:8080/v1

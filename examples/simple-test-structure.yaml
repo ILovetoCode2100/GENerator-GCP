@@ -1,0 +1,33 @@
+# Simple Test Structure Example
+# Minimal example for testing the create-structure command
+
+project:
+  name: "Quick Test Project"
+
+goals:
+  - name: "Basic Flow Test"
+    url: "https://example.com"
+    journeys:
+      # This journey will rename the auto-created one
+      - name: "Simple User Journey"
+        checkpoints:
+          # This will update the existing navigation
+          - name: "Homepage"
+            navigation_url: "https://example.com/home"
+            steps:
+              - type: wait
+                selector: "body"
+                timeout: 3000
+              - type: click
+                selector: ".get-started"
+          
+          - name: "Form Submission"
+            steps:
+              - type: fill
+                selector: "#email"
+                value: "test@example.com"
+              - type: click
+                selector: ".submit"
+              - type: wait
+                selector: ".success"
+                timeout: 5000

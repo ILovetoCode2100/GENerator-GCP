@@ -1,0 +1,27 @@
+{
+  "project": {
+    "name": "Test Virtuoso CLI",
+    "description": "Testing the CLI configuration"
+  },
+  "goals": [
+    {
+      "name": "Basic Test Flow",
+      "description": "Verify CLI functionality",
+      "journeys": [
+        {
+          "name": "Simple Navigation Test",
+          "checkpoints": [
+            {
+              "name": "Homepage Check",
+              "description": "Verify homepage loads"
+            },
+            {
+              "name": "Login Check",
+              "description": "Verify login page"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+# Small test structure for testing
+project:
+  name: "Small Test Suite Demo"
+  description: "A small test suite for testing the batch creation"
+
+goals:
+  - name: "Basic Test"
+    url: "https://example.com"
+    journeys:
+      - name: "Simple Journey"
+        checkpoints:
+          - name: "Navigate"
+            steps:
+              - type: navigate
+                url: "https://example.com"
+              - type: wait
+                selector: "Body"
+                timeout: 1000

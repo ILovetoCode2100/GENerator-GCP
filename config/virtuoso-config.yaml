@@ -1,0 +1,35 @@
+# Virtuoso API Configuration
+# This file contains the configuration for the Virtuoso API
+
+api:
+  base_url: https://api-app2.virtuoso.qa/api
+  auth_token: f7a55516-5cc4-4529-b2ae-8e106a7d164e
+  
+organization:
+  id: "2242"
+  
+headers:
+  X-Virtuoso-Client-ID: api-cli-generator
+  X-Virtuoso-Client-Name: api-cli-generator
+  
+# Business rules for Virtuoso
+business_rules:
+  initial_checkpoint_name: "INITIAL_CHECKPOINT"
+  auto_attach_checkpoints: true
+  create_initial_journey: true
+  
+# Output formatting
+output:
+  default_format: human  # Options: json, yaml, human, ai
+  verbose: false
+  
+# HTTP client settings
+http:
+  timeout: 30  # seconds
+  retries: 3
+  retry_wait: 1  # seconds
+  
+# Logging
+logging:
+  level: info  # Options: debug, info, warn, error
+  file: ~/.api-cli/virtuoso.log

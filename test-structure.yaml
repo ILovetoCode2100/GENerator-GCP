@@ -1,0 +1,44 @@
+project:
+  name: "API CLI Test Suite"
+  description: "Test suite for validating new CLI commands"
+
+goals:
+  - name: "Command Testing Flow"
+    url: "https://api-test.example.com"
+    journeys:
+      - name: "Basic Command Test Journey"  # Will rename auto-created journey
+        checkpoints:
+          - name: "Navigate to Test Page"  # Will update existing navigation
+            navigation_url: "https://api-test.example.com/test"
+            steps:
+              - type: wait
+                selector: "#test-container"
+                timeout: 3000
+          - name: "Execute Test Actions"
+            steps:
+              - type: click
+                selector: ".test-button"
+              - type: fill
+                selector: "#test-input"
+                value: "test-value-123"
+          - name: "Verify Results"
+            steps:
+              - type: wait
+                selector: ".success-message"
+                timeout: 5000
+              - type: click
+                selector: ".continue-button"
+
+      - name: "Error Handling Journey"  # Additional journey
+        checkpoints:
+          - name: "Navigate to Error Test"  # Uses shared navigation
+            steps:
+              - type: wait
+                selector: "#error-test"
+          - name: "Trigger Error"
+            steps:
+              - type: click
+                selector: ".error-trigger"
+              - type: wait
+                selector: ".error-dialog"
+                timeout: 2000

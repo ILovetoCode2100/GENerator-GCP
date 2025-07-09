@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  virtuoso-cli:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: virtuoso-cli:latest
+    container_name: virtuoso-cli
+    volumes:
+      # Mount current directory to /workspace for easy file access
+      - .:/workspace
+      # Mount config directory
+      - ./config:/config
+      # Mount home directory for persistent settings
+      - ~/.virtuoso:/home/apiuser/.virtuoso
+    environment:
+      # Default environment variables
+      - VIRTUOSO_CONFIG_PATH=/config
+      - VIRTUOSO_OUTPUT_FORMAT=human
+      # Pass through environment variables if set
+      - VIRTUOSO_API_TOKEN=${VIRTUOSO_API_TOKEN:-}
+      - VIRTUOSO_BASE_URL=${VIRTUOSO_BASE_URL:-}
+      - VIRTUOSO_ORG_ID=${VIRTUOSO_ORG_ID:-}
+    working_dir: /workspace
+    # Override default command to keep container interactive
+    command: tail -f /dev/null
+    stdin_open: true
+    tty: true
+    networks:
+      - virtuoso-network
+
+  # Optional: Development service with hot reload
+  virtuoso-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    image: virtuoso-cli:dev
+    container_name: virtuoso-cli-dev
+    volumes:
+      - .:/app
+      - go-mod-cache:/go/pkg/mod
+    working_dir: /app
+    command: tail -f /dev/null
+    stdin_open: true
+    tty: true
+    environment:
+      - CGO_ENABLED=0
+      - GOOS=linux
+    networks:
+      - virtuoso-network
+
+networks:
+  virtuoso-network:
+    driver: bridge
+
+volumes:
+  go-mod-cache:
+    driver: local
