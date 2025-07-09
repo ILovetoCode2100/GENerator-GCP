@@ -177,7 +177,24 @@ OpenAPI Spec (specs/api.yaml)
 3. Support environment variable override (VIRTUOSO_ prefix)
 4. Session state automatically saved to config file
 
-## Step Commands (39 total)
+## Available Commands (69 total)
+
+### Core Management Commands (11)
+- `validate-config` - Configuration validation and API connectivity
+- `create-project`, `list-projects` - Project management
+- `create-goal`, `list-goals` - Goal management with auto-journey creation
+- `create-journey`, `list-journeys`, `update-journey` - Journey management
+- `create-checkpoint`, `list-checkpoints` - Checkpoint management
+- `set-checkpoint` - Session context management
+
+### High-Priority Execution Commands (5)
+- `execute-goal` - Goal execution with real-time monitoring
+- `monitor-execution` - Real-time execution progress tracking
+- `get-execution-analysis` - Detailed execution analysis with AI insights
+- `manage-test-data` - Test data table management with CSV support
+- `create-environment` - Environment creation with variable management
+
+### Step Creation Commands (47)
 
 All step commands follow the new stateful pattern:
 ```bash
