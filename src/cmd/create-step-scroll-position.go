@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strconv"
 
 	"github.com/marklovelady/api-cli-generator/pkg/virtuoso"
 	"github.com/spf13/cobra"

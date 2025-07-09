@@ -103,7 +103,7 @@ func (c *EnhancedClient) HandleError(err error, operation string) error {
 	c.logger.WithError(err).WithField("operation", operation).Error("API operation failed")
 	
 	// Check for specific error types and wrap accordingly
-	switch e := err.(type) {
+	switch err.(type) {
 	// TODO: Uncomment when generated API is available
 	// case *api.ErrorResponse:
 	// 	return fmt.Errorf("%s failed: %s (code: %d)", operation, e.Message, e.Code)

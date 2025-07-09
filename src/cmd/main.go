@@ -53,6 +53,11 @@ func initConfig() {
 		cfg.Output.Verbose = true
 	}
 	if output != "" {
+		// Validate output format
+		if err := validateOutputFormat(output); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
 		cfg.Output.DefaultFormat = output
 	}
 }

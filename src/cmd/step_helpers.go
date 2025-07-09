@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
+	"time"
 	
 	"github.com/spf13/cobra"
 )
@@ -74,55 +76,188 @@ type StepOutput struct {
 	UsingContext bool        `json:"using_context"`
 	AutoPosition bool        `json:"auto_position"`
 	Extra        interface{} `json:"extra,omitempty"`
+	Timestamp    string      `json:"timestamp"`
+}
+
+// validateOutputFormat validates that the output format is supported
+func validateOutputFormat(format string) error {
+	supportedFormats := []string{"human", "json", "yaml", "ai"}
+	for _, supported := range supportedFormats {
+		if format == supported {
+			return nil
+		}
+	}
+	return fmt.Errorf("unsupported output format '%s'. Supported formats: %s", format, strings.Join(supportedFormats, ", "))
 }
 
 // outputStepResult outputs the step creation result in the specified format
 func outputStepResult(output *StepOutput) error {
+	// Set timestamp if not already set
+	if output.Timestamp == "" {
+		output.Timestamp = time.Now().Format(time.RFC3339)
+	}
+	
+	// Validate output format
+	if err := validateOutputFormat(cfg.Output.DefaultFormat); err != nil {
+		return err
+	}
+	
 	switch cfg.Output.DefaultFormat {
 	case "json":
-		encoder := json.NewEncoder(os.Stdout)
-		encoder.SetIndent("", "  ")
-		if err := encoder.Encode(output); err != nil {
-			return fmt.Errorf("failed to encode JSON output: %w", err)
-		}
+		return outputStepResultJSON(output)
 	case "yaml":
-		fmt.Printf("status: %s\n", output.Status)
-		fmt.Printf("step_type: %s\n", output.StepType)
-		fmt.Printf("checkpoint_id: %d\n", output.CheckpointID)
-		fmt.Printf("step_id: %d\n", output.StepID)
-		fmt.Printf("position: %d\n", output.Position)
-		fmt.Printf("parsed_step: %s\n", output.ParsedStep)
-		fmt.Printf("using_context: %t\n", output.UsingContext)
-		fmt.Printf("auto_position: %t\n", output.AutoPosition)
-		if output.Extra != nil {
-			fmt.Printf("extra: %v\n", output.Extra)
-		}
+		return outputStepResultYAML(output)
 	case "ai":
-		fmt.Printf("Successfully created %s step:\n", output.StepType)
-		fmt.Printf("- Step ID: %d\n", output.StepID)
-		fmt.Printf("- Step Type: %s\n", output.StepType)
-		fmt.Printf("- Checkpoint ID: %d\n", output.CheckpointID)
-		fmt.Printf("- Position: %d\n", output.Position)
-		fmt.Printf("- Parsed Step: %s\n", output.ParsedStep)
-		if output.UsingContext {
-			fmt.Printf("- Used session context checkpoint\n")
-		}
-		if output.AutoPosition {
-			fmt.Printf("- Auto-incremented position\n")
-		}
-		fmt.Printf("\nNext steps:\n")
-		fmt.Printf("1. Add another step: api-cli create-step-* (uses checkpoint %d)\n", output.CheckpointID)
-		fmt.Printf("2. Execute the test journey\n")
+		return outputStepResultAI(output)
 	default: // human
-		fmt.Printf("✅ Created %s step at position %d in checkpoint %d\n", output.StepType, output.Position, output.CheckpointID)
-		fmt.Printf("   Step ID: %d\n", output.StepID)
-		fmt.Printf("   Parsed Step: %s\n", output.ParsedStep)
-		if output.UsingContext {
-			fmt.Printf("   🎯 Used session context checkpoint\n")
-		}
-		if output.AutoPosition {
-			fmt.Printf("   🔄 Auto-incremented position\n")
-		}
+		return outputStepResultHuman(output)
+	}
+}
+
+// outputStepResultJSON outputs step result in JSON format with rich metadata
+func outputStepResultJSON(output *StepOutput) error {
+	// Create enhanced JSON structure
+	result := map[string]interface{}{
+		"metadata": map[string]interface{}{
+			"timestamp": output.Timestamp,
+			"format":    "json",
+			"version":   "1.0",
+		},
+		"step": map[string]interface{}{
+			"id":            output.StepID,
+			"type":          output.StepType,
+			"position":      output.Position,
+			"checkpoint_id": output.CheckpointID,
+			"parsed_step":   output.ParsedStep,
+			"status":        output.Status,
+		},
+		"context": map[string]interface{}{
+			"using_session_context": output.UsingContext,
+			"auto_position":         output.AutoPosition,
+		},
+	}
+	
+	if output.Extra != nil {
+		result["extra"] = output.Extra
+	}
+	
+	encoder := json.NewEncoder(os.Stdout)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(result); err != nil {
+		return fmt.Errorf("failed to encode JSON output: %w", err)
+	}
+	return nil
+}
+
+// outputStepResultYAML outputs step result in YAML format with structured data
+func outputStepResultYAML(output *StepOutput) error {
+	fmt.Printf("# Virtuoso API CLI - Step Creation Result\n")
+	fmt.Printf("metadata:\n")
+	fmt.Printf("  timestamp: %s\n", output.Timestamp)
+	fmt.Printf("  format: yaml\n")
+	fmt.Printf("  version: \"1.0\"\n")
+	fmt.Printf("\n")
+	fmt.Printf("step:\n")
+	fmt.Printf("  id: %d\n", output.StepID)
+	fmt.Printf("  type: %s\n", output.StepType)
+	fmt.Printf("  position: %d\n", output.Position)
+	fmt.Printf("  checkpoint_id: %d\n", output.CheckpointID)
+	fmt.Printf("  parsed_step: \"%s\"\n", output.ParsedStep)
+	fmt.Printf("  status: %s\n", output.Status)
+	fmt.Printf("\n")
+	fmt.Printf("context:\n")
+	fmt.Printf("  using_session_context: %t\n", output.UsingContext)
+	fmt.Printf("  auto_position: %t\n", output.AutoPosition)
+	
+	if output.Extra != nil {
+		fmt.Printf("\n")
+		fmt.Printf("extra:\n")
+		fmt.Printf("  data: %v\n", output.Extra)
+	}
+	
+	return nil
+}
+
+// outputStepResultAI outputs step result in AI-friendly conversational format
+func outputStepResultAI(output *StepOutput) error {
+	fmt.Printf("🎯 Step Creation Summary\n")
+	fmt.Printf("========================\n\n")
+	
+	// Main result
+	fmt.Printf("✅ Successfully created a %s step!\n\n", strings.ToUpper(output.StepType))
+	
+	// Key details
+	fmt.Printf("📋 Step Details:\n")
+	fmt.Printf("   • Step ID: %d\n", output.StepID)
+	fmt.Printf("   • Type: %s\n", output.StepType)
+	fmt.Printf("   • Position: %d (execution order)\n", output.Position)
+	fmt.Printf("   • Checkpoint: %d\n", output.CheckpointID)
+	fmt.Printf("   • Description: %s\n", output.ParsedStep)
+	fmt.Printf("   • Created: %s\n", output.Timestamp)
+	
+	// Context information
+	fmt.Printf("\n🔄 Context Information:\n")
+	if output.UsingContext {
+		fmt.Printf("   • ✅ Used session context checkpoint (%d)\n", output.CheckpointID)
+	} else {
+		fmt.Printf("   • ⚙️  Used explicit checkpoint specification\n")
+	}
+	
+	if output.AutoPosition {
+		fmt.Printf("   • ✅ Auto-incremented position to %d\n", output.Position)
+	} else {
+		fmt.Printf("   • ⚙️  Used explicit position %d\n", output.Position)
+	}
+	
+	// Next steps suggestions
+	fmt.Printf("\n🚀 What's Next?\n")
+	fmt.Printf("   1. Add another step: `api-cli create-step-[type] [args]`\n")
+	fmt.Printf("      (will use checkpoint %d and position %d)\n", output.CheckpointID, output.Position+1)
+	fmt.Printf("   2. View all steps: `api-cli list-checkpoints [journey_id]`\n")
+	fmt.Printf("   3. Execute the test: `api-cli execute-goal [goal_id]`\n")
+	
+	// Extra data if available
+	if output.Extra != nil {
+		fmt.Printf("\n📊 Additional Information:\n")
+		fmt.Printf("   %v\n", output.Extra)
+	}
+	
+	fmt.Printf("\n💡 Tip: Use `--checkpoint [id]` to override session context for specific steps\n")
+	
+	return nil
+}
+
+// outputStepResultHuman outputs step result in human-friendly format
+func outputStepResultHuman(output *StepOutput) error {
+	// Status icon and main message
+	statusIcon := "✅"
+	if output.Status != "success" {
+		statusIcon = "❌"
+	}
+	
+	fmt.Printf("%s Created %s step at position %d\n", statusIcon, output.StepType, output.Position)
+	
+	// Core details with visual hierarchy
+	fmt.Printf("   📍 Step ID: %d\n", output.StepID)
+	fmt.Printf("   🎯 Checkpoint: %d\n", output.CheckpointID)
+	fmt.Printf("   📝 Description: %s\n", output.ParsedStep)
+	
+	// Context indicators
+	contextIndicators := []string{}
+	if output.UsingContext {
+		contextIndicators = append(contextIndicators, "🔗 session context")
+	}
+	if output.AutoPosition {
+		contextIndicators = append(contextIndicators, "🔄 auto-position")
+	}
+	
+	if len(contextIndicators) > 0 {
+		fmt.Printf("   ⚙️  Context: %s\n", strings.Join(contextIndicators, ", "))
+	}
+	
+	// Extra information if available
+	if output.Extra != nil {
+		fmt.Printf("   📊 Extra: %v\n", output.Extra)
 	}
 	
 	return nil
