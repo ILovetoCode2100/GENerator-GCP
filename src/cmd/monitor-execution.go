@@ -111,7 +111,7 @@ Examples:
 				}
 			}
 
-			return outputMonitorResult(output, cfg.Output.Format)
+			return outputMonitorResult(output, cfg.Output.DefaultFormat)
 		},
 	}
 
