@@ -33,6 +33,17 @@ This command checks:
 				return fmt.Errorf("configuration not loaded")
 			}
 			
+			// Check if config file exists
+			configPath := "./config/virtuoso-config.yaml"
+			if _, err := os.Stat(configPath); os.IsNotExist(err) {
+				switch cfg.Output.DefaultFormat {
+				case "json":
+					fmt.Fprintf(os.Stdout, `{"step": "config_file_check", "status": "warning", "message": "Config file not found, using defaults"}`+"\n")
+				default:
+					fmt.Printf("⚠️  Config file not found at %s, using defaults\n", configPath)
+				}
+			}
+			
 			// Validate required fields
 			if cfg.API.BaseURL == "" {
 				return fmt.Errorf("base URL not configured")
