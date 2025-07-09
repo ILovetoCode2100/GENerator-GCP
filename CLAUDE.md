@@ -82,6 +82,13 @@ export VIRTUOSO_API_TOKEN="your-token"
 
 # Override checkpoint for specific steps
 ./bin/api-cli create-step-click "Submit" 2 --checkpoint 1678319
+
+# NEW: High-priority execution and monitoring commands
+./bin/api-cli execute-goal 123 --wait --timeout 600
+./bin/api-cli monitor-execution exec_12345 --follow --interval 3
+./bin/api-cli get-execution-analysis exec_12345 --ai-insights --failures-only
+./bin/api-cli manage-test-data --create-table --table-name "Users" --columns "name,email,role"
+./bin/api-cli create-environment --name "Production" --variables "BASE_URL=https://prod.com,API_KEY=secret"
 ```
 
 ## Architecture
