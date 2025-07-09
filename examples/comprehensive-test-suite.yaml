@@ -1,0 +1,519 @@
+project:
+  name: "Comprehensive E-Commerce Test Suite"
+  
+goals:
+  - name: "Homepage Testing"
+    url: "https://shop.example.com"
+    journeys:
+      - name: "Basic Homepage Flow"
+        checkpoints:
+          - name: "Landing Page Load"
+            navigation_url: "https://shop.example.com"
+            steps:
+              - type: wait
+                selector: ".hero-banner"
+                timeout: 3000
+              - type: click
+                selector: ".cookie-accept"
+              - type: scroll_to_element
+                selector: ".featured-products"
+                
+          - name: "Featured Products Section"
+            steps:
+              - type: hover
+                selector: ".product-card:first-child"
+              - type: click
+                selector: ".quick-view-btn"
+              - type: wait
+                selector: ".modal-content"
+                timeout: 2000
+                
+          - name: "Newsletter Signup"
+            steps:
+              - type: scroll_to_bottom
+              - type: write
+                selector: "#newsletter-email"
+                value: "test@example.com"
+              - type: click
+                selector: ".subscribe-btn"
+                
+      - name: "Mobile Homepage View"
+        checkpoints:
+          - name: "Mobile Viewport"
+            navigation_url: "https://shop.example.com"
+            steps:
+              - type: window
+                width: 375
+                height: 667
+              - type: wait
+                selector: ".mobile-menu"
+                timeout: 2000
+              - type: click
+                selector: ".hamburger-menu"
+                
+          - name: "Mobile Navigation"
+            steps:
+              - type: click
+                selector: ".mobile-nav-item[data-category='electronics']"
+              - type: wait
+                selector: ".category-page"
+                timeout: 2000
+              - type: assert_exists
+                selector: ".product-grid"
+                
+          - name: "Mobile Search"
+            steps:
+              - type: click
+                selector: ".mobile-search-icon"
+              - type: write
+                selector: "#mobile-search-input"
+                value: "laptop"
+              - type: key
+                key: "Enter"
+                
+      - name: "Homepage Performance"
+        checkpoints:
+          - name: "Page Load Metrics"
+            navigation_url: "https://shop.example.com"
+            steps:
+              - type: execute_js
+                script: "return window.performance.timing.loadEventEnd - window.performance.timing.navigationStart"
+              - type: wait_time
+                seconds: 1
+              - type: assert_exists
+                selector: "body"
+                
+          - name: "Resource Loading"
+            steps:
+              - type: assert_exists
+                selector: "img.hero-banner"
+              - type: assert_exists
+                selector: ".product-card img"
+              - type: comment
+                text: "Verify all critical images loaded"
+                
+          - name: "Interactive Elements"
+            steps:
+              - type: assert_exists
+                selector: ".add-to-cart-btn"
+              - type: assert_not_exists
+                selector: ".error-message"
+              - type: store
+                selector: ".cart-count"
+                variable: "initialCartCount"
+                
+  - name: "Product Catalog Testing"
+    url: "https://shop.example.com/products"
+    journeys:
+      - name: "Product Browsing"
+        checkpoints:
+          - name: "Category Page"
+            navigation_url: "https://shop.example.com/products/electronics"
+            steps:
+              - type: wait
+                selector: ".product-grid"
+                timeout: 3000
+              - type: pick
+                selector: "#sort-dropdown"
+                value: "Price: Low to High"
+              - type: wait_time
+                seconds: 2
+                
+          - name: "Product Filtering"
+            steps:
+              - type: click
+                selector: ".filter-toggle"
+              - type: click
+                selector: "input[data-filter='brand'][value='Samsung']"
+              - type: click
+                selector: ".apply-filters-btn"
+                
+          - name: "Product Details"
+            steps:
+              - type: click
+                selector: ".product-card:nth-child(2)"
+              - type: wait
+                selector: ".product-details"
+                timeout: 2000
+              - type: assert_exists
+                selector: ".price-display"
+                
+      - name: "Search Functionality"
+        checkpoints:
+          - name: "Search Execution"
+            navigation_url: "https://shop.example.com/search"
+            steps:
+              - type: write
+                selector: "#search-input"
+                value: "wireless headphones"
+              - type: click
+                selector: ".search-submit"
+              - type: wait
+                selector: ".search-results"
+                timeout: 3000
+                
+          - name: "Search Filters"
+            steps:
+              - type: click
+                selector: ".price-filter[data-range='50-100']"
+              - type: click
+                selector: ".rating-filter[data-stars='4']"
+              - type: assert_exists
+                selector: ".filtered-count"
+                
+          - name: "Search Sorting"
+            steps:
+              - type: pick
+                selector: "#search-sort"
+                value: "Relevance"
+              - type: wait_time
+                seconds: 1
+              - type: store
+                selector: ".result-count"
+                variable: "searchResultCount"
+                
+      - name: "Product Comparison"
+        checkpoints:
+          - name: "Add to Compare"
+            navigation_url: "https://shop.example.com/products/laptops"
+            steps:
+              - type: click
+                selector: ".product-card:nth-child(1) .compare-btn"
+              - type: click
+                selector: ".product-card:nth-child(2) .compare-btn"
+              - type: click
+                selector: ".compare-drawer-toggle"
+                
+          - name: "Compare View"
+            steps:
+              - type: click
+                selector: ".view-comparison-btn"
+              - type: wait
+                selector: ".comparison-table"
+                timeout: 2000
+              - type: assert_exists
+                selector: ".spec-differences"
+                
+          - name: "Remove from Compare"
+            steps:
+              - type: click
+                selector: ".remove-compare-item:first-child"
+              - type: assert_equals
+                selector: ".compare-count"
+                value: "1"
+              - type: click
+                selector: ".clear-comparison"
+                
+  - name: "Checkout Process Testing"
+    url: "https://shop.example.com/cart"
+    journeys:
+      - name: "Guest Checkout"
+        checkpoints:
+          - name: "Add to Cart"
+            navigation_url: "https://shop.example.com/products/laptop-pro-15"
+            steps:
+              - type: wait
+                selector: ".product-page"
+                timeout: 3000
+              - type: click
+                selector: ".add-to-cart-primary"
+              - type: wait
+                selector: ".cart-notification"
+                timeout: 2000
+                
+          - name: "Shopping Cart"
+            navigation_url: "https://shop.example.com/cart"
+            steps:
+              - type: assert_exists
+                selector: ".cart-item"
+              - type: write
+                selector: "input[name='quantity']"
+                value: "2"
+              - type: click
+                selector: ".proceed-to-checkout"
+                
+          - name: "Guest Information"
+            steps:
+              - type: click
+                selector: ".checkout-as-guest"
+              - type: write
+                selector: "#email"
+                value: "guest@example.com"
+              - type: write
+                selector: "#phone"
+                value: "+1234567890"
+                
+      - name: "Registered User Checkout"
+        checkpoints:
+          - name: "User Login"
+            navigation_url: "https://shop.example.com/login"
+            steps:
+              - type: write
+                selector: "#login-email"
+                value: "user@example.com"
+              - type: write
+                selector: "#login-password"
+                value: "TestPass123!"
+              - type: click
+                selector: ".login-submit"
+                
+          - name: "Saved Addresses"
+            navigation_url: "https://shop.example.com/checkout/shipping"
+            steps:
+              - type: wait
+                selector: ".saved-addresses"
+                timeout: 2000
+              - type: click
+                selector: ".address-card:first-child"
+              - type: click
+                selector: ".continue-to-payment"
+                
+          - name: "Payment Selection"
+            steps:
+              - type: click
+                selector: "input[value='credit-card']"
+              - type: assert_checked
+                selector: "input[value='credit-card']"
+              - type: click
+                selector: ".place-order-btn"
+                
+      - name: "Cart Management"
+        checkpoints:
+          - name: "Cart Operations"
+            navigation_url: "https://shop.example.com/cart"
+            steps:
+              - type: click
+                selector: ".save-for-later-btn"
+              - type: assert_exists
+                selector: ".saved-items-section"
+              - type: click
+                selector: ".move-to-cart-btn"
+                
+          - name: "Promo Code"
+            steps:
+              - type: click
+                selector: ".promo-code-toggle"
+              - type: write
+                selector: "#promo-code-input"
+                value: "SAVE20"
+              - type: click
+                selector: ".apply-promo-btn"
+                
+          - name: "Cart Summary"
+            steps:
+              - type: assert_exists
+                selector: ".discount-applied"
+              - type: store
+                selector: ".total-price"
+                variable: "finalPrice"
+              - type: screenshot
+                filename: "cart-summary"
+                
+      # The comprehensive 4th journey with complete list of step types
+      - name: "Complete Step Types Showcase"
+        checkpoints:
+          - name: "Navigation and Basic Actions"
+            navigation_url: "https://shop.example.com/demo"
+            steps:
+              # Navigation steps
+              - type: navigate
+                url: "https://shop.example.com/demo/forms"
+              - type: wait_time
+                seconds: 2
+              - type: window
+                width: 1920
+                height: 1080
+              - type: screenshot
+                filename: "demo-page"
+              - type: comment
+                text: "Starting comprehensive step demonstration"
+                
+          - name: "Mouse Interactions"
+            steps:
+              # Click variations
+              - type: click
+                selector: ".demo-button"
+              - type: double_click
+                selector: ".expandable-item"
+              - type: right_click
+                selector: ".context-menu-trigger"
+              - type: hover
+                selector: ".tooltip-trigger"
+              # Drag and drop
+              - type: drag_drop
+                source: ".draggable-item"
+                target: ".drop-zone"
+                
+          - name: "Form Inputs"
+            steps:
+              # Text input
+              - type: write
+                selector: "#full-name"
+                value: "John Doe"
+              - type: fill
+                selector: "#email-field"
+                value: "john.doe@example.com"
+              - type: type
+                selector: "#search-box"
+                value: "product search"
+              # Selections
+              - type: pick
+                selector: "#country-select"
+                value: "United States"
+              - type: select
+                selector: "#state-dropdown"
+                value: "California"
+              # Checkboxes and radios
+              - type: check
+                selector: "#terms-checkbox"
+              - type: uncheck
+                selector: "#newsletter-checkbox"
+              - type: choose
+                selector: "input[name='shipping'][value='express']"
+                
+          - name: "File Operations"
+            steps:
+              # File upload
+              - type: upload
+                selector: "#file-input"
+                filename: "test-document.pdf"
+              # Download verification
+              - type: click
+                selector: ".download-btn"
+              - type: wait_time
+                seconds: 3
+              - type: assert_exists
+                selector: ".download-complete"
+                
+          - name: "Keyboard Actions"
+            steps:
+              # Key presses
+              - type: key
+                key: "Tab"
+              - type: press
+                key: "Enter"
+              - type: key
+                key: "Escape"
+              # Key combinations
+              - type: key
+                key: "Control+A"
+              - type: key
+                key: "Control+C"
+              - type: key
+                key: "Control+V"
+                
+          - name: "Scrolling Actions"
+            steps:
+              # Scroll variations
+              - type: scroll_to_top
+              - type: scroll_to_bottom
+              - type: scroll_to_element
+                selector: "#middle-section"
+              - type: scroll
+                x: 0
+                y: 500
+              - type: scroll_by
+                x: 0
+                y: -200
+                
+          - name: "Wait Conditions"
+            steps:
+              # Different wait types
+              - type: wait
+                selector: ".dynamic-content"
+                timeout: 5000
+              - type: wait_element
+                selector: ".ajax-loaded"
+              - type: wait_for_element
+                selector: ".delayed-element"
+                timeout: 3000
+              - type: wait_time
+                seconds: 1
+              - type: wait_for_text
+                text: "Loading Complete"
+                timeout: 5000
+                
+          - name: "Assertions"
+            steps:
+              # Existence assertions
+              - type: assert_exists
+                selector: ".success-message"
+              - type: assert_not_exists
+                selector: ".error-message"
+              # Value assertions
+              - type: assert_equals
+                selector: ".price-tag"
+                value: "$99.99"
+              - type: assert_contains
+                selector: ".description"
+                value: "premium quality"
+              - type: assert_not_contains
+                selector: ".warning-text"
+                value: "error"
+              # State assertions
+              - type: assert_checked
+                selector: "#agreed-terms"
+              - type: assert_not_checked
+                selector: "#spam-me"
+              - type: assert_enabled
+                selector: ".submit-button"
+              - type: assert_disabled
+                selector: ".locked-button"
+              - type: assert_visible
+                selector: ".popup-modal"
+              - type: assert_hidden
+                selector: ".collapsed-section"
+                
+          - name: "Advanced Actions"
+            steps:
+              # JavaScript execution
+              - type: execute_js
+                script: "document.querySelector('.counter').innerText = '100'"
+              - type: execute_script
+                script: "return document.title"
+              # Variable storage
+              - type: store
+                selector: ".order-number"
+                variable: "orderNum"
+              - type: store_value
+                selector: "#total-amount"
+                variable: "totalPrice"
+              # Browser actions
+              - type: add_cookie
+                name: "test_cookie"
+                value: "test_value"
+              - type: clear_cookies
+              - type: refresh
+              - type: go_back
+              - type: go_forward
+              # Alert handling
+              - type: accept_alert
+              - type: dismiss_alert
+              - type: alert_text
+                variable: "alertMessage"
+              # Frame switching
+              - type: switch_to_frame
+                selector: "#payment-iframe"
+              - type: switch_to_default
+              # Tab management
+              - type: new_tab
+                url: "https://shop.example.com/help"
+              - type: close_tab
+              - type: switch_tab
+                index: 0
+                
+          - name: "Final Validations"
+            steps:
+              # Complex assertions
+              - type: assert_url
+                value: "https://shop.example.com/demo/complete"
+              - type: assert_title
+                value: "Demo Complete - Shop Example"
+              - type: count_elements
+                selector: ".test-passed"
+                variable: "passedTests"
+              # Final screenshot
+              - type: screenshot
+                filename: "test-complete"
+              - type: comment
+                text: "All step types demonstrated successfully"
