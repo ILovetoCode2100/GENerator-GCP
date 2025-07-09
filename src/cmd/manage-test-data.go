@@ -77,7 +77,7 @@ Examples:
 
 			// Determine operation based on flags
 			if createTableFlag {
-				return createTestDataTable(client, tableNameFlag, descriptionFlag, columnsFlag, cfg.Output.Format)
+				return createTestDataTable(client, tableNameFlag, descriptionFlag, columnsFlag, cfg.Output.DefaultFormat)
 			} else if importCsvFlag != "" {
 				return importTestDataFromCSV(client, importCsvFlag, tableIDFlag, cfg.Output.Format)
 			} else if exportCsvFlag != "" {
