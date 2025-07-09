@@ -32,6 +32,6 @@ session:
   current_goal_id: null
   current_snapshot_id: null
   current_journey_id: null
-  current_checkpoint_id: null
+  current_checkpoint_id: 1678318
   auto_increment_position: true
   next_position: 3
