@@ -108,5 +108,8 @@ Example:
 		},
 	}
 	
+	// Enable negative number support
+	enableNegativeNumbers(cmd)
+	
 	return cmd
 }
