@@ -79,7 +79,7 @@ Examples:
 			if createTableFlag {
 				return createTestDataTable(client, tableNameFlag, descriptionFlag, columnsFlag, cfg.Output.DefaultFormat)
 			} else if importCsvFlag != "" {
-				return importTestDataFromCSV(client, importCsvFlag, tableIDFlag, cfg.Output.Format)
+				return importTestDataFromCSV(client, importCsvFlag, tableIDFlag, cfg.Output.DefaultFormat)
 			} else if exportCsvFlag != "" {
 				return exportTestDataToCSV(client, exportCsvFlag, tableIDFlag, cfg.Output.Format)
 			} else if tableIDFlag != "" {
