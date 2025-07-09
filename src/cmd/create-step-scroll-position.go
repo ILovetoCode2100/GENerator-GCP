@@ -18,8 +18,12 @@ func newCreateStepScrollPositionCmd() *cobra.Command {
 		
 Example:
   api-cli create-step-scroll-position 1678318 100 200 1
-  api-cli create-step-scroll-position 1678318 0 500 2 -o json`,
+  api-cli create-step-scroll-position 1678318 0 500 2 -o json
+  api-cli create-step-scroll-position 1678318 -- -10 -20 3  # Use -- for negative coordinates`,
 		Args: cobra.ExactArgs(4),
+		FParseErrWhitelist: cobra.FParseErrWhitelist{
+			UnknownFlags: true,
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			checkpointIDStr := args[0]
 			xStr := args[1]
