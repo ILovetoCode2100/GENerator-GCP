@@ -120,7 +120,7 @@ Examples:
 				},
 			}
 
-			return outputEnvironmentResult(output, cfg.Output.Format)
+			return outputEnvironmentResult(output, cfg.Output.DefaultFormat)
 		},
 	}
 
