@@ -81,7 +81,7 @@ Examples:
 			} else if importCsvFlag != "" {
 				return importTestDataFromCSV(client, importCsvFlag, tableIDFlag, cfg.Output.DefaultFormat)
 			} else if exportCsvFlag != "" {
-				return exportTestDataToCSV(client, exportCsvFlag, tableIDFlag, cfg.Output.Format)
+				return exportTestDataToCSV(client, exportCsvFlag, tableIDFlag, cfg.Output.DefaultFormat)
 			} else if tableIDFlag != "" {
 				return getTestDataTable(client, tableIDFlag, cfg.Output.Format)
 			} else {
