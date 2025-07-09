@@ -123,7 +123,7 @@ Examples:
 				}
 			}
 
-			return outputExecutionResult(output, cfg.Output.Format)
+			return outputExecutionResult(output, cfg.Output.DefaultFormat)
 		},
 	}
 
