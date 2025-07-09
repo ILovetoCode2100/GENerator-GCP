@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/marklovelady/api-cli-generator/pkg/config"
 	"github.com/marklovelady/api-cli-generator/pkg/virtuoso"
