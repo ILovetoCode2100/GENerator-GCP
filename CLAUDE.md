@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**API CLI Generator - Virtuoso Edition** - A Go-based CLI tool that generates an intelligent orchestration interface for the Virtuoso API. It automatically creates CLI commands from OpenAPI specifications and provides advanced batch test structure creation and workflow automation.
+**API CLI Generator - Virtuoso Edition** - A comprehensive Go-based CLI tool that provides an intelligent orchestration interface for the Virtuoso API. It features 69 commands including test automation, execution monitoring, analytics, and workflow management with advanced session context management.
 
 **Technology Stack**:
 - Go 1.21+ (primary language)
