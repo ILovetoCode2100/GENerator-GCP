@@ -1,55 +1,63 @@
-# API CLI Generator - Virtuoso Edition
+# API CLI Generator
 
 **Created:** 2025-07-08  
-**Purpose:** Generate intelligent orchestration CLI for Virtuoso API
-**Status:** Configured with Virtuoso credentials
+**Purpose:** Generate intelligent CLI interfaces from OpenAPI specifications
+**Status:** Production ready
 
 ## 🎯 Overview
 
-This project creates a secure, intelligent CLI for the Virtuoso API that:
-- Handles complex multi-step workflows automatically
-- Enforces business rules (auto-attach, initial resources)
-- Supports batch creation from JSON/YAML files
-- Provides AI-friendly interfaces and output
+This project creates secure, intelligent CLI tools from OpenAPI specifications that:
+- Handle complex multi-step workflows automatically
+- Enforce business rules and validation
+- Support batch operations from JSON/YAML files
+- Provide multiple output formats (human, JSON, YAML, AI)
+- Generate type-safe Go code from OpenAPI specs
 
 ## ⚡ Quick Start
 
 ```bash
-# Set up environment
-source ./scripts/setup-virtuoso.sh
+# Generate CLI from OpenAPI spec
+make generate
 
-# Create project structure from JSON
-./bin/api-cli create-structure --file structure.json
+# Build the CLI binary
+make build
 
-# Add test steps
-./bin/api-cli add-step <checkpoint-id> navigate --url "https://example.com"
-./bin/api-cli add-step <checkpoint-id> click --selector "#button"
+# Run the CLI
+./bin/api-cli --help
+
+# Create structure from batch file
+./bin/api-cli create-structure --file examples/test-structure.yaml
 ```
 
-See [VIRTUOSO_QUICK_START.md](VIRTUOSO_QUICK_START.md) for detailed usage.
+See [docs/guides/QUICK_START.md](docs/guides/QUICK_START.md) for detailed usage.
 
 ## 📚 Documentation
 
-- [COMMANDS.md](COMMANDS.md) - Complete command reference
-- [BATCH_FEATURES_GUIDE.md](BATCH_FEATURES_GUIDE.md) - Batch structure creation guide
-- [VIRTUOSO_CLI_SUMMARY.md](VIRTUOSO_CLI_SUMMARY.md) - Implementation summary
+- [docs/api-reference/](docs/api-reference/) - Complete command reference
+- [docs/guides/](docs/guides/) - User guides and tutorials
+- [docs/architecture/](docs/architecture/) - Architecture documentation
+- [docs/development/](docs/development/) - Development guides
 - [examples/](examples/) - Example structure files
 
-## 🔧 Virtuoso Configuration
+## 🔧 Configuration
 
-The CLI is pre-configured for Virtuoso API:
+The CLI supports flexible configuration through:
 
 ```yaml
-Base URL: https://api-app2.virtuoso.qa/api
-Org ID: 2242
-Headers:
-  X-Virtuoso-Client-ID: api-cli-generator
-  X-Virtuoso-Client-Name: api-cli-generator
+# config/config.yaml
+api:
+  base_url: "https://api.example.com"
+  headers:
+    X-Client-ID: "api-cli-generator"
+    X-Client-Name: "api-cli-generator"
+  timeout: 30s
 ```
 
-Configuration stored in:
-- `/config/virtuoso-config.yaml` - Main config file
-- Environment variables (prefix: `VIRTUOSO_`)
+Configuration sources (in order of precedence):
+- Command line flags
+- Environment variables
+- Configuration file (`config/config.yaml`)
+- Default values
 
 ## 🏗️ Architecture
 
@@ -64,6 +72,14 @@ OpenAPI Spec → Code Generation → Go CLI → Multiple Deployment Targets
     │
     └── Version controlled, immutable source of truth
 ```
+
+## ✨ Features
+
+- **Type Safety**: Generated Go code ensures compile-time validation
+- **Security**: Template injection prevention and parameter validation
+- **Flexibility**: Multiple output formats and configuration options
+- **Automation**: Batch operations from structured files
+- **Documentation**: Auto-generated command documentation
 
 ## 📁 Project Structure
 
@@ -104,7 +120,7 @@ api-cli-generator/
 - **Templating:** Go text/template
 - **Container:** Alpine-based Docker image
 
-## 🚀 Quick Start
+## 🚀 Getting Started
 
 1. **Place your OpenAPI spec**
    ```bash
@@ -121,7 +137,13 @@ api-cli-generator/
    make build
    ```
 
-4. **Run locally**
+4. **Configure your API**
+   ```bash
+   cp config/config.yaml.example config/config.yaml
+   # Edit config.yaml with your API details
+   ```
+
+5. **Run locally**
    ```bash
    ./bin/api-cli --help
    ```
@@ -157,26 +179,23 @@ oapi-codegen -package api -generate types,client specs/api.yaml > src/api/client
 
 ## 📋 Implementation Status
 
-### Phase 1: Basic Commands ✅
-- [x] Create Project
-- [x] Create Goal (with auto-journey creation)
-- [x] Create Journey
-- [x] Create Checkpoint (with auto-attach)
-- [x] Add Step (all types: click, fill, wait, press, navigate)
+### Core Features ✅
+- [x] OpenAPI spec parsing and code generation
+- [x] Type-safe Go client generation
+- [x] CLI command framework with Cobra
+- [x] Configuration management with Viper
+- [x] Multiple output formats (human, JSON, YAML, AI)
+- [x] Batch operation support from YAML/JSON files
+- [x] Docker containerization
+- [x] Comprehensive documentation
 
-### Phase 2: Orchestration ✅
-- [x] Create Structure (batch from YAML/JSON)
-- [x] Journey renaming and management
-- [x] Navigation URL updates
-- [x] Workflow automation
-- [x] Business rule enforcement
-
-### Phase 3: Enhanced Features ✅
-- [x] List commands (projects, goals, journeys, checkpoints)
-- [x] Update commands (journey title, navigation URL)
-- [x] Get commands (step details with canonical ID)
-- [x] Dry-run mode for previewing changes
-- [x] Multiple output formats (human, json, yaml, ai)
+### Advanced Features ✅
+- [x] Template-based request building
+- [x] Error handling and retry logic
+- [x] Dry-run mode for previewing operations
+- [x] Structured logging and debugging
+- [x] Flexible configuration hierarchy
+- [x] Security validations and input sanitization
 
 ## 🔗 Dependencies
 
@@ -193,3 +212,15 @@ github.com/go-resty/resty/v2
 - [oapi-codegen Documentation](https://github.com/deepmap/oapi-codegen)
 - [Cobra CLI Guide](https://cobra.dev/)
 - [OpenAPI 3.0 Specification](https://swagger.io/specification/)
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+
+## 📊 Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a detailed history of changes to this project.

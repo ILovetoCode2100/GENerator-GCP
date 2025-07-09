@@ -1,19 +1,16 @@
-# Virtuoso API CLI Configuration Example
-# Copy this file to virtuoso-config.yaml and customize
+# API CLI Generator Configuration
+# This file contains the configuration for the API CLI
 
-# API configuration
 api:
-  base_url: https://api-app2.virtuoso.qa/api
-  auth_token: your-auth-token-here  # Use VIRTUOSO_API_TOKEN env var for security
+  base_url: https://api.example.com/api
+  auth_token: your-auth-token-here
   
-# Organization settings
 organization:
-  id: "2242"  # Your organization ID
+  id: "your-org-id"
   
-# Headers for API requests
 headers:
-  X-Virtuoso-Client-ID: api-cli-generator
-  X-Virtuoso-Client-Name: api-cli-generator
+  X-Client-ID: api-cli-generator
+  X-Client-Name: api-cli-generator
   
 # Business rules
 business_rules:
@@ -39,7 +36,7 @@ logging:
 
 # Session context management
 session:
-  # Current project context - set by CLI commands
+  # Current project context
   current_project_id: null
   current_goal_id: null
   current_snapshot_id: null

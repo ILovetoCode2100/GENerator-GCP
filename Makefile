@@ -79,3 +79,45 @@ install: build ## Install binary to /usr/local/bin
 dev: ## Run with hot reload (requires air)
 	@which air > /dev/null || (echo "Installing air..." && go install github.com/cosmtrek/air@latest)
 	air -c .air.toml
+
+lint: ## Run linting
+	@which golangci-lint > /dev/null || (echo "Installing golangci-lint..." && go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest)
+	golangci-lint run
+
+fmt: ## Format code
+	gofmt -s -w .
+	goimports -w .
+
+check: ## Run all checks
+	@echo "Running all checks..."
+	make fmt
+	make lint
+	make test
+	make build
+	@echo "All checks passed!"
+
+ci: ## Run CI pipeline locally
+	@echo "Running CI pipeline locally..."
+	make check
+	make validate-spec
+	make docker-build
+	@echo "CI pipeline completed!"
+
+tools: ## Install development tools
+	@echo "Installing development tools..."
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	go install github.com/cosmtrek/air@latest
+	go install honnef.co/go/tools/cmd/staticcheck@latest
+	go install github.com/goreleaser/goreleaser@latest
+	npm install -g @apidevtools/swagger-cli
+	@echo "Development tools installed!"
+
+release-snapshot: ## Build release snapshot
+	@which goreleaser > /dev/null || (echo "Installing goreleaser..." && go install github.com/goreleaser/goreleaser@latest)
+	goreleaser release --snapshot --rm-dist
+
+coverage: ## Generate test coverage report
+	@echo "Generating coverage report..."
+	go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+	go tool cover -html=coverage.txt -o coverage.html
+	@echo "Coverage report generated: coverage.html"

@@ -1638,3 +1638,204 @@ func (c *Client) CreateStoreValueStep(checkpointID int, value string, variableNa
 	
 	return c.addStep(checkpointID, position, parsedStep)
 }
+
+// CreateMouseMoveToStep creates a mouse move to absolute coordinates step
+func (c *Client) CreateMouseMoveToStep(checkpointID int, x int, y int, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "MOUSE",
+		"value": "",
+		"meta": map[string]interface{}{
+			"action": "MOVE",
+			"x": x,
+			"y": y,
+		},
+	}
+	
+	return c.addStep(checkpointID, position, parsedStep)
+}
+
+// CreateMouseMoveByStep creates a mouse move by relative offset step
+func (c *Client) CreateMouseMoveByStep(checkpointID int, x int, y int, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "MOUSE",
+		"value": "",
+		"meta": map[string]interface{}{
+			"action": "OFFSET",
+			"x": x,
+			"y": y,
+		},
+	}
+	
+	return c.addStep(checkpointID, position, parsedStep)
+}
+
+// CreateSwitchIFrameStep creates a switch to iframe step by element selector
+func (c *Client) CreateSwitchIFrameStep(checkpointID int, selector string, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "SWITCH",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": fmt.Sprintf(`{"clue":"%s"}`, selector),
+				},
+			},
+		},
+		"meta": map[string]interface{}{
+			"type": "FRAME_BY_ELEMENT",
+		},
+	}
+	
+	return c.addStep(checkpointID, position, parsedStep)
+}
+
+// CreateSwitchNextTabStep creates a switch to next tab step
+func (c *Client) CreateSwitchNextTabStep(checkpointID int, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "SWITCH",
+		"meta": map[string]interface{}{
+			"type": "NEXT_TAB",
+		},
+	}
+	
+	return c.addStep(checkpointID, position, parsedStep)
+}
+
+// CreateSwitchParentFrameStep creates a switch to parent frame step
+func (c *Client) CreateSwitchParentFrameStep(checkpointID int, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "SWITCH",
+		"meta": map[string]interface{}{
+			"type": "PARENT_FRAME",
+		},
+	}
+	
+	return c.addStep(checkpointID, position, parsedStep)
+}
+
+// CreateSwitchPrevTabStep creates a switch to previous tab step
+func (c *Client) CreateSwitchPrevTabStep(checkpointID int, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "SWITCH",
+		"meta": map[string]interface{}{
+			"type": "PREV_TAB",
+		},
+	}
+	
+	return c.addStep(checkpointID, position, parsedStep)
+}
+
+// CreateAssertNotEqualsStep creates an assertion step that verifies an element does not equal a value
+func (c *Client) CreateAssertNotEqualsStep(checkpointID int, element string, value string, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "ASSERT_NOT_EQUALS",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": fmt.Sprintf(`{"clue":"%s"}`, element),
+				},
+			},
+		},
+		"value": value,
+		"meta": map[string]interface{}{},
+	}
+	
+	return c.addStep(checkpointID, position, parsedStep)
+}
+
+// CreateAssertGreaterThanStep creates an assertion step that verifies an element is greater than a value
+func (c *Client) CreateAssertGreaterThanStep(checkpointID int, element string, value string, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "ASSERT_GREATER_THAN",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": fmt.Sprintf(`{"clue":"%s"}`, element),
+				},
+			},
+		},
+		"value": value,
+		"meta": map[string]interface{}{},
+	}
+	
+	return c.addStep(checkpointID, position, parsedStep)
+}
+
+// CreateAssertGreaterThanOrEqualStep creates an assertion step that verifies an element is greater than or equal to a value
+func (c *Client) CreateAssertGreaterThanOrEqualStep(checkpointID int, element string, value string, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "ASSERT_GREATER_THAN_OR_EQUAL",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": fmt.Sprintf(`{"clue":"%s"}`, element),
+				},
+			},
+		},
+		"value": value,
+		"meta": map[string]interface{}{},
+	}
+	
+	return c.addStep(checkpointID, position, parsedStep)
+}
+
+// CreateAssertMatchesStep creates an assertion step that verifies an element matches a regex pattern
+func (c *Client) CreateAssertMatchesStep(checkpointID int, element string, regexPattern string, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "ASSERT_MATCHES",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": fmt.Sprintf(`{"clue":"%s"}`, element),
+				},
+			},
+		},
+		"value": regexPattern,
+		"meta": map[string]interface{}{},
+	}
+	
+	return c.addStep(checkpointID, position, parsedStep)
+}
+
+// ValidateCheckpoint validates that a checkpoint exists and is accessible
+func (c *Client) ValidateCheckpoint(checkpointID int) error {
+	// Try to get the checkpoint details via the testcases endpoint
+	var response struct {
+		Success bool           `json:"success"`
+		Item    Checkpoint     `json:"item"`
+		Error   string         `json:"error,omitempty"`
+	}
+	
+	resp, err := c.httpClient.R().
+		SetResult(&response).
+		Get(fmt.Sprintf("/testcases/%d", checkpointID))
+	
+	if err != nil {
+		return fmt.Errorf("checkpoint validation request failed: %w", err)
+	}
+	
+	if resp.IsError() {
+		if resp.StatusCode() == 404 {
+			return fmt.Errorf("checkpoint %d not found", checkpointID)
+		}
+		if response.Error != "" {
+			return fmt.Errorf("checkpoint validation failed: %s", response.Error)
+		}
+		return fmt.Errorf("checkpoint validation failed with status %d: %s", resp.StatusCode(), resp.String())
+	}
+	
+	if !response.Success {
+		return fmt.Errorf("checkpoint validation failed: API returned success=false")
+	}
+	
+	// Verify we got a valid checkpoint back
+	if response.Item.ID != checkpointID {
+		return fmt.Errorf("checkpoint validation failed: returned checkpoint ID %d does not match requested ID %d", response.Item.ID, checkpointID)
+	}
+	
+	return nil
+}
