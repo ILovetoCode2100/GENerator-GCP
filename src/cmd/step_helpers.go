@@ -132,3 +132,19 @@ func outputStepResult(output *StepOutput) error {
 func addCheckpointFlag(cmd *cobra.Command, checkpointFlag *int) {
 	cmd.Flags().IntVar(checkpointFlag, "checkpoint", 0, "Checkpoint ID (overrides session context)")
 }
+
+// parseIntArg safely parses an integer argument, handling negative numbers
+func parseIntArg(arg string, fieldName string) (int, error) {
+	val, err := strconv.Atoi(arg)
+	if err != nil {
+		return 0, fmt.Errorf("invalid %s: %w", fieldName, err)
+	}
+	return val, nil
+}
+
+// enableNegativeNumbers configures a command to properly handle negative number arguments
+func enableNegativeNumbers(cmd *cobra.Command) {
+	cmd.FParseErrWhitelist = cobra.FParseErrWhitelist{
+		UnknownFlags: true,
+	}
+}
