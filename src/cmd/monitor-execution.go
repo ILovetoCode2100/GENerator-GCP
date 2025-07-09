@@ -62,7 +62,7 @@ Examples:
 			client := virtuoso.NewClient(cfg)
 
 			if followFlag {
-				return followExecution(client, executionID, intervalFlag, timeoutFlag, cfg.Output.Format)
+				return followExecution(client, executionID, intervalFlag, timeoutFlag, cfg.Output.DefaultFormat)
 			}
 
 			// Single status check
