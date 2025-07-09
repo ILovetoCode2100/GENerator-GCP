@@ -101,7 +101,7 @@ Examples:
 				}
 			}
 
-			return outputAnalysisResult(output, cfg.Output.Format)
+			return outputAnalysisResult(output, cfg.Output.DefaultFormat)
 		},
 	}
 
