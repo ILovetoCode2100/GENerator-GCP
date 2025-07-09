@@ -209,15 +209,24 @@ All step commands follow the new stateful pattern:
 ```
 
 Step types include:
-- **Navigation**: navigate, wait-time, wait-element, window
-- **Mouse**: click, double-click, right-click, hover, mouse-down/up/move/enter
-- **Input**: write, key, pick, pick-value, pick-text, upload
-- **Scroll**: scroll-top/bottom/element/position
-- **Assert**: assert-exists/not-exists/equals/checked/selected/variable/less-than-or-equal
-- **Data**: store, store-value, execute-js
-- **Environment**: add-cookie, delete-cookie, clear-cookies
-- **Dialog**: dismiss-alert, dismiss-confirm, dismiss-prompt
-- **Other**: comment
+- **Navigation (4)**: navigate, wait-time, wait-element, window
+- **Mouse Actions (8)**: click, double-click, right-click, hover, mouse-down/up/move/enter
+- **Input (6)**: write, key, pick, pick-value, pick-text, upload
+- **Scroll (4)**: scroll-top/bottom/element/position
+- **Assertions (11)**: assert-exists/not-exists/equals/checked/selected/variable/greater-than/greater-than-or-equal/less-than-or-equal/matches/not-equals
+- **Data (3)**: store, store-value, execute-js
+- **Environment (3)**: add-cookie, delete-cookie, clear-cookies
+- **Dialog (3)**: dismiss-alert, dismiss-confirm, dismiss-prompt
+- **Frame/Tab (4)**: switch-iframe, switch-next-tab, switch-prev-tab, switch-parent-frame
+- **Utility (1)**: comment
+
+### Additional System Commands (6)
+- `add-step` - Generic step addition (legacy)
+- `get-step` - Step details retrieval
+- `update-navigation` - Navigation step URL updates
+- `create-structure` - Enhanced batch structure creation
+- `completion` - Shell autocompletion
+- `help` - Command help system
 
 ## Batch Structure Format
 ```yaml
