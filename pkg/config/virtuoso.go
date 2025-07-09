@@ -103,10 +103,12 @@ func LoadConfig() (*VirtuosoConfig, error) {
 	
 	// Read config file
 	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			// Config file not found; use defaults and warn user
+			fmt.Printf("Warning: No config file found. Using defaults. To create a config file, run: mkdir -p ./config && touch ./config/virtuoso-config.yaml\n")
+		} else {
 			return nil, fmt.Errorf("error reading config: %w", err)
 		}
-		// Config file not found; use defaults
 	}
 	
 	var config VirtuosoConfig
