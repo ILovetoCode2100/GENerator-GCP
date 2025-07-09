@@ -39,9 +39,9 @@ func resolveStepContext(args []string, checkpointFlag int, positionIndex int) (*
 	if positionIndex < len(args) {
 		// Position provided as argument
 		var err error
-		ctx.Position, err = strconv.Atoi(args[positionIndex])
+		ctx.Position, err = parseIntArg(args[positionIndex], "position")
 		if err != nil {
-			return nil, fmt.Errorf("invalid position: %w", err)
+			return nil, err
 		}
 		ctx.AutoPosition = false
 	} else {
