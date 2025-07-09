@@ -16,39 +16,38 @@ func newCreateStepScrollPositionCmd() *cobra.Command {
 		Short: "Create a scroll position step at a specific position in a checkpoint",
 		Long: `Create a scroll position step that scrolls to specific X and Y coordinates at the specified position in the checkpoint.
 		
+X and Y coordinates can be negative. Use -- before negative values to avoid flag parsing issues.
+		
 Example:
   api-cli create-step-scroll-position 1678318 100 200 1
   api-cli create-step-scroll-position 1678318 0 500 2 -o json
   api-cli create-step-scroll-position 1678318 -- -10 -20 3  # Use -- for negative coordinates`,
 		Args: cobra.ExactArgs(4),
-		FParseErrWhitelist: cobra.FParseErrWhitelist{
-			UnknownFlags: true,
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			checkpointIDStr := args[0]
 			xStr := args[1]
 			yStr := args[2]
 			positionStr := args[3]
 			
-			// Convert IDs to int
-			checkpointID, err := strconv.Atoi(checkpointIDStr)
+			// Convert IDs to int using helper function
+			checkpointID, err := parseIntArg(checkpointIDStr, "checkpoint ID")
 			if err != nil {
-				return fmt.Errorf("invalid checkpoint ID: %w", err)
+				return err
 			}
 			
-			x, err := strconv.Atoi(xStr)
+			x, err := parseIntArg(xStr, "X coordinate")
 			if err != nil {
-				return fmt.Errorf("invalid X coordinate: %w", err)
+				return err
 			}
 			
-			y, err := strconv.Atoi(yStr)
+			y, err := parseIntArg(yStr, "Y coordinate")
 			if err != nil {
-				return fmt.Errorf("invalid Y coordinate: %w", err)
+				return err
 			}
 			
-			position, err := strconv.Atoi(positionStr)
+			position, err := parseIntArg(positionStr, "position")
 			if err != nil {
-				return fmt.Errorf("invalid position: %w", err)
+				return err
 			}
 			
 			// Create Virtuoso client
