@@ -1,9 +1,7 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 
 	"github.com/marklovelady/api-cli-generator/pkg/virtuoso"
@@ -11,30 +9,62 @@ import (
 )
 
 func newCreateStepKeyCmd() *cobra.Command {
+	var checkpointFlag int
+	
 	cmd := &cobra.Command{
-		Use:   "create-step-key CHECKPOINT_ID KEY POSITION",
+		Use:   "create-step-key KEY [POSITION]",
 		Short: "Create a keyboard press step at a specific position in a checkpoint",
 		Long: `Create a keyboard press step that presses a specific key at the specified position in the checkpoint.
-		
-Example:
-  api-cli create-step-key 1678318 "Enter" 1
-  api-cli create-step-key 1678318 "Tab" 2 -o json
-  api-cli create-step-key 1678318 "Escape" 3`,
-		Args: cobra.ExactArgs(3),
+
+Uses the current checkpoint from session context by default. Override with --checkpoint flag.
+Position is auto-incremented if not specified and auto-increment is enabled.
+
+Examples:
+  # Using current checkpoint context
+  api-cli create-step-key "Enter" 1
+  api-cli create-step-key "Tab"  # Auto-increment position
+  
+  # Override checkpoint explicitly
+  api-cli create-step-key "Enter" 1 --checkpoint 1678318
+  
+  # Legacy format (still supported)
+  api-cli create-step-key 1678318 "Enter" 1`,
+		Args: cobra.RangeArgs(1, 3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			checkpointIDStr := args[0]
-			key := args[1]
-			positionStr := args[2]
+			var key string
+			var ctx *StepContext
+			var err error
 			
-			// Convert IDs to int
-			checkpointID, err := strconv.Atoi(checkpointIDStr)
-			if err != nil {
-				return fmt.Errorf("invalid checkpoint ID: %w", err)
-			}
-			
-			position, err := strconv.Atoi(positionStr)
-			if err != nil {
-				return fmt.Errorf("invalid position: %w", err)
+			// Check if using legacy format (first arg is numeric)
+			if len(args) >= 3 {
+				if _, err := strconv.Atoi(args[0]); err == nil {
+					// Legacy format: CHECKPOINT_ID KEY POSITION
+					checkpointID, _ := strconv.Atoi(args[0])
+					key = args[1]
+					position, err := strconv.Atoi(args[2])
+					if err != nil {
+						return fmt.Errorf("invalid position: %w", err)
+					}
+					
+					ctx = &StepContext{
+						CheckpointID: checkpointID,
+						Position:     position,
+						UsingContext: false,
+						AutoPosition: false,
+					}
+				} else {
+					// Modern format with 3 args is invalid
+					return fmt.Errorf("invalid arguments: when providing 3 arguments, first must be checkpoint ID (number)")
+				}
+			} else {
+				// Modern format: KEY [POSITION]
+				key = args[0]
+				
+				// Resolve checkpoint and position
+				ctx, err = resolveStepContext(args, checkpointFlag, 1)
+				if err != nil {
+					return err
+				}
 			}
 			
 			// Validate key
@@ -46,56 +76,32 @@ Example:
 			client := virtuoso.NewClient(cfg)
 			
 			// Create key step using the enhanced client
-			stepID, err := client.CreateKeyStep(checkpointID, key, position)
+			stepID, err := client.CreateKeyStep(ctx.CheckpointID, key, ctx.Position)
 			if err != nil {
 				return fmt.Errorf("failed to create key step: %w", err)
 			}
 			
-			// Format output based on the format flag
-			switch cfg.Output.DefaultFormat {
-			case "json":
-				output := map[string]interface{}{
-					"status":        "success",
-					"step_type":     "KEY",
-					"checkpoint_id": checkpointID,
-					"step_id":       stepID,
-					"key":           key,
-					"position":      position,
-					"parsed_step":   fmt.Sprintf("press %s", key),
-				}
-				encoder := json.NewEncoder(os.Stdout)
-				encoder.SetIndent("", "  ")
-				if err := encoder.Encode(output); err != nil {
-					return fmt.Errorf("failed to encode JSON output: %w", err)
-				}
-			case "yaml":
-				fmt.Printf("status: success\n")
-				fmt.Printf("step_type: KEY\n")
-				fmt.Printf("checkpoint_id: %d\n", checkpointID)
-				fmt.Printf("step_id: %d\n", stepID)
-				fmt.Printf("key: %s\n", key)
-				fmt.Printf("position: %d\n", position)
-				fmt.Printf("parsed_step: press %s\n", key)
-			case "ai":
-				fmt.Printf("Successfully created key step:\n")
-				fmt.Printf("- Step ID: %d\n", stepID)
-				fmt.Printf("- Step Type: KEY\n")
-				fmt.Printf("- Checkpoint ID: %d\n", checkpointID)
-				fmt.Printf("- Key: %s\n", key)
-				fmt.Printf("- Position: %d\n", position)
-				fmt.Printf("- Parsed Step: press %s\n", key)
-				fmt.Printf("\nNext steps:\n")
-				fmt.Printf("1. Add another step: api-cli create-step-* %d <options>\n", checkpointID)
-				fmt.Printf("2. Execute the test journey\n")
-			default: // human
-				fmt.Printf("✅ Created key step at position %d in checkpoint %d\n", position, checkpointID)
-				fmt.Printf("   Key: %s\n", key)
-				fmt.Printf("   Step ID: %d\n", stepID)
+			// Save config if position was auto-incremented
+			saveStepContext(ctx)
+			
+			// Output result
+			output := &StepOutput{
+				Status:       "success",
+				StepType:     "KEY",
+				CheckpointID: ctx.CheckpointID,
+				StepID:       stepID,
+				Position:     ctx.Position,
+				ParsedStep:   fmt.Sprintf("press %s", key),
+				UsingContext: ctx.UsingContext,
+				AutoPosition: ctx.AutoPosition,
+				Extra:        map[string]interface{}{"key": key},
 			}
 			
-			return nil
+			return outputStepResult(output)
 		},
 	}
+	
+	addCheckpointFlag(cmd, &checkpointFlag)
 	
 	return cmd
 }

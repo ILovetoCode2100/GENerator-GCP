@@ -1,9 +1,7 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 
 	"github.com/marklovelady/api-cli-generator/pkg/virtuoso"
@@ -11,80 +9,97 @@ import (
 )
 
 func newCreateStepClearCookiesCmd() *cobra.Command {
+	var checkpointFlag int
+	
 	cmd := &cobra.Command{
-		Use:   "create-step-clear-cookies CHECKPOINT_ID POSITION",
+		Use:   "create-step-clear-cookies [POSITION]",
 		Short: "Create a clear all cookies step at a specific position in a checkpoint",
 		Long: `Create a clear all cookies step that removes all cookies at the specified position in the checkpoint.
-		
-Example:
+
+Modern usage (with session context):
+  api-cli set-checkpoint 1678318
+  api-cli create-step-clear-cookies
+  api-cli create-step-clear-cookies 2
+  api-cli create-step-clear-cookies --checkpoint 1678319
+
+Legacy usage (backward compatible):
   api-cli create-step-clear-cookies 1678318 1
   api-cli create-step-clear-cookies 1678318 2 -o json`,
-		Args: cobra.ExactArgs(2),
+		Args: cobra.RangeArgs(0, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			checkpointIDStr := args[0]
-			positionStr := args[1]
+			// Determine if using legacy or modern syntax
+			var ctx *StepContext
+			var err error
 			
-			// Convert IDs to int
-			checkpointID, err := strconv.Atoi(checkpointIDStr)
-			if err != nil {
-				return fmt.Errorf("invalid checkpoint ID: %w", err)
-			}
-			
-			position, err := strconv.Atoi(positionStr)
-			if err != nil {
-				return fmt.Errorf("invalid position: %w", err)
+			// Check for legacy syntax (first arg is numeric checkpoint ID)
+			if len(args) >= 2 {
+				if _, parseErr := strconv.Atoi(args[0]); parseErr == nil {
+					// Legacy syntax: CHECKPOINT_ID POSITION
+					checkpointID, err := strconv.Atoi(args[0])
+					if err != nil {
+						return fmt.Errorf("invalid checkpoint ID: %w", err)
+					}
+					
+					position, err := strconv.Atoi(args[1])
+					if err != nil {
+						return fmt.Errorf("invalid position: %w", err)
+					}
+					
+					ctx = &StepContext{
+						CheckpointID: checkpointID,
+						Position:     position,
+						UsingContext: false,
+						AutoPosition: false,
+					}
+				} else {
+					// Modern syntax with explicit position: [POSITION]
+					positionIndex := 0
+					ctx, err = resolveStepContext(args, checkpointFlag, positionIndex)
+					if err != nil {
+						return err
+					}
+				}
+			} else {
+				// Modern syntax: no args or just position
+				positionIndex := 0
+				ctx, err = resolveStepContext(args, checkpointFlag, positionIndex)
+				if err != nil {
+					return err
+				}
 			}
 			
 			// Create Virtuoso client
 			client := virtuoso.NewClient(cfg)
 			
 			// Create clear cookies step using the enhanced client
-			stepID, err := client.CreateClearCookiesStep(checkpointID, position)
+			stepID, err := client.CreateClearCookiesStep(ctx.CheckpointID, ctx.Position)
 			if err != nil {
 				return fmt.Errorf("failed to create clear cookies step: %w", err)
 			}
 			
-			// Format output based on the format flag
-			switch cfg.Output.DefaultFormat {
-			case "json":
-				output := map[string]interface{}{
-					"status":        "success",
-					"step_type":     "CLEAR_COOKIES",
-					"checkpoint_id": checkpointID,
-					"step_id":       stepID,
-					"position":      position,
-					"parsed_step":   "clear all cookies",
-				}
-				encoder := json.NewEncoder(os.Stdout)
-				encoder.SetIndent("", "  ")
-				if err := encoder.Encode(output); err != nil {
-					return fmt.Errorf("failed to encode JSON output: %w", err)
-				}
-			case "yaml":
-				fmt.Printf("status: success\n")
-				fmt.Printf("step_type: CLEAR_COOKIES\n")
-				fmt.Printf("checkpoint_id: %d\n", checkpointID)
-				fmt.Printf("step_id: %d\n", stepID)
-				fmt.Printf("position: %d\n", position)
-				fmt.Printf("parsed_step: clear all cookies\n")
-			case "ai":
-				fmt.Printf("Successfully created clear cookies step:\n")
-				fmt.Printf("- Step ID: %d\n", stepID)
-				fmt.Printf("- Step Type: CLEAR_COOKIES\n")
-				fmt.Printf("- Checkpoint ID: %d\n", checkpointID)
-				fmt.Printf("- Position: %d\n", position)
-				fmt.Printf("- Parsed Step: clear all cookies\n")
-				fmt.Printf("\nNext steps:\n")
-				fmt.Printf("1. Add another step: api-cli create-step-* %d <options>\n", checkpointID)
-				fmt.Printf("2. Execute the test journey\n")
-			default: // human
-				fmt.Printf("✅ Created clear cookies step at position %d in checkpoint %d\n", position, checkpointID)
-				fmt.Printf("   Step ID: %d\n", stepID)
+			// Save session context if position was auto-incremented
+			saveStepContext(ctx)
+			
+			// Create step output
+			output := &StepOutput{
+				Status:       "success",
+				StepType:     "CLEAR_COOKIES",
+				CheckpointID: ctx.CheckpointID,
+				StepID:       stepID,
+				Position:     ctx.Position,
+				ParsedStep:   "clear all cookies",
+				UsingContext: ctx.UsingContext,
+				AutoPosition: ctx.AutoPosition,
+				Extra:        nil,
 			}
 			
-			return nil
+			// Output the result
+			return outputStepResult(output)
 		},
 	}
+	
+	// Add checkpoint flag
+	addCheckpointFlag(cmd, &checkpointFlag)
 	
 	return cmd
 }

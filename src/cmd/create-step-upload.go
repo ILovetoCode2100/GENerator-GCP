@@ -1,9 +1,7 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 
 	"github.com/marklovelady/api-cli-generator/pkg/virtuoso"
@@ -11,31 +9,66 @@ import (
 )
 
 func newCreateStepUploadCmd() *cobra.Command {
+	var checkpointFlag int
+	
 	cmd := &cobra.Command{
-		Use:   "create-step-upload CHECKPOINT_ID FILENAME ELEMENT POSITION",
+		Use:   "create-step-upload ELEMENT FILE_PATH [POSITION]",
 		Short: "Create a file upload step at a specific position in a checkpoint",
 		Long: `Create a file upload step that uploads a file to a specific element at the specified position in the checkpoint.
-		
-Example:
-  api-cli create-step-upload 1678318 "document.pdf" "file upload" 1
-  api-cli create-step-upload 1678318 "image.jpg" "#file-input" 2 -o json
-  api-cli create-step-upload 1678318 "data.csv" "input[type='file']" 3`,
-		Args: cobra.ExactArgs(4),
+
+Uses the current checkpoint from session context by default. Override with --checkpoint flag.
+Position is auto-incremented if not specified and auto-increment is enabled.
+
+Examples:
+  # Using current checkpoint context
+  api-cli create-step-upload "file upload" "document.pdf" 1
+  api-cli create-step-upload "#file-input" "image.jpg"  # Auto-increment position
+  
+  # Override checkpoint explicitly
+  api-cli create-step-upload "file upload" "document.pdf" 1 --checkpoint 1678318
+  
+  # Legacy syntax (still supported)
+  api-cli create-step-upload 1678318 "document.pdf" "file upload" 1`,
+		Args: cobra.RangeArgs(2, 4),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			checkpointIDStr := args[0]
-			filename := args[1]
-			element := args[2]
-			positionStr := args[3]
+			var element, filename string
+			var ctx *StepContext
+			var err error
 			
-			// Convert IDs to int
-			checkpointID, err := strconv.Atoi(checkpointIDStr)
-			if err != nil {
-				return fmt.Errorf("invalid checkpoint ID: %w", err)
-			}
-			
-			position, err := strconv.Atoi(positionStr)
-			if err != nil {
-				return fmt.Errorf("invalid position: %w", err)
+			// Detect legacy syntax (first arg is numeric checkpoint ID)
+			if len(args) == 4 {
+				// Try to parse first arg as checkpoint ID
+				if checkpointID, parseErr := strconv.Atoi(args[0]); parseErr == nil {
+					// Legacy format: CHECKPOINT_ID FILENAME ELEMENT POSITION
+					filename = args[1]
+					element = args[2]
+					position, posErr := strconv.Atoi(args[3])
+					if posErr != nil {
+						return fmt.Errorf("invalid position: %w", posErr)
+					}
+					ctx = &StepContext{
+						CheckpointID: checkpointID,
+						Position:     position,
+						UsingContext: false,
+						AutoPosition: false,
+					}
+				} else {
+					// Not legacy format, treat as modern format with all args
+					element = args[0]
+					filename = args[1]
+					ctx, err = resolveStepContext(args[2:], checkpointFlag, 0)
+					if err != nil {
+						return err
+					}
+				}
+			} else {
+				// Modern format: ELEMENT FILE_PATH [POSITION]
+				element = args[0]
+				filename = args[1]
+				ctx, err = resolveStepContext(args[2:], checkpointFlag, 0)
+				if err != nil {
+					return err
+				}
 			}
 			
 			// Validate inputs
@@ -50,60 +83,35 @@ Example:
 			client := virtuoso.NewClient(cfg)
 			
 			// Create upload step using the enhanced client
-			stepID, err := client.CreateUploadStep(checkpointID, filename, element, position)
+			stepID, err := client.CreateUploadStep(ctx.CheckpointID, filename, element, ctx.Position)
 			if err != nil {
 				return fmt.Errorf("failed to create upload step: %w", err)
 			}
 			
-			// Format output based on the format flag
-			switch cfg.Output.DefaultFormat {
-			case "json":
-				output := map[string]interface{}{
-					"status":        "success",
-					"step_type":     "UPLOAD",
-					"checkpoint_id": checkpointID,
-					"step_id":       stepID,
-					"filename":      filename,
-					"element":       element,
-					"position":      position,
-					"parsed_step":   fmt.Sprintf("upload \"%s\" to %s", filename, element),
-				}
-				encoder := json.NewEncoder(os.Stdout)
-				encoder.SetIndent("", "  ")
-				if err := encoder.Encode(output); err != nil {
-					return fmt.Errorf("failed to encode JSON output: %w", err)
-				}
-			case "yaml":
-				fmt.Printf("status: success\n")
-				fmt.Printf("step_type: UPLOAD\n")
-				fmt.Printf("checkpoint_id: %d\n", checkpointID)
-				fmt.Printf("step_id: %d\n", stepID)
-				fmt.Printf("filename: %s\n", filename)
-				fmt.Printf("element: %s\n", element)
-				fmt.Printf("position: %d\n", position)
-				fmt.Printf("parsed_step: upload \"%s\" to %s\n", filename, element)
-			case "ai":
-				fmt.Printf("Successfully created upload step:\n")
-				fmt.Printf("- Step ID: %d\n", stepID)
-				fmt.Printf("- Step Type: UPLOAD\n")
-				fmt.Printf("- Checkpoint ID: %d\n", checkpointID)
-				fmt.Printf("- Filename: %s\n", filename)
-				fmt.Printf("- Element: %s\n", element)
-				fmt.Printf("- Position: %d\n", position)
-				fmt.Printf("- Parsed Step: upload \"%s\" to %s\n", filename, element)
-				fmt.Printf("\nNext steps:\n")
-				fmt.Printf("1. Add another step: api-cli create-step-* %d <options>\n", checkpointID)
-				fmt.Printf("2. Execute the test journey\n")
-			default: // human
-				fmt.Printf("✅ Created upload step at position %d in checkpoint %d\n", position, checkpointID)
-				fmt.Printf("   Filename: %s\n", filename)
-				fmt.Printf("   Element: %s\n", element)
-				fmt.Printf("   Step ID: %d\n", stepID)
+			// Save config if position was auto-incremented
+			saveStepContext(ctx)
+			
+			// Output result
+			output := &StepOutput{
+				Status:       "success",
+				StepType:     "UPLOAD",
+				CheckpointID: ctx.CheckpointID,
+				StepID:       stepID,
+				Position:     ctx.Position,
+				ParsedStep:   fmt.Sprintf("upload \"%s\" to %s", filename, element),
+				UsingContext: ctx.UsingContext,
+				AutoPosition: ctx.AutoPosition,
+				Extra: map[string]interface{}{
+					"filename": filename,
+					"element":  element,
+				},
 			}
 			
-			return nil
+			return outputStepResult(output)
 		},
 	}
+	
+	addCheckpointFlag(cmd, &checkpointFlag)
 	
 	return cmd
 }

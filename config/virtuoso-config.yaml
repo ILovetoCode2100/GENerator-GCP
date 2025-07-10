@@ -1,37 +1,30 @@
 api:
-  base_url: https://api-app2.virtuoso.qa/api
-  auth_token: test-token
-  
-organization:
-  id: "2242"
-  
-headers:
-  X-Virtuoso-Client-ID: api-cli-generator
-  X-Virtuoso-Client-Name: api-cli-generator
-  
+    auth_token: test-token
+    base_url: https://api-app2.virtuoso.qa/api
 business_rules:
-  initial_checkpoint_name: "INITIAL_CHECKPOINT"
-  auto_attach_checkpoints: true
-  create_initial_journey: true
-  
-output:
-  default_format: human
-  verbose: false
-  
+    auto_attach_checkpoints: true
+    create_initial_journey: true
+    initial_checkpoint_name: INITIAL_CHECKPOINT
+headers:
+    x-virtuoso-client-id: api-cli-generator
+    x-virtuoso-client-name: api-cli-generator
 http:
-  timeout: 30
-  retries: 3
-  retry_wait: 1
-  
+    retries: 3
+    retry_wait: 1
+    timeout: 30
 logging:
-  level: info
-  file: ~/.api-cli/api-cli.log
-
+    file: ~/.api-cli/api-cli.log
+    level: info
+organization:
+    id: "2242"
+output:
+    default_format: human
+    verbose: false
 session:
-  current_project_id: null
-  current_goal_id: null
-  current_snapshot_id: null
-  current_journey_id: null
-  current_checkpoint_id: 1678318
-  auto_increment_position: true
-  next_position: 3
+    auto_increment_position: true
+    current_checkpoint_id: 1680450
+    current_goal_id: null
+    current_journey_id: null
+    current_project_id: null
+    current_snapshot_id: null
+    next_position: 6

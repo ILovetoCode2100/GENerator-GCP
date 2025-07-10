@@ -1,9 +1,7 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 
 	"github.com/marklovelady/api-cli-generator/pkg/virtuoso"
@@ -11,34 +9,81 @@ import (
 )
 
 func newCreateStepWaitTimeCmd() *cobra.Command {
+	var checkpointFlag int
+	
 	cmd := &cobra.Command{
-		Use:   "create-step-wait-time CHECKPOINT_ID SECONDS POSITION",
+		Use:   "create-step-wait-time SECONDS [POSITION]",
 		Short: "Create a wait time step at a specific position in a checkpoint",
 		Long: `Create a wait time step that waits for a specified number of seconds at the specified position in the checkpoint.
-		
-Example:
-  api-cli create-step-wait-time 1678318 5 2
-  api-cli create-step-wait-time 1678318 10 3 -o json`,
-		Args: cobra.ExactArgs(3),
+
+Uses the current checkpoint from session context by default. Override with --checkpoint flag.
+Position is auto-incremented if not specified and auto-increment is enabled.
+
+Examples:
+  # Using current checkpoint context
+  api-cli create-step-wait-time 5 1
+  api-cli create-step-wait-time 10  # Auto-increment position
+  
+  # Override checkpoint explicitly
+  api-cli create-step-wait-time 5 1 --checkpoint 1678318
+  
+  # Legacy syntax (deprecated but still supported)
+  api-cli create-step-wait-time 1678318 5 1`,
+		Args: func(cmd *cobra.Command, args []string) error {
+			// Support both modern and legacy syntax
+			if len(args) == 3 {
+				// Legacy: CHECKPOINT_ID SECONDS POSITION
+				// Check if first arg is a checkpoint ID (all digits)
+				if _, err := strconv.Atoi(args[0]); err == nil {
+					return nil // Legacy syntax
+				}
+			}
+			// Modern: SECONDS [POSITION]
+			if len(args) >= 1 && len(args) <= 2 {
+				return nil
+			}
+			return fmt.Errorf("accepts 1-2 args (modern) or 3 args (legacy), received %d", len(args))
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			checkpointIDStr := args[0]
-			secondsStr := args[1]
-			positionStr := args[2]
+			var seconds int
+			var err error
+			var ctx *StepContext
 			
-			// Convert IDs to int
-			checkpointID, err := strconv.Atoi(checkpointIDStr)
-			if err != nil {
-				return fmt.Errorf("invalid checkpoint ID: %w", err)
+			// Handle legacy syntax
+			if len(args) == 3 {
+				if checkpointID, err := strconv.Atoi(args[0]); err == nil {
+					// Legacy syntax detected
+					seconds, err = strconv.Atoi(args[1])
+					if err != nil {
+						return fmt.Errorf("invalid seconds: %w", err)
+					}
+					
+					position, err := strconv.Atoi(args[2])
+					if err != nil {
+						return fmt.Errorf("invalid position: %w", err)
+					}
+					
+					ctx = &StepContext{
+						CheckpointID: checkpointID,
+						Position:     position,
+						UsingContext: false,
+						AutoPosition: false,
+					}
+				}
 			}
 			
-			seconds, err := strconv.Atoi(secondsStr)
-			if err != nil {
-				return fmt.Errorf("invalid seconds: %w", err)
-			}
-			
-			position, err := strconv.Atoi(positionStr)
-			if err != nil {
-				return fmt.Errorf("invalid position: %w", err)
+			// Modern syntax
+			if ctx == nil {
+				seconds, err = strconv.Atoi(args[0])
+				if err != nil {
+					return fmt.Errorf("invalid seconds: %w", err)
+				}
+				
+				// Resolve checkpoint and position
+				ctx, err = resolveStepContext(args, checkpointFlag, 1)
+				if err != nil {
+					return err
+				}
 			}
 			
 			// Validate seconds
@@ -50,56 +95,32 @@ Example:
 			client := virtuoso.NewClient(cfg)
 			
 			// Create wait time step using the enhanced client
-			stepID, err := client.CreateWaitTimeStep(checkpointID, seconds, position)
+			stepID, err := client.CreateWaitTimeStep(ctx.CheckpointID, seconds, ctx.Position)
 			if err != nil {
 				return fmt.Errorf("failed to create wait time step: %w", err)
 			}
 			
-			// Format output based on the format flag
-			switch cfg.Output.DefaultFormat {
-			case "json":
-				output := map[string]interface{}{
-					"status":        "success",
-					"step_type":     "WAIT_TIME",
-					"checkpoint_id": checkpointID,
-					"step_id":       stepID,
-					"seconds":       seconds,
-					"position":      position,
-					"parsed_step":   fmt.Sprintf("Wait %d seconds", seconds),
-				}
-				encoder := json.NewEncoder(os.Stdout)
-				encoder.SetIndent("", "  ")
-				if err := encoder.Encode(output); err != nil {
-					return fmt.Errorf("failed to encode JSON output: %w", err)
-				}
-			case "yaml":
-				fmt.Printf("status: success\n")
-				fmt.Printf("step_type: WAIT_TIME\n")
-				fmt.Printf("checkpoint_id: %d\n", checkpointID)
-				fmt.Printf("step_id: %d\n", stepID)
-				fmt.Printf("seconds: %d\n", seconds)
-				fmt.Printf("position: %d\n", position)
-				fmt.Printf("parsed_step: Wait %d seconds\n", seconds)
-			case "ai":
-				fmt.Printf("Successfully created wait time step:\n")
-				fmt.Printf("- Step ID: %d\n", stepID)
-				fmt.Printf("- Step Type: WAIT_TIME\n")
-				fmt.Printf("- Checkpoint ID: %d\n", checkpointID)
-				fmt.Printf("- Seconds: %d\n", seconds)
-				fmt.Printf("- Position: %d\n", position)
-				fmt.Printf("- Parsed Step: Wait %d seconds\n", seconds)
-				fmt.Printf("\nNext steps:\n")
-				fmt.Printf("1. Add another step: api-cli create-step-* %d <options>\n", checkpointID)
-				fmt.Printf("2. Execute the test journey\n")
-			default: // human
-				fmt.Printf("✅ Created wait time step at position %d in checkpoint %d\n", position, checkpointID)
-				fmt.Printf("   Wait duration: %d seconds\n", seconds)
-				fmt.Printf("   Step ID: %d\n", stepID)
+			// Save config if position was auto-incremented
+			saveStepContext(ctx)
+			
+			// Output result
+			output := &StepOutput{
+				Status:       "success",
+				StepType:     "WAIT_TIME",
+				CheckpointID: ctx.CheckpointID,
+				StepID:       stepID,
+				Position:     ctx.Position,
+				ParsedStep:   fmt.Sprintf("Wait %d seconds", seconds),
+				UsingContext: ctx.UsingContext,
+				AutoPosition: ctx.AutoPosition,
+				Extra:        map[string]interface{}{"seconds": seconds},
 			}
 			
-			return nil
+			return outputStepResult(output)
 		},
 	}
+	
+	addCheckpointFlag(cmd, &checkpointFlag)
 	
 	return cmd
 }

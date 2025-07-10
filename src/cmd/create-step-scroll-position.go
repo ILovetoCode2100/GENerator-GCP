@@ -1,50 +1,97 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/marklovelady/api-cli-generator/pkg/virtuoso"
 	"github.com/spf13/cobra"
 )
 
 func newCreateStepScrollPositionCmd() *cobra.Command {
+	var checkpointFlag int
+	
 	cmd := &cobra.Command{
-		Use:   "create-step-scroll-position CHECKPOINT_ID X Y POSITION",
+		Use:   "create-step-scroll-position X Y [POSITION]",
 		Short: "Create a scroll position step at a specific position in a checkpoint",
 		Long: `Create a scroll position step that scrolls to specific X and Y coordinates at the specified position in the checkpoint.
-		
+
+Uses the current checkpoint from session context by default. Override with --checkpoint flag.
+Position is auto-incremented if not specified and auto-increment is enabled.
+
 X and Y coordinates can be negative. Use -- before negative values to avoid flag parsing issues.
-		
-Example:
-  api-cli create-step-scroll-position 1678318 100 200 1
-  api-cli create-step-scroll-position 1678318 0 500 2 -o json
-  api-cli create-step-scroll-position 1678318 -- -10 -20 3  # Use -- for negative coordinates`,
-		Args: cobra.ExactArgs(4),
+
+Examples:
+  # Using current checkpoint context
+  api-cli create-step-scroll-position 100 200 1
+  api-cli create-step-scroll-position 0 500  # Auto-increment position
+  api-cli create-step-scroll-position -- -10 -20  # Negative coordinates with auto-position
+  api-cli create-step-scroll-position -- -10 -20 3  # Negative coordinates with position
+  
+  # Override checkpoint explicitly
+  api-cli create-step-scroll-position 100 200 1 --checkpoint 1678318
+  
+  # Legacy format (deprecated but still supported)
+  api-cli create-step-scroll-position 1678318 100 200 1`,
+		Args: cobra.RangeArgs(2, 4),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			checkpointIDStr := args[0]
-			xStr := args[1]
-			yStr := args[2]
-			positionStr := args[3]
+			// Handle legacy format (CHECKPOINT_ID X Y POSITION)
+			if len(args) == 4 {
+				// Legacy format: first arg is checkpoint ID
+				checkpointID, err := parseIntArg(args[0], "checkpoint ID")
+				if err != nil {
+					return err
+				}
+				x, err := parseIntArg(args[1], "X coordinate")
+				if err != nil {
+					return err
+				}
+				y, err := parseIntArg(args[2], "Y coordinate")
+				if err != nil {
+					return err
+				}
+				position, err := parseIntArg(args[3], "position")
+				if err != nil {
+					return err
+				}
+				
+				// Create Virtuoso client
+				client := virtuoso.NewClient(cfg)
+				
+				// Create scroll position step using the enhanced client
+				stepID, err := client.CreateScrollPositionStep(checkpointID, x, y, position)
+				if err != nil {
+					return fmt.Errorf("failed to create scroll position step: %w", err)
+				}
+				
+				// Output result using legacy context flags
+				output := &StepOutput{
+					Status:       "success",
+					StepType:     "SCROLL_POSITION",
+					CheckpointID: checkpointID,
+					StepID:       stepID,
+					Position:     position,
+					ParsedStep:   fmt.Sprintf("scroll to position (%d, %d)", x, y),
+					UsingContext: false,
+					AutoPosition: false,
+					Extra:        map[string]interface{}{"x": x, "y": y},
+				}
+				
+				return outputStepResult(output)
+			}
 			
-			// Convert IDs to int using helper function
-			checkpointID, err := parseIntArg(checkpointIDStr, "checkpoint ID")
+			// Modern format: X Y [POSITION]
+			x, err := parseIntArg(args[0], "X coordinate")
 			if err != nil {
 				return err
 			}
 			
-			x, err := parseIntArg(xStr, "X coordinate")
+			y, err := parseIntArg(args[1], "Y coordinate")
 			if err != nil {
 				return err
 			}
 			
-			y, err := parseIntArg(yStr, "Y coordinate")
-			if err != nil {
-				return err
-			}
-			
-			position, err := parseIntArg(positionStr, "position")
+			// Resolve checkpoint and position
+			ctx, err := resolveStepContext(args, checkpointFlag, 2)
 			if err != nil {
 				return err
 			}
@@ -53,59 +100,32 @@ Example:
 			client := virtuoso.NewClient(cfg)
 			
 			// Create scroll position step using the enhanced client
-			stepID, err := client.CreateScrollPositionStep(checkpointID, x, y, position)
+			stepID, err := client.CreateScrollPositionStep(ctx.CheckpointID, x, y, ctx.Position)
 			if err != nil {
 				return fmt.Errorf("failed to create scroll position step: %w", err)
 			}
 			
-			// Format output based on the format flag
-			switch cfg.Output.DefaultFormat {
-			case "json":
-				output := map[string]interface{}{
-					"status":        "success",
-					"step_type":     "SCROLL_POSITION",
-					"checkpoint_id": checkpointID,
-					"step_id":       stepID,
-					"x":             x,
-					"y":             y,
-					"position":      position,
-					"parsed_step":   fmt.Sprintf("Scroll to position (%d, %d)", x, y),
-				}
-				encoder := json.NewEncoder(os.Stdout)
-				encoder.SetIndent("", "  ")
-				if err := encoder.Encode(output); err != nil {
-					return fmt.Errorf("failed to encode JSON output: %w", err)
-				}
-			case "yaml":
-				fmt.Printf("status: success\n")
-				fmt.Printf("step_type: SCROLL_POSITION\n")
-				fmt.Printf("checkpoint_id: %d\n", checkpointID)
-				fmt.Printf("step_id: %d\n", stepID)
-				fmt.Printf("x: %d\n", x)
-				fmt.Printf("y: %d\n", y)
-				fmt.Printf("position: %d\n", position)
-				fmt.Printf("parsed_step: Scroll to position (%d, %d)\n", x, y)
-			case "ai":
-				fmt.Printf("Successfully created scroll position step:\n")
-				fmt.Printf("- Step ID: %d\n", stepID)
-				fmt.Printf("- Step Type: SCROLL_POSITION\n")
-				fmt.Printf("- Checkpoint ID: %d\n", checkpointID)
-				fmt.Printf("- X Coordinate: %d\n", x)
-				fmt.Printf("- Y Coordinate: %d\n", y)
-				fmt.Printf("- Position: %d\n", position)
-				fmt.Printf("- Parsed Step: Scroll to position (%d, %d)\n", x, y)
-				fmt.Printf("\nNext steps:\n")
-				fmt.Printf("1. Add another step: api-cli create-step-* %d <options>\n", checkpointID)
-				fmt.Printf("2. Execute the test journey\n")
-			default: // human
-				fmt.Printf("✅ Created scroll position step at position %d in checkpoint %d\n", position, checkpointID)
-				fmt.Printf("   X: %d, Y: %d\n", x, y)
-				fmt.Printf("   Step ID: %d\n", stepID)
+			// Save config if position was auto-incremented
+			saveStepContext(ctx)
+			
+			// Output result
+			output := &StepOutput{
+				Status:       "success",
+				StepType:     "SCROLL_POSITION",
+				CheckpointID: ctx.CheckpointID,
+				StepID:       stepID,
+				Position:     ctx.Position,
+				ParsedStep:   fmt.Sprintf("scroll to position (%d, %d)", x, y),
+				UsingContext: ctx.UsingContext,
+				AutoPosition: ctx.AutoPosition,
+				Extra:        map[string]interface{}{"x": x, "y": y},
 			}
 			
-			return nil
+			return outputStepResult(output)
 		},
 	}
+	
+	addCheckpointFlag(cmd, &checkpointFlag)
 	
 	// Enable negative number support
 	enableNegativeNumbers(cmd)

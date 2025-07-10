@@ -1,9 +1,7 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 
 	"github.com/marklovelady/api-cli-generator/pkg/virtuoso"
@@ -11,29 +9,75 @@ import (
 )
 
 func newCreateStepMouseDownCmd() *cobra.Command {
+	var checkpointFlag int
+	
 	cmd := &cobra.Command{
-		Use:   "create-step-mouse-down CHECKPOINT_ID ELEMENT POSITION",
+		Use:   "create-step-mouse-down ELEMENT [POSITION]",
 		Short: "Create a mouse down step at a specific position in a checkpoint",
 		Long: `Create a mouse down step that presses down the mouse button on a specific element at the specified position in the checkpoint.
-		
-Example:
-  api-cli create-step-mouse-down 1678318 "Drag handle" 1
-  api-cli create-step-mouse-down 1678318 "#draggable-item" 2 -o json`,
-		Args: cobra.ExactArgs(3),
+
+Uses the current checkpoint from session context by default. Override with --checkpoint flag.
+Position is auto-incremented if not specified and auto-increment is enabled.
+
+Examples:
+  # Using current checkpoint context
+  api-cli create-step-mouse-down "Drag handle" 1
+  api-cli create-step-mouse-down "#draggable-item"  # Auto-increment position
+  
+  # Override checkpoint explicitly
+  api-cli create-step-mouse-down "Drag handle" 1 --checkpoint 1678318
+  
+  # Legacy syntax (deprecated but still supported)
+  api-cli create-step-mouse-down 1678318 "Drag handle" 1`,
+		Args: func(cmd *cobra.Command, args []string) error {
+			// Support both modern and legacy syntax
+			if len(args) == 3 {
+				// Legacy: CHECKPOINT_ID ELEMENT POSITION
+				// Check if first arg is a checkpoint ID (all digits)
+				if _, err := strconv.Atoi(args[0]); err == nil {
+					return nil // Legacy syntax
+				}
+			}
+			// Modern: ELEMENT [POSITION]
+			if len(args) >= 1 && len(args) <= 2 {
+				return nil
+			}
+			return fmt.Errorf("accepts 1-2 args (modern) or 3 args (legacy), received %d", len(args))
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			checkpointIDStr := args[0]
-			element := args[1]
-			positionStr := args[2]
+			var element string
+			var ctx *StepContext
+			var err error
 			
-			// Convert IDs to int
-			checkpointID, err := strconv.Atoi(checkpointIDStr)
-			if err != nil {
-				return fmt.Errorf("invalid checkpoint ID: %w", err)
+			// Handle legacy syntax
+			if len(args) == 3 {
+				if checkpointID, err := strconv.Atoi(args[0]); err == nil {
+					// Legacy syntax detected
+					element = args[1]
+					
+					position, err := strconv.Atoi(args[2])
+					if err != nil {
+						return fmt.Errorf("invalid position: %w", err)
+					}
+					
+					ctx = &StepContext{
+						CheckpointID: checkpointID,
+						Position:     position,
+						UsingContext: false,
+						AutoPosition: false,
+					}
+				}
 			}
 			
-			position, err := strconv.Atoi(positionStr)
-			if err != nil {
-				return fmt.Errorf("invalid position: %w", err)
+			// Modern syntax
+			if ctx == nil {
+				element = args[0]
+				
+				// Resolve checkpoint and position
+				ctx, err = resolveStepContext(args, checkpointFlag, 1)
+				if err != nil {
+					return err
+				}
 			}
 			
 			// Validate element
@@ -45,56 +89,32 @@ Example:
 			client := virtuoso.NewClient(cfg)
 			
 			// Create mouse down step using the enhanced client
-			stepID, err := client.CreateMouseDownStep(checkpointID, element, position)
+			stepID, err := client.CreateMouseDownStep(ctx.CheckpointID, element, ctx.Position)
 			if err != nil {
 				return fmt.Errorf("failed to create mouse down step: %w", err)
 			}
 			
-			// Format output based on the format flag
-			switch cfg.Output.DefaultFormat {
-			case "json":
-				output := map[string]interface{}{
-					"status":        "success",
-					"step_type":     "MOUSE_DOWN",
-					"checkpoint_id": checkpointID,
-					"step_id":       stepID,
-					"element":       element,
-					"position":      position,
-					"parsed_step":   fmt.Sprintf("Mouse down on %s", element),
-				}
-				encoder := json.NewEncoder(os.Stdout)
-				encoder.SetIndent("", "  ")
-				if err := encoder.Encode(output); err != nil {
-					return fmt.Errorf("failed to encode JSON output: %w", err)
-				}
-			case "yaml":
-				fmt.Printf("status: success\n")
-				fmt.Printf("step_type: MOUSE_DOWN\n")
-				fmt.Printf("checkpoint_id: %d\n", checkpointID)
-				fmt.Printf("step_id: %d\n", stepID)
-				fmt.Printf("element: %s\n", element)
-				fmt.Printf("position: %d\n", position)
-				fmt.Printf("parsed_step: Mouse down on %s\n", element)
-			case "ai":
-				fmt.Printf("Successfully created mouse down step:\n")
-				fmt.Printf("- Step ID: %d\n", stepID)
-				fmt.Printf("- Step Type: MOUSE_DOWN\n")
-				fmt.Printf("- Checkpoint ID: %d\n", checkpointID)
-				fmt.Printf("- Element: %s\n", element)
-				fmt.Printf("- Position: %d\n", position)
-				fmt.Printf("- Parsed Step: Mouse down on %s\n", element)
-				fmt.Printf("\nNext steps:\n")
-				fmt.Printf("1. Add another step: api-cli create-step-* %d <options>\n", checkpointID)
-				fmt.Printf("2. Execute the test journey\n")
-			default: // human
-				fmt.Printf("✅ Created mouse down step at position %d in checkpoint %d\n", position, checkpointID)
-				fmt.Printf("   Element: %s\n", element)
-				fmt.Printf("   Step ID: %d\n", stepID)
+			// Save config if position was auto-incremented
+			saveStepContext(ctx)
+			
+			// Output result
+			output := &StepOutput{
+				Status:       "success",
+				StepType:     "MOUSE_DOWN",
+				CheckpointID: ctx.CheckpointID,
+				StepID:       stepID,
+				Position:     ctx.Position,
+				ParsedStep:   fmt.Sprintf("Mouse down on %s", element),
+				UsingContext: ctx.UsingContext,
+				AutoPosition: ctx.AutoPosition,
+				Extra:        map[string]interface{}{"element": element},
 			}
 			
-			return nil
+			return outputStepResult(output)
 		},
 	}
+	
+	addCheckpointFlag(cmd, &checkpointFlag)
 	
 	return cmd
 }

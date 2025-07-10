@@ -1,9 +1,7 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 
 	"github.com/marklovelady/api-cli-generator/pkg/virtuoso"
@@ -11,30 +9,66 @@ import (
 )
 
 func newCreateStepPickTextCmd() *cobra.Command {
+	var checkpointFlag int
+	
 	cmd := &cobra.Command{
-		Use:   "create-step-pick-text CHECKPOINT_ID TEXT ELEMENT POSITION",
+		Use:   "create-step-pick-text ELEMENT TEXT [POSITION]",
 		Short: "Create a pick text step at a specific position in a checkpoint",
 		Long: `Create a pick text step that selects a dropdown option by visible text in a specific element at the specified position in the checkpoint.
-		
-Example:
-  api-cli create-step-pick-text 1678318 "United States" "Country dropdown" 1
-  api-cli create-step-pick-text 1678318 "Premium Plan" "#subscription-select" 2 -o json`,
-		Args: cobra.ExactArgs(4),
+
+Uses the current checkpoint from session context by default. Override with --checkpoint flag.
+Position is auto-incremented if not specified and auto-increment is enabled.
+
+Examples:
+  # Using current checkpoint context
+  api-cli create-step-pick-text "Country dropdown" "United States" 1
+  api-cli create-step-pick-text "#subscription-select" "Premium Plan"  # Auto-increment position
+  
+  # Override checkpoint explicitly
+  api-cli create-step-pick-text "Country dropdown" "United States" 1 --checkpoint 1678318
+  
+  # Legacy syntax (still supported)
+  api-cli create-step-pick-text 1678318 "United States" "Country dropdown" 1`,
+		Args: cobra.RangeArgs(2, 4),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			checkpointIDStr := args[0]
-			text := args[1]
-			element := args[2]
-			positionStr := args[3]
+			var element, text string
+			var ctx *StepContext
+			var err error
 			
-			// Convert IDs to int
-			checkpointID, err := strconv.Atoi(checkpointIDStr)
-			if err != nil {
-				return fmt.Errorf("invalid checkpoint ID: %w", err)
-			}
-			
-			position, err := strconv.Atoi(positionStr)
-			if err != nil {
-				return fmt.Errorf("invalid position: %w", err)
+			// Detect legacy syntax (first arg is numeric checkpoint ID)
+			if len(args) == 4 {
+				// Try to parse first arg as checkpoint ID
+				if checkpointID, parseErr := strconv.Atoi(args[0]); parseErr == nil {
+					// Legacy format: CHECKPOINT_ID TEXT ELEMENT POSITION
+					text = args[1]
+					element = args[2]
+					position, posErr := strconv.Atoi(args[3])
+					if posErr != nil {
+						return fmt.Errorf("invalid position: %w", posErr)
+					}
+					ctx = &StepContext{
+						CheckpointID: checkpointID,
+						Position:     position,
+						UsingContext: false,
+						AutoPosition: false,
+					}
+				} else {
+					// Not legacy format, treat as modern format with all args
+					element = args[0]
+					text = args[1]
+					ctx, err = resolveStepContext(args[2:], checkpointFlag, 0)
+					if err != nil {
+						return err
+					}
+				}
+			} else {
+				// Modern format: ELEMENT TEXT [POSITION]
+				element = args[0]
+				text = args[1]
+				ctx, err = resolveStepContext(args[2:], checkpointFlag, 0)
+				if err != nil {
+					return err
+				}
 			}
 			
 			// Validate text and element
@@ -49,60 +83,35 @@ Example:
 			client := virtuoso.NewClient(cfg)
 			
 			// Create pick text step using the enhanced client
-			stepID, err := client.CreatePickTextStep(checkpointID, text, element, position)
+			stepID, err := client.CreatePickTextStep(ctx.CheckpointID, text, element, ctx.Position)
 			if err != nil {
 				return fmt.Errorf("failed to create pick text step: %w", err)
 			}
 			
-			// Format output based on the format flag
-			switch cfg.Output.DefaultFormat {
-			case "json":
-				output := map[string]interface{}{
-					"status":        "success",
-					"step_type":     "PICK_TEXT",
-					"checkpoint_id": checkpointID,
-					"step_id":       stepID,
-					"text":          text,
-					"element":       element,
-					"position":      position,
-					"parsed_step":   fmt.Sprintf("Pick text \"%s\" in %s", text, element),
-				}
-				encoder := json.NewEncoder(os.Stdout)
-				encoder.SetIndent("", "  ")
-				if err := encoder.Encode(output); err != nil {
-					return fmt.Errorf("failed to encode JSON output: %w", err)
-				}
-			case "yaml":
-				fmt.Printf("status: success\n")
-				fmt.Printf("step_type: PICK_TEXT\n")
-				fmt.Printf("checkpoint_id: %d\n", checkpointID)
-				fmt.Printf("step_id: %d\n", stepID)
-				fmt.Printf("text: %s\n", text)
-				fmt.Printf("element: %s\n", element)
-				fmt.Printf("position: %d\n", position)
-				fmt.Printf("parsed_step: Pick text \"%s\" in %s\n", text, element)
-			case "ai":
-				fmt.Printf("Successfully created pick text step:\n")
-				fmt.Printf("- Step ID: %d\n", stepID)
-				fmt.Printf("- Step Type: PICK_TEXT\n")
-				fmt.Printf("- Checkpoint ID: %d\n", checkpointID)
-				fmt.Printf("- Text: %s\n", text)
-				fmt.Printf("- Element: %s\n", element)
-				fmt.Printf("- Position: %d\n", position)
-				fmt.Printf("- Parsed Step: Pick text \"%s\" in %s\n", text, element)
-				fmt.Printf("\nNext steps:\n")
-				fmt.Printf("1. Add another step: api-cli create-step-* %d <options>\n", checkpointID)
-				fmt.Printf("2. Execute the test journey\n")
-			default: // human
-				fmt.Printf("✅ Created pick text step at position %d in checkpoint %d\n", position, checkpointID)
-				fmt.Printf("   Text: %s\n", text)
-				fmt.Printf("   Element: %s\n", element)
-				fmt.Printf("   Step ID: %d\n", stepID)
+			// Save config if position was auto-incremented
+			saveStepContext(ctx)
+			
+			// Output result
+			output := &StepOutput{
+				Status:       "success",
+				StepType:     "PICK_TEXT",
+				CheckpointID: ctx.CheckpointID,
+				StepID:       stepID,
+				Position:     ctx.Position,
+				ParsedStep:   fmt.Sprintf("Pick text \"%s\" in %s", text, element),
+				UsingContext: ctx.UsingContext,
+				AutoPosition: ctx.AutoPosition,
+				Extra: map[string]interface{}{
+					"text":    text,
+					"element": element,
+				},
 			}
 			
-			return nil
+			return outputStepResult(output)
 		},
 	}
+	
+	addCheckpointFlag(cmd, &checkpointFlag)
 	
 	return cmd
 }

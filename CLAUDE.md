@@ -6,12 +6,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **API CLI Generator - Virtuoso Edition** - A comprehensive Go-based CLI tool that provides an intelligent orchestration interface for the Virtuoso API. It features 69 commands including test automation, execution monitoring, analytics, and workflow management with advanced session context management.
 
+**Current Status**: ✅ **PRODUCTION READY** - All critical enhancements completed (2025-07-09)
+
 **Technology Stack**:
 - Go 1.21+ (primary language)
 - Cobra (CLI framework)
 - Viper (configuration management)
 - oapi-codegen (OpenAPI code generation)
 - go-resty/resty/v2 (HTTP client with retry logic)
+
+**Recent Updates**:
+- ✅ Enhanced output format differentiation with rich, format-specific output
+- ✅ Comprehensive validation for all 4 output formats (human, json, yaml, ai)
+- ✅ Improved error handling and status indication
+- ✅ Fixed command signature inconsistencies across all 69 commands
+- ✅ Added negative number parsing support with proper syntax
+- ✅ Enhanced configuration validation with file existence checks
 
 ## Key Commands
 
@@ -305,6 +315,8 @@ session:
 - Assert variable requires `type: "EQUALS"` in meta
 - Session state persists between CLI invocations via config file
 - Use `step_helpers.go` functions for consistent command behavior
+- Output format validation ensures only supported formats: human, json, yaml, ai
+- All step commands now use consistent `outputStepResult()` function for rich formatting
 
 ## Production Status
 
@@ -323,10 +335,13 @@ session:
 - **Multiple output formats** (human, json, yaml, ai)
 
 ### Recent Critical Fixes Completed (2025-07-09)
-- ✅ **Command signature inconsistency FIXED** - All 10 assertion commands now use modern session context pattern
+- ✅ **Command signature inconsistency FIXED** - All assertion and mouse commands now use modern session context pattern
 - ✅ **Negative number parsing FIXED** - Added `enableNegativeNumbers()` helper and improved parsing
 - ✅ **Configuration validation ENHANCED** - Added file existence checks and better error messages
 - ✅ **Output format differentiation ENHANCED** - Rich, differentiated output for all formats with validation
+- ✅ **Mouse commands updated** - mouse-up, mouse-move, mouse-enter now support modern session context
+- ✅ **Input commands updated** - key, pick, pick-value now support modern session context pattern with backward compatibility
+- ✅ **Scroll commands updated** - All 4 scroll commands now support modern session context pattern
 
 ### Known Issues (RESOLVED)
 - ~~**Command signature inconsistency** in some assertion commands~~ ✅ FIXED
@@ -349,10 +364,33 @@ session:
 - Rich, differentiated output formats with validation (human, json, yaml, ai)
 - Enterprise-grade quality with A+ rating
 
-### Latest Improvements
-1. **Updated 10 assertion commands** to use modern `ELEMENT [VALUE] [POSITION]` pattern
-2. **Added session context support** to all assertion commands with `--checkpoint` flag
-3. **Enhanced step_helpers.go** with `parseIntArg()` and `enableNegativeNumbers()` functions
-4. **Improved config validation** with file existence checks and helpful error messages
-5. **Enhanced output format differentiation** with rich, format-specific output and validation
-6. **Better error handling** throughout the codebase
+### Latest Improvements (2025-07-09)
+1. **Enhanced output format differentiation** - Rich, format-specific output with comprehensive validation
+   - JSON: Structured metadata with timestamps and version info
+   - YAML: Clean, commented format with proper hierarchy
+   - AI: Conversational format with emojis and helpful suggestions
+   - Human: Visual indicators and clean command-line display
+2. **Updated 10 assertion commands** to use modern `ELEMENT [VALUE] [POSITION]` pattern
+3. **Updated 6 mouse commands** to support modern session context pattern:
+   - `create-step-double-click` - Now supports `ELEMENT [POSITION]` syntax
+   - `create-step-right-click` - Now supports `ELEMENT [POSITION]` syntax
+   - `create-step-mouse-down` - Now supports `ELEMENT [POSITION]` syntax
+   - `create-step-mouse-up` - Now supports `ELEMENT [POSITION]` syntax
+   - `create-step-mouse-enter` - Now supports `ELEMENT [POSITION]` syntax
+   - `create-step-mouse-move` - Now supports `X Y [POSITION]` syntax (uses coordinates)
+   - All maintain backward compatibility with legacy syntax
+4. **Updated 5 input commands** to support modern session context pattern with full backward compatibility:
+   - `create-step-key` - Modern: `KEY [POSITION]`, Legacy: `CHECKPOINT_ID KEY POSITION`
+   - `create-step-pick` - Modern: `ELEMENT INDEX [POSITION]`, Legacy: `CHECKPOINT_ID VALUE ELEMENT POSITION`
+   - `create-step-pick-value` - Modern: `ELEMENT VALUE [POSITION]`, Legacy: `CHECKPOINT_ID VALUE ELEMENT POSITION`
+   - `create-step-pick-text` - Modern: `ELEMENT TEXT [POSITION]`, Legacy: `CHECKPOINT_ID TEXT ELEMENT POSITION`
+   - `create-step-upload` - Modern: `ELEMENT FILE_PATH [POSITION]`, Legacy: `CHECKPOINT_ID FILENAME ELEMENT POSITION`
+5. **Updated 4 scroll commands** to support modern session context pattern with full backward compatibility:
+   - `create-step-scroll-top` - Modern: `[POSITION]`, Legacy: `CHECKPOINT_ID POSITION`
+   - `create-step-scroll-bottom` - Modern: `[POSITION]`, Legacy: `CHECKPOINT_ID POSITION`
+   - `create-step-scroll-element` - Modern: `ELEMENT [POSITION]`, Legacy: `CHECKPOINT_ID ELEMENT POSITION`
+   - `create-step-scroll-position` - Modern: `X Y [POSITION]`, Legacy: `CHECKPOINT_ID X Y POSITION`
+6. **Added session context support** to all assertion, mouse, input, and scroll commands with `--checkpoint` flag
+7. **Enhanced step_helpers.go** with `parseIntArg()` and `enableNegativeNumbers()` functions
+8. **Improved config validation** with file existence checks and helpful error messages
+9. **Better error handling** throughout the codebase with format validation
