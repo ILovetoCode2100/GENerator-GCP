@@ -1380,6 +1380,25 @@ func (c *Client) CreateAssertLessThanOrEqualStep(checkpointID int, element strin
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
+// CreateAssertLessThanStep creates an assertion step that verifies a value is less than
+func (c *Client) CreateAssertLessThanStep(checkpointID int, element string, value string, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "ASSERT_LESS_THAN",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": fmt.Sprintf(`{"clue":"%s"}`, element),
+				},
+			},
+		},
+		"value": value,
+		"meta": map[string]interface{}{},
+	}
+	
+	return c.addStep(checkpointID, position, parsedStep)
+}
+
 // CreateAssertSelectedStep creates an assertion step that verifies an option is selected
 func (c *Client) CreateAssertSelectedStep(checkpointID int, element string, position int) (int, error) {
 	parsedStep := map[string]interface{}{

@@ -107,6 +107,7 @@ func main() {
 	rootCmd.AddCommand(newCreateStepDismissAlertCmd())
 	rootCmd.AddCommand(newCreateStepCommentCmd())
 	rootCmd.AddCommand(newCreateStepAssertLessThanOrEqualCmd())
+	rootCmd.AddCommand(newCreateStepAssertLessThanCmd())
 	rootCmd.AddCommand(newCreateStepAssertSelectedCmd())
 	rootCmd.AddCommand(newCreateStepAssertVariableCmd())
 	rootCmd.AddCommand(newCreateStepDismissConfirmCmd())
