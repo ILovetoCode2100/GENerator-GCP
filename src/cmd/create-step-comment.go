@@ -1,9 +1,7 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 
 	"github.com/marklovelady/api-cli-generator/pkg/virtuoso"
@@ -11,29 +9,63 @@ import (
 )
 
 func newCreateStepCommentCmd() *cobra.Command {
+	var checkpointFlag int
+	
 	cmd := &cobra.Command{
-		Use:   "create-step-comment CHECKPOINT_ID COMMENT POSITION",
+		Use:   "create-step-comment COMMENT [POSITION]",
 		Short: "Create a comment step at a specific position in a checkpoint",
 		Long: `Create a comment step that adds documentation or notes at the specified position in the checkpoint.
-		
-Example:
-  api-cli create-step-comment 1678318 "This step logs in the user" 1
-  api-cli create-step-comment 1678318 "Validate the dashboard loads correctly" 2 -o json`,
-		Args: cobra.ExactArgs(3),
+
+Uses the current checkpoint from session context by default. Override with --checkpoint flag.
+Position is auto-incremented if not specified and auto-increment is enabled.
+
+Examples:
+  # Using current checkpoint context (modern syntax)
+  api-cli create-step-comment "This step logs in the user" 1
+  api-cli create-step-comment "Validate the dashboard loads correctly"  # Auto-increment position
+  
+  # Override checkpoint explicitly
+  api-cli create-step-comment "This is a comment" 1 --checkpoint 1678318
+  
+  # Legacy syntax (backward compatibility)
+  api-cli create-step-comment 1678318 "This step logs in the user" 1`,
+		Args: cobra.RangeArgs(1, 3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			checkpointIDStr := args[0]
-			comment := args[1]
-			positionStr := args[2]
+			var comment string
+			var ctx *StepContext
+			var err error
 			
-			// Convert IDs to int
-			checkpointID, err := strconv.Atoi(checkpointIDStr)
-			if err != nil {
-				return fmt.Errorf("invalid checkpoint ID: %w", err)
-			}
-			
-			position, err := strconv.Atoi(positionStr)
-			if err != nil {
-				return fmt.Errorf("invalid position: %w", err)
+			// Detect legacy syntax: 3 args where first is numeric
+			if len(args) == 3 {
+				if _, err := strconv.Atoi(args[0]); err == nil {
+					// Legacy syntax: CHECKPOINT_ID COMMENT POSITION
+					checkpointID, _ := strconv.Atoi(args[0])
+					comment = args[1]
+					position, err := strconv.Atoi(args[2])
+					if err != nil {
+						return fmt.Errorf("invalid position: %w", err)
+					}
+					
+					// Create context manually for legacy syntax
+					ctx = &StepContext{
+						CheckpointID: checkpointID,
+						Position:     position,
+						UsingContext: false,
+						AutoPosition: false,
+					}
+				} else {
+					// Modern syntax with 3 args (shouldn't happen with valid input)
+					return fmt.Errorf("invalid arguments: when providing 3 arguments, first must be checkpoint ID (number)")
+				}
+			} else {
+				// Modern syntax: COMMENT [POSITION]
+				comment = args[0]
+				
+				// Resolve checkpoint and position using helper
+				ctx, err = resolveStepContext(args, checkpointFlag, 1)
+				if err != nil {
+					return err
+				}
 			}
 			
 			// Validate comment
@@ -45,56 +77,35 @@ Example:
 			client := virtuoso.NewClient(cfg)
 			
 			// Create comment step using the enhanced client
-			stepID, err := client.CreateCommentStep(checkpointID, comment, position)
+			stepID, err := client.CreateCommentStep(ctx.CheckpointID, comment, ctx.Position)
 			if err != nil {
 				return fmt.Errorf("failed to create comment step: %w", err)
 			}
 			
-			// Format output based on the format flag
-			switch cfg.Output.DefaultFormat {
-			case "json":
-				output := map[string]interface{}{
-					"status":        "success",
-					"step_type":     "COMMENT",
-					"checkpoint_id": checkpointID,
-					"step_id":       stepID,
-					"comment":       comment,
-					"position":      position,
-					"parsed_step":   fmt.Sprintf("# %s", comment),
-				}
-				encoder := json.NewEncoder(os.Stdout)
-				encoder.SetIndent("", "  ")
-				if err := encoder.Encode(output); err != nil {
-					return fmt.Errorf("failed to encode JSON output: %w", err)
-				}
-			case "yaml":
-				fmt.Printf("status: success\n")
-				fmt.Printf("step_type: COMMENT\n")
-				fmt.Printf("checkpoint_id: %d\n", checkpointID)
-				fmt.Printf("step_id: %d\n", stepID)
-				fmt.Printf("comment: %s\n", comment)
-				fmt.Printf("position: %d\n", position)
-				fmt.Printf("parsed_step: # %s\n", comment)
-			case "ai":
-				fmt.Printf("Successfully created comment step:\n")
-				fmt.Printf("- Step ID: %d\n", stepID)
-				fmt.Printf("- Step Type: COMMENT\n")
-				fmt.Printf("- Checkpoint ID: %d\n", checkpointID)
-				fmt.Printf("- Comment: %s\n", comment)
-				fmt.Printf("- Position: %d\n", position)
-				fmt.Printf("- Parsed Step: # %s\n", comment)
-				fmt.Printf("\nNext steps:\n")
-				fmt.Printf("1. Add another step: api-cli create-step-* %d <options>\n", checkpointID)
-				fmt.Printf("2. Execute the test journey\n")
-			default: // human
-				fmt.Printf("✅ Created comment step at position %d in checkpoint %d\n", position, checkpointID)
-				fmt.Printf("   Comment: %s\n", comment)
-				fmt.Printf("   Step ID: %d\n", stepID)
+			// Save context if position was auto-incremented
+			saveStepContext(ctx)
+			
+			// Format output using the helper
+			output := &StepOutput{
+				Status:       "success",
+				StepType:     "COMMENT",
+				CheckpointID: ctx.CheckpointID,
+				StepID:       stepID,
+				Position:     ctx.Position,
+				ParsedStep:   fmt.Sprintf("# %s", comment),
+				UsingContext: ctx.UsingContext,
+				AutoPosition: ctx.AutoPosition,
+				Extra: map[string]interface{}{
+					"comment": comment,
+				},
 			}
 			
-			return nil
+			return outputStepResult(output)
 		},
 	}
+	
+	// Add checkpoint flag
+	addCheckpointFlag(cmd, &checkpointFlag)
 	
 	return cmd
 }

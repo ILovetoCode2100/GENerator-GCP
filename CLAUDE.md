@@ -385,12 +385,14 @@ session:
    - `create-step-pick-value` - Modern: `ELEMENT VALUE [POSITION]`, Legacy: `CHECKPOINT_ID VALUE ELEMENT POSITION`
    - `create-step-pick-text` - Modern: `ELEMENT TEXT [POSITION]`, Legacy: `CHECKPOINT_ID TEXT ELEMENT POSITION`
    - `create-step-upload` - Modern: `ELEMENT FILE_PATH [POSITION]`, Legacy: `CHECKPOINT_ID FILENAME ELEMENT POSITION`
-5. **Updated 4 scroll commands** to support modern session context pattern with full backward compatibility:
+5. **Updated utility commands** to support modern session context pattern with full backward compatibility:
+   - `create-step-comment` - Modern: `COMMENT [POSITION]`, Legacy: `CHECKPOINT_ID COMMENT POSITION`
+6. **Updated 4 scroll commands** to support modern session context pattern with full backward compatibility:
    - `create-step-scroll-top` - Modern: `[POSITION]`, Legacy: `CHECKPOINT_ID POSITION`
    - `create-step-scroll-bottom` - Modern: `[POSITION]`, Legacy: `CHECKPOINT_ID POSITION`
    - `create-step-scroll-element` - Modern: `ELEMENT [POSITION]`, Legacy: `CHECKPOINT_ID ELEMENT POSITION`
    - `create-step-scroll-position` - Modern: `X Y [POSITION]`, Legacy: `CHECKPOINT_ID X Y POSITION`
-6. **Added session context support** to all assertion, mouse, input, and scroll commands with `--checkpoint` flag
-7. **Enhanced step_helpers.go** with `parseIntArg()` and `enableNegativeNumbers()` functions
-8. **Improved config validation** with file existence checks and helpful error messages
-9. **Better error handling** throughout the codebase with format validation
+7. **Added session context support** to all assertion, mouse, input, scroll, and utility commands with `--checkpoint` flag
+8. **Enhanced step_helpers.go** with `parseIntArg()` and `enableNegativeNumbers()` functions
+9. **Improved config validation** with file existence checks and helpful error messages
+10. **Better error handling** throughout the codebase with format validation
