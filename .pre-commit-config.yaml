@@ -10,7 +10,7 @@ repos:
       - id: check-merge-conflict
       - id: check-case-conflict
       - id: check-added-large-files
-        args: ['--maxkb=1000']
+        args: ["--maxkb=1000"]
       - id: mixed-line-ending
 
   # Security scanning (works for all languages)
@@ -73,7 +73,7 @@ repos:
         name: "🐹 go · Imports"
       - id: go-mod-tidy
         name: "🐹 go · Mod tidy"
-      - id: go-vet-mod
+      - id: go-vet
         name: "🐹 go · Vet"
 
   # Additional language support
