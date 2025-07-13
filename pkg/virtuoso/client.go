@@ -585,10 +585,13 @@ func (c *Client) ListProjects() ([]*Project, error) {
 // ListProjectsWithOptions lists projects with pagination options
 func (c *Client) ListProjectsWithOptions(offset, limit int) ([]*Project, error) {
 	var response struct {
-		Success bool      `json:"success"`
-		Items   []Project `json:"items"`
-		Total   int       `json:"total"`
-		Error   string    `json:"error,omitempty"`
+		Success bool               `json:"success"`
+		Map     map[string]Project `json:"map"`
+		Total   int                `json:"total"`
+		Error   *struct {
+			Code    string `json:"code"`
+			Message string `json:"message"`
+		} `json:"error,omitempty"`
 	}
 	
 	req := c.httpClient.R().
@@ -610,17 +613,23 @@ func (c *Client) ListProjectsWithOptions(offset, limit int) ([]*Project, error) 
 	}
 	
 	if resp.IsError() {
-		if response.Error != "" {
-			return nil, fmt.Errorf("list projects failed: %s", response.Error)
+		if response.Error != nil {
+			return nil, fmt.Errorf("list projects failed: %s", response.Error.Message)
 		}
 		return nil, fmt.Errorf("list projects failed with status %d: %s", resp.StatusCode(), resp.String())
 	}
 	
-	// Convert to slice of pointers
-	projects := make([]*Project, len(response.Items))
-	for i := range response.Items {
-		projects[i] = &response.Items[i]
+	// Convert map to slice of pointers
+	projects := make([]*Project, 0, len(response.Map))
+	for _, project := range response.Map {
+		p := project // Create a copy to avoid pointer issues
+		projects = append(projects, &p)
 	}
+	
+	// Sort by ID for consistent ordering
+	sort.Slice(projects, func(i, j int) bool {
+		return projects[i].ID < projects[j].ID
+	})
 	
 	return projects, nil
 }
