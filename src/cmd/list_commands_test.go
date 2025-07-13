@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"strings"
 	"testing"
 
 	"github.com/marklovelady/api-cli-generator/pkg/config"
@@ -68,21 +67,21 @@ func TestListProjectsCommand(t *testing.T) {
 
 			// Create command
 			cmd := newListProjectsCmd()
-			
+
 			// Capture output
 			var buf bytes.Buffer
 			cmd.SetOut(&buf)
 			cmd.SetErr(&buf)
-			
+
 			// Execute command
 			err := cmd.Execute()
-			
+
 			// Should handle API error gracefully
 			if err != nil {
 				assert.Contains(t, err.Error(), "failed to list projects")
 				return
 			}
-			
+
 			// Check output contains expected strings
 			output := buf.String()
 			for _, expected := range tt.expectedOutput {
@@ -142,28 +141,28 @@ func TestListGoalsCommand(t *testing.T) {
 			// Create command
 			cmd := newListGoalsCmd()
 			cmd.SetArgs(tt.args)
-			
+
 			// Capture output
 			var buf bytes.Buffer
 			cmd.SetOut(&buf)
 			cmd.SetErr(&buf)
-			
+
 			// Execute command
 			err := cmd.Execute()
-			
+
 			// Check error
 			if tt.expectedError != "" {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), tt.expectedError)
 				return
 			}
-			
+
 			// Should handle API error gracefully
 			if err != nil {
 				assert.Contains(t, err.Error(), "failed to list goals")
 				return
 			}
-			
+
 			// Check output
 			output := buf.String()
 			for _, expected := range tt.expectedOutput {
@@ -217,15 +216,15 @@ func TestListJourneysCommand(t *testing.T) {
 			// Create command
 			cmd := newListJourneysCmd()
 			cmd.SetArgs(tt.args)
-			
+
 			// Capture output
 			var buf bytes.Buffer
 			cmd.SetOut(&buf)
 			cmd.SetErr(&buf)
-			
+
 			// Execute command
 			err := cmd.Execute()
-			
+
 			// Check error
 			if tt.expectedError != "" {
 				require.Error(t, err)
@@ -287,15 +286,15 @@ func TestListCheckpointsCommand(t *testing.T) {
 			// Create command
 			cmd := newListCheckpointsCmd()
 			cmd.SetArgs(tt.args)
-			
+
 			// Capture output
 			var buf bytes.Buffer
 			cmd.SetOut(&buf)
 			cmd.SetErr(&buf)
-			
+
 			// Execute command
 			err := cmd.Execute()
-			
+
 			// Check error
 			if tt.expectedError != "" {
 				require.Error(t, err)
@@ -309,12 +308,12 @@ func TestListCheckpointsCommand(t *testing.T) {
 func TestPaginationFlags(t *testing.T) {
 	// Test list-projects pagination flags
 	cmd := newListProjectsCmd()
-	
+
 	// Check that pagination flags exist
 	limitFlag := cmd.Flag("limit")
 	require.NotNil(t, limitFlag, "limit flag should exist")
 	assert.Equal(t, "50", limitFlag.DefValue, "Default limit should be 50")
-	
+
 	offsetFlag := cmd.Flag("offset")
 	require.NotNil(t, offsetFlag, "offset flag should exist")
 	assert.Equal(t, "0", offsetFlag.DefValue, "Default offset should be 0")
@@ -322,16 +321,16 @@ func TestPaginationFlags(t *testing.T) {
 
 func TestOutputFormatValidation(t *testing.T) {
 	validFormats := []string{"json", "yaml", "human", "ai"}
-	
+
 	for _, format := range validFormats {
 		t.Run("Valid format: "+format, func(t *testing.T) {
 			err := validateOutputFormat(format)
 			assert.NoError(t, err)
 		})
 	}
-	
+
 	invalidFormats := []string{"xml", "csv", "invalid", ""}
-	
+
 	for _, format := range invalidFormats {
 		t.Run("Invalid format: "+format, func(t *testing.T) {
 			err := validateOutputFormat(format)
@@ -354,7 +353,7 @@ func TestJSONOutputParsing(t *testing.T) {
 			ID: "12345",
 		},
 	}
-	
+
 	// Create a mock response that would be generated
 	mockResponse := map[string]interface{}{
 		"status": "success",
@@ -364,20 +363,20 @@ func TestJSONOutputParsing(t *testing.T) {
 			{ID: 2, Name: "Project 2", Description: "Test project 2"},
 		},
 	}
-	
+
 	// Marshal to JSON
 	jsonBytes, err := json.Marshal(mockResponse)
 	require.NoError(t, err)
-	
+
 	// Parse JSON
 	var parsed map[string]interface{}
 	err = json.Unmarshal(jsonBytes, &parsed)
 	require.NoError(t, err)
-	
+
 	// Verify structure
 	assert.Equal(t, "success", parsed["status"])
 	assert.Equal(t, float64(2), parsed["count"])
-	
+
 	projects, ok := parsed["projects"].([]interface{})
 	require.True(t, ok, "projects should be an array")
 	assert.Len(t, projects, 2)
@@ -402,7 +401,7 @@ func TestRichOutputContent(t *testing.T) {
 		},
 		{
 			name:    "List goals AI format includes next steps",
-			format:  "ai", 
+			format:  "ai",
 			command: newListGoalsCmd,
 			expected: []string{
 				"Next steps:",
@@ -421,13 +420,13 @@ func TestRichOutputContent(t *testing.T) {
 			},
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Check command long description
 			cmd := tt.command()
 			longDesc := cmd.Long
-			
+
 			// Verify rich descriptions exist
 			assert.NotEmpty(t, longDesc, "Command should have a long description")
 			assert.True(t, len(longDesc) > 50, "Long description should be detailed")
@@ -458,7 +457,7 @@ func TestTableOutputFormatting(t *testing.T) {
 			expectedHeaders: []string{"ID", "NAME", "TITLE", "STATUS"},
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// The actual table formatting would be tested with integration tests
