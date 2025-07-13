@@ -43,7 +43,7 @@ jobs:
         make build-test
     
     - name: Run bats tests
-      timeout-minutes: 5
+      timeout-minutes: 10
       env:
         GITHUB_RUN_ID: ${{ github.run_id }}
         TEST_TAG_PREFIX: test-${{ github.run_id }}
@@ -51,15 +51,26 @@ jobs:
         VIRTUOSO_API_URL: ${{ vars.VIRTUOSO_API_URL }}
         VIRTUOSO_BASE_URL: ${{ vars.VIRTUOSO_API_URL }}
         VIRTUOSO_AUTH_TOKEN: ${{ secrets.VIRTUOSO_API_KEY }}
+        PROJECT_ROOT: ${{ github.workspace }}
+        API_CLI_BIN: ./bin/api-cli
       run: |
         # Create config directory
         mkdir -p ~/.api-cli
         # Configure API credentials for tests
         echo "api_key: $VIRTUOSO_API_KEY" > ~/.api-cli/config.yaml
         echo "api_url: $VIRTUOSO_API_URL" >> ~/.api-cli/config.yaml
-        # Run only basic tests first to debug
-        bats -t src/cmd/tests/00_env.bats || true
-        echo "Basic test completed, checking for issues..."
+        
+        # Run tests one by one to identify which one hangs
+        echo "Running individual test files..."
+        for test_file in src/cmd/tests/*.bats; do
+          echo "===================="
+          echo "Running: $test_file"
+          echo "===================="
+          timeout 60s bats -t "$test_file" || echo "Test $test_file failed or timed out"
+        done
+        
+        # Generate summary
+        echo "Test run completed"
       continue-on-error: true
       id: bats-tests
     

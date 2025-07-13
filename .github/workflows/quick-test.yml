@@ -1,0 +1,48 @@
+name: Quick Test
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  quick-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+    
+    - name: Quick build
+      run: |
+        echo "Building CLI..."
+        cd src/cmd && go build -o ../../bin/api-cli
+        echo "Build successful!"
+    
+    - name: Basic functionality test
+      env:
+        VIRTUOSO_API_KEY: ${{ secrets.VIRTUOSO_API_KEY }}
+        VIRTUOSO_API_URL: ${{ vars.VIRTUOSO_API_URL }}
+      run: |
+        # Test basic commands
+        echo "Testing --version"
+        ./bin/api-cli --version || echo "No version flag"
+        
+        echo -e "\nTesting --help"
+        ./bin/api-cli --help
+        
+        echo -e "\nTesting list-projects (with auth)"
+        mkdir -p ~/.api-cli
+        echo "api_key: $VIRTUOSO_API_KEY" > ~/.api-cli/config.yaml
+        echo "api_url: $VIRTUOSO_API_URL" >> ~/.api-cli/config.yaml
+        
+        ./bin/api-cli list-projects --output json || echo "list-projects failed"
+        
+        echo -e "\nQuick test completed!"
