@@ -19,7 +19,7 @@ GOMOD=$(GOCMD) mod
 # Build flags
 LDFLAGS=-ldflags "-X main.Version=$(VERSION) -s -w"
 
-.PHONY: all build clean test generate docker help
+.PHONY: all build build-test clean test generate docker help
 
 all: clean generate build ## Clean, generate, and build
 
@@ -39,14 +39,20 @@ build: ## Build the CLI binary
 	$(GOBUILD) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) ./$(SRC_DIR)/cmd
 	@echo "Build complete: $(BUILD_DIR)/$(BINARY_NAME)"
 
+build-test: ## Build the CLI binary for testing (fails fast on compilation errors)
+	@echo "Building $(BINARY_NAME) for testing..."
+	@mkdir -p $(BUILD_DIR)
+	@cd $(SRC_DIR)/cmd && $(GOBUILD) -o ../../$(BUILD_DIR)/$(BINARY_NAME) || (echo "Build failed!" && exit 1)
+	@echo "Test build complete: $(BUILD_DIR)/$(BINARY_NAME)"
+
 clean: ## Clean build artifacts
 	@echo "Cleaning..."
 	@rm -rf $(BUILD_DIR)
 	@$(GOCLEAN)
 	@echo "Clean complete"
 
-test: ## Run tests
-	@echo "Running tests..."
+test: ## Run Go unit tests
+	@echo "Running Go unit tests..."
 	$(GOTEST) -v ./...
 
 deps: ## Download dependencies
@@ -100,6 +106,7 @@ ci: ## Run CI pipeline locally
 	@echo "Running CI pipeline locally..."
 	make check
 	make validate-spec
+	make test-bats
 	make docker-build
 	@echo "CI pipeline completed!"
 
@@ -110,6 +117,7 @@ tools: ## Install development tools
 	go install honnef.co/go/tools/cmd/staticcheck@latest
 	go install github.com/goreleaser/goreleaser@latest
 	npm install -g @apidevtools/swagger-cli
+	npm install -g bats
 	@echo "Development tools installed!"
 
 release-snapshot: ## Build release snapshot
@@ -121,3 +129,15 @@ coverage: ## Generate test coverage report
 	go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
 	go tool cover -html=coverage.txt -o coverage.html
 	@echo "Coverage report generated: coverage.html"
+
+test-bats: build-test ## Run BATS integration tests with report
+	@echo "Running BATS integration tests..."
+	@if command -v bats >/dev/null 2>&1; then \
+		./$(SRC_DIR)/cmd/tests/generate_report.sh; \
+	else \
+		echo "BATS not installed. Install with: npm install -g bats"; \
+		exit 1; \
+	fi
+
+test-all: test test-bats ## Run all tests (Go unit tests and BATS integration tests)
+	@echo "All tests completed!"
