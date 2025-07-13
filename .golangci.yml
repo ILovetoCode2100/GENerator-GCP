@@ -46,6 +46,8 @@ linters-settings:
       - octalLiteral
       - whyNoLint
       - wrapperFunc
+      - sprintfQuotedString
+      - paramTypeCombine
 
   gocyclo:
     min-complexity: 15
@@ -90,7 +92,6 @@ linters:
   enable:
     - bodyclose
     - dogsled
-    - dupl
     - errcheck
     - exhaustive
     - funlen
@@ -130,6 +131,7 @@ linters:
     - scopelint
     - structcheck
     - varcheck
+    - dupl
 
 issues:
   exclude-rules:
