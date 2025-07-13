@@ -1,0 +1,35 @@
+name: Debug Makefile
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Debug directory and Makefile
+      run: |
+        echo "Current directory: $(pwd)"
+        echo "Directory contents:"
+        ls -la
+        echo ""
+        echo "Makefile exists?"
+        if [ -f Makefile ]; then
+          echo "Yes, Makefile exists"
+          echo "Makefile content (first 50 lines):"
+          head -50 Makefile
+          echo ""
+          echo "Searching for build-test target:"
+          grep -n "build-test" Makefile || echo "build-test not found"
+        else
+          echo "No, Makefile does not exist"
+        fi
+        echo ""
+        echo "Make version:"
+        make --version
+        echo ""
+        echo "Available make targets:"
+        make help || echo "make help failed"
