@@ -1,22 +1,25 @@
+// Package config provides configuration management for the Virtuoso API CLI.
+// It handles loading and validating configuration from files and environment variables.
 package config
 
 import (
 	"fmt"
 	"os"
 	"path/filepath"
+
 	"github.com/spf13/viper"
 )
 
 // VirtuosoConfig holds all configuration for the Virtuoso API
 type VirtuosoConfig struct {
-	API      APIConfig      `mapstructure:"api"`
-	Org      OrgConfig      `mapstructure:"organization"`
-	Headers  HeadersConfig  `mapstructure:"headers"`
-	Rules    BusinessRules  `mapstructure:"business_rules"`
-	Output   OutputConfig   `mapstructure:"output"`
-	HTTP     HTTPConfig     `mapstructure:"http"`
-	Logging  LoggingConfig  `mapstructure:"logging"`
-	Session  SessionConfig  `mapstructure:"session"`
+	API     APIConfig     `mapstructure:"api"`
+	Org     OrgConfig     `mapstructure:"organization"`
+	Headers HeadersConfig `mapstructure:"headers"`
+	Rules   BusinessRules `mapstructure:"business_rules"`
+	Output  OutputConfig  `mapstructure:"output"`
+	HTTP    HTTPConfig    `mapstructure:"http"`
+	Logging LoggingConfig `mapstructure:"logging"`
+	Session SessionConfig `mapstructure:"session"`
 }
 
 // APIConfig holds API connection details
@@ -64,25 +67,25 @@ type LoggingConfig struct {
 
 // SessionConfig holds session context information
 type SessionConfig struct {
-	CurrentProjectID    *int  `mapstructure:"current_project_id"`
-	CurrentGoalID       *int  `mapstructure:"current_goal_id"`
-	CurrentSnapshotID   *int  `mapstructure:"current_snapshot_id"`
-	CurrentJourneyID    *int  `mapstructure:"current_journey_id"`
-	CurrentCheckpointID *int  `mapstructure:"current_checkpoint_id"`
-	AutoIncrementPos    bool  `mapstructure:"auto_increment_position"`
-	NextPosition        int   `mapstructure:"next_position"`
+	CurrentProjectID    *int `mapstructure:"current_project_id"`
+	CurrentGoalID       *int `mapstructure:"current_goal_id"`
+	CurrentSnapshotID   *int `mapstructure:"current_snapshot_id"`
+	CurrentJourneyID    *int `mapstructure:"current_journey_id"`
+	CurrentCheckpointID *int `mapstructure:"current_checkpoint_id"`
+	AutoIncrementPos    bool `mapstructure:"auto_increment_position"`
+	NextPosition        int  `mapstructure:"next_position"`
 }
 
 // LoadConfig loads configuration from file and environment
 func LoadConfig() (*VirtuosoConfig, error) {
 	viper.SetConfigName("virtuoso-config")
 	viper.SetConfigType("yaml")
-	
+
 	// Add config paths
 	viper.AddConfigPath("./config")
 	viper.AddConfigPath("$HOME/.api-cli")
 	viper.AddConfigPath(".")
-	
+
 	// Set defaults
 	viper.SetDefault("api.base_url", "https://api-app2.virtuoso.qa/api")
 	viper.SetDefault("organization.id", "2242")
@@ -96,41 +99,42 @@ func LoadConfig() (*VirtuosoConfig, error) {
 	viper.SetDefault("http.retries", 3)
 	viper.SetDefault("session.auto_increment_position", true)
 	viper.SetDefault("session.next_position", 1)
-	
+
 	// Allow environment variables
 	viper.SetEnvPrefix("VIRTUOSO")
 	viper.AutomaticEnv()
-	
+
 	// Read config file
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// Config file not found; use defaults and warn user
-			fmt.Printf("Warning: No config file found. Using defaults. To create a config file, run: mkdir -p ./config && touch ./config/virtuoso-config.yaml\n")
+			fmt.Printf("Warning: No config file found. Using defaults. " +
+				"To create a config file, run: mkdir -p ./config && touch ./config/virtuoso-config.yaml\n")
 		} else {
 			return nil, fmt.Errorf("error reading config: %w", err)
 		}
 	}
-	
+
 	var config VirtuosoConfig
 	if err := viper.Unmarshal(&config); err != nil {
 		return nil, fmt.Errorf("error unmarshaling config: %w", err)
 	}
-	
+
 	// Override with environment variables if set
 	if token := os.Getenv("VIRTUOSO_API_TOKEN"); token != "" {
 		config.API.AuthToken = token
 	}
-	
+
 	return &config, nil
 }
 
 // GetHeaders returns all headers for API requests
 func (c *VirtuosoConfig) GetHeaders() map[string]string {
 	return map[string]string{
-		"Authorization":         fmt.Sprintf("Bearer %s", c.API.AuthToken),
-		"X-Virtuoso-Client-ID":  c.Headers.ClientID,
+		"Authorization":          fmt.Sprintf("Bearer %s", c.API.AuthToken),
+		"X-Virtuoso-Client-ID":   c.Headers.ClientID,
 		"X-Virtuoso-Client-Name": c.Headers.ClientName,
-		"Content-Type":          "application/json",
+		"Content-Type":           "application/json",
 	}
 }
 
@@ -229,7 +233,7 @@ func (c *VirtuosoConfig) SaveConfig() error {
 	}
 
 	// Create directory if it doesn't exist
-	if err := os.MkdirAll(filepath.Dir(configPath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(configPath), 0750); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 

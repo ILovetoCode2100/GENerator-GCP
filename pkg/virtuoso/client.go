@@ -1,3 +1,5 @@
+// Package virtuoso provides a client for interacting with the Virtuoso API.
+// It includes methods for managing projects, goals, journeys, checkpoints, and test steps.
 package virtuoso
 
 import (
@@ -6,7 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"time"
-	
+
 	"github.com/go-resty/resty/v2"
 	"github.com/marklovelady/api-cli-generator/pkg/config"
 	"github.com/sirupsen/logrus"
@@ -25,7 +27,7 @@ func NewClient(cfg *config.VirtuosoConfig) *Client {
 	if cfg.Output.Verbose {
 		logger.SetLevel(logrus.DebugLevel)
 	}
-	
+
 	// Create Resty client with all headers and config
 	httpClient := resty.New().
 		SetBaseURL(cfg.API.BaseURL).
@@ -47,7 +49,7 @@ func NewClient(cfg *config.VirtuosoConfig) *Client {
 			}).Debug("Received Virtuoso API response")
 			return nil
 		})
-	
+
 	return &Client{
 		httpClient: httpClient,
 		config:     cfg,
@@ -73,17 +75,17 @@ func NewClientDirect(baseURL, token string) *Client {
 			DefaultFormat: "human",
 		},
 	}
-	
+
 	// Set up headers
 	headers := map[string]string{
-		"Authorization":         "Bearer " + token,
-		"Content-Type":          "application/json",
-		"X-Virtuoso-Client-ID":  "api-cli-generator",
+		"Authorization":          "Bearer " + token,
+		"Content-Type":           "application/json",
+		"X-Virtuoso-Client-ID":   "api-cli-generator",
 		"X-Virtuoso-Client-Name": "API CLI Generator",
 	}
-	
+
 	logger := logrus.New()
-	
+
 	// Create Resty client
 	httpClient := resty.New().
 		SetBaseURL(baseURL).
@@ -105,7 +107,7 @@ func NewClientDirect(baseURL, token string) *Client {
 			}).Debug("Received Virtuoso API response")
 			return nil
 		})
-	
+
 	return &Client{
 		httpClient: httpClient,
 		config:     cfg,
@@ -174,14 +176,14 @@ type CheckpointDetail struct {
 
 // JourneyWithCheckpoints represents a journey with its checkpoints
 type JourneyWithCheckpoints struct {
-	ID          int                `json:"id"`
-	GoalID      int                `json:"goalId"`
-	SnapshotID  int                `json:"snapshotId"`
-	Name        string             `json:"name"`
-	Title       string             `json:"title"`
-	Archived    bool               `json:"archived"`
-	Draft       bool               `json:"draft"`
-	Cases       []CheckpointDetail `json:"cases"`
+	ID         int                `json:"id"`
+	GoalID     int                `json:"goalId"`
+	SnapshotID int                `json:"snapshotId"`
+	Name       string             `json:"name"`
+	Title      string             `json:"title"`
+	Archived   bool               `json:"archived"`
+	Draft      bool               `json:"draft"`
+	Cases      []CheckpointDetail `json:"cases"`
 }
 
 // CreateProject creates a new project
@@ -191,53 +193,53 @@ func (c *Client) CreateProject(name, description string) (*Project, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid organization ID: %w", err)
 	}
-	
+
 	body := map[string]interface{}{
 		"name":           name,
 		"organizationId": orgID,
 	}
-	
+
 	// Only add description if provided
 	if description != "" {
 		body["description"] = description
 	}
-	
+
 	var response struct {
 		Success bool    `json:"success"`
 		Item    Project `json:"item"`
 		Error   string  `json:"error,omitempty"`
 	}
-	
+
 	resp, err := c.httpClient.R().
 		SetBody(body).
 		SetResult(&response).
 		Post("/projects")
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("create project request failed: %w", err)
 	}
-	
+
 	if resp.IsError() {
 		if response.Error != "" {
 			return nil, fmt.Errorf("create project failed: %s", response.Error)
 		}
 		return nil, fmt.Errorf("create project failed with status %d: %s", resp.StatusCode(), resp.String())
 	}
-	
+
 	if !response.Success {
 		return nil, fmt.Errorf("create project failed: API returned success=false")
 	}
-	
+
 	return &response.Item, nil
 }
 
 // CreateGoal creates a new goal (with auto-created journey)
 func (c *Client) CreateGoal(projectID int, name, url string) (*Goal, error) {
 	body := map[string]interface{}{
-		"projectId":        projectID,
-		"name":             name,
-		"environmentId":    nil,
-		"url":              url,
+		"projectId":     projectID,
+		"name":          name,
+		"environmentId": nil,
+		"url":           url,
 		"deviceSize": map[string]int{
 			"width":  1280,
 			"height": 800,
@@ -257,33 +259,33 @@ func (c *Client) CreateGoal(projectID int, name, url string) (*Goal, error) {
 		},
 		"createFirstJourney": true,
 	}
-	
+
 	var response struct {
-		Success bool `json:"success"`
-		Item    Goal `json:"item"`
+		Success bool   `json:"success"`
+		Item    Goal   `json:"item"`
 		Error   string `json:"error,omitempty"`
 	}
-	
+
 	resp, err := c.httpClient.R().
 		SetBody(body).
 		SetResult(&response).
 		Post("/goals")
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("create goal request failed: %w", err)
 	}
-	
+
 	if resp.IsError() {
 		if response.Error != "" {
 			return nil, fmt.Errorf("create goal failed: %s", response.Error)
 		}
 		return nil, fmt.Errorf("create goal failed with status %d: %s", resp.StatusCode(), resp.String())
 	}
-	
+
 	if !response.Success {
 		return nil, fmt.Errorf("create goal failed: API returned success=false")
 	}
-	
+
 	return &response.Item, nil
 }
 
@@ -297,27 +299,27 @@ func (c *Client) GetGoalSnapshot(goalID int) (string, error) {
 			} `json:"snapshots"`
 		} `json:"item"`
 	}
-	
+
 	resp, err := c.httpClient.R().
 		SetResult(&response).
 		Get(fmt.Sprintf("/goals/%d/versions", goalID))
-	
+
 	if err != nil {
 		return "", fmt.Errorf("get snapshot request failed: %w", err)
 	}
-	
+
 	if resp.IsError() {
 		return "", fmt.Errorf("get snapshot failed with status %d: %s", resp.StatusCode(), resp.String())
 	}
-	
+
 	if !response.Success {
 		return "", fmt.Errorf("get snapshot failed: API returned success=false")
 	}
-	
+
 	if len(response.Item.Snapshots) == 0 {
 		return "", fmt.Errorf("no snapshots found for goal %d", goalID)
 	}
-	
+
 	// Return the first snapshot ID as string
 	return fmt.Sprintf("%d", response.Item.Snapshots[0].SnapshotID), nil
 }
@@ -332,40 +334,40 @@ func (c *Client) CreateJourney(goalID, snapshotID int, name string) (*Journey, e
 		"archived":   false,
 		"draft":      true,
 	}
-	
+
 	var response struct {
 		Success bool    `json:"success"`
 		Item    Journey `json:"item"`
 		Error   string  `json:"error,omitempty"`
 	}
-	
+
 	resp, err := c.httpClient.R().
 		SetBody(body).
 		SetResult(&response).
 		Post("/testsuites")
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("create journey request failed: %w", err)
 	}
-	
+
 	if resp.IsError() {
 		if response.Error != "" {
 			return nil, fmt.Errorf("create journey failed: %s", response.Error)
 		}
 		return nil, fmt.Errorf("create journey failed with status %d: %s", resp.StatusCode(), resp.String())
 	}
-	
+
 	// Check if we have the journey in the wrapped response
 	if response.Item.ID != 0 {
 		return &response.Item, nil
 	}
-	
+
 	// Try parsing as direct journey (in case API doesn't wrap)
 	var journey Journey
 	if err := json.Unmarshal(resp.Body(), &journey); err == nil && journey.ID != 0 {
 		return &journey, nil
 	}
-	
+
 	return nil, fmt.Errorf("could not parse journey response")
 }
 
@@ -376,40 +378,40 @@ func (c *Client) CreateCheckpoint(goalID, snapshotID int, title string) (*Checkp
 		"snapshotId": snapshotID,
 		"title":      title,
 	}
-	
+
 	var response struct {
 		Success bool       `json:"success"`
 		Item    Checkpoint `json:"item"`
 		Error   string     `json:"error,omitempty"`
 	}
-	
+
 	resp, err := c.httpClient.R().
 		SetBody(body).
 		SetResult(&response).
 		Post("/testcases")
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("create checkpoint request failed: %w", err)
 	}
-	
+
 	if resp.IsError() {
 		if response.Error != "" {
 			return nil, fmt.Errorf("create checkpoint failed: %s", response.Error)
 		}
 		return nil, fmt.Errorf("create checkpoint failed with status %d: %s", resp.StatusCode(), resp.String())
 	}
-	
+
 	// Try direct response first (in case envelope=false is implied)
 	if response.Item.ID != 0 {
 		return &response.Item, nil
 	}
-	
+
 	// Try parsing as direct checkpoint
 	var checkpoint Checkpoint
 	if err := json.Unmarshal(resp.Body(), &checkpoint); err == nil && checkpoint.ID != 0 {
 		return &checkpoint, nil
 	}
-	
+
 	return nil, fmt.Errorf("could not parse checkpoint response")
 }
 
@@ -419,35 +421,35 @@ func (c *Client) AttachCheckpoint(journeyID, checkpointID, position int) error {
 		"checkpointId": checkpointID,
 		"position":     position,
 	}
-	
+
 	resp, err := c.httpClient.R().
 		SetBody(body).
 		Post(fmt.Sprintf("/testsuites/%d/checkpoints/attach", journeyID))
-	
+
 	if err != nil {
 		return fmt.Errorf("attach checkpoint request failed: %w", err)
 	}
-	
+
 	if resp.IsError() {
 		return fmt.Errorf("attach checkpoint failed with status %d: %s", resp.StatusCode(), resp.String())
 	}
-	
+
 	return nil
 }
 
 // Step represents a test step
 type Step struct {
-	ID             int                    `json:"id"`
-	CanonicalID    string                 `json:"canonicalId"`
-	CheckpointID   int                    `json:"checkpointId"`
-	StepIndex      int                    `json:"stepIndex"`
-	Action         string                 `json:"action"`
-	Value          string                 `json:"value"`
-	Optional       bool                   `json:"optional"`
-	IgnoreOutcome  bool                   `json:"ignoreOutcome"`
-	Skip           bool                   `json:"skip"`
-	Meta           map[string]interface{} `json:"meta"`
-	Target         map[string]interface{} `json:"target"`
+	ID            int                    `json:"id"`
+	CanonicalID   string                 `json:"canonicalId"`
+	CheckpointID  int                    `json:"checkpointId"`
+	StepIndex     int                    `json:"stepIndex"`
+	Action        string                 `json:"action"`
+	Value         string                 `json:"value"`
+	Optional      bool                   `json:"optional"`
+	IgnoreOutcome bool                   `json:"ignoreOutcome"`
+	Skip          bool                   `json:"skip"`
+	Meta          map[string]interface{} `json:"meta"`
+	Target        map[string]interface{} `json:"target"`
 }
 
 // addStep is a helper method to add a step to a checkpoint
@@ -457,22 +459,22 @@ func (c *Client) addStep(checkpointID int, stepIndex int, parsedStep map[string]
 		"stepIndex":    stepIndex,
 		"parsedStep":   parsedStep,
 	}
-	
+
 	var response interface{}
-	
+
 	resp, err := c.httpClient.R().
 		SetBody(body).
 		SetResult(&response).
 		Post("/teststeps")
-	
+
 	if err != nil {
 		return 0, fmt.Errorf("add step request failed: %w", err)
 	}
-	
+
 	if resp.IsError() {
 		return 0, fmt.Errorf("add step failed with status %d: %s", resp.StatusCode(), resp.String())
 	}
-	
+
 	// The API returns 200 with the created step details
 	// Try to extract the ID from the response
 	if responseMap, ok := response.(map[string]interface{}); ok {
@@ -480,7 +482,7 @@ func (c *Client) addStep(checkpointID int, stepIndex int, parsedStep map[string]
 			return int(id), nil
 		}
 	}
-	
+
 	// If we can't find an ID, return a success indicator
 	// The API might not return an ID for steps
 	return 1, nil
@@ -501,7 +503,7 @@ func (c *Client) AddNavigateStep(checkpointID int, url string) (int, error) {
 		"value": url,
 		"meta":  map[string]interface{}{},
 	}
-	
+
 	// For now, we'll append at the end by using a high stepIndex
 	// In a real implementation, we'd query existing steps first
 	return c.addStep(checkpointID, 999, parsedStep)
@@ -522,12 +524,11 @@ func (c *Client) AddClickStep(checkpointID int, selector string) (int, error) {
 		"value": "",
 		"meta":  map[string]interface{}{},
 	}
-	
+
 	// For now, we'll append at the end by using a high stepIndex
 	// In a real implementation, we'd query existing steps first
 	return c.addStep(checkpointID, 999, parsedStep)
 }
-
 
 // AddWaitStep adds a wait step to a checkpoint
 func (c *Client) AddWaitStep(checkpointID int, selector string, timeout int) (int, error) {
@@ -544,38 +545,36 @@ func (c *Client) AddWaitStep(checkpointID int, selector string, timeout int) (in
 		"value": fmt.Sprintf("%d", timeout),
 		"meta":  map[string]interface{}{},
 	}
-	
+
 	// For now, we'll append at the end by using a high stepIndex
 	// In a real implementation, we'd query existing steps first
 	return c.addStep(checkpointID, 999, parsedStep)
 }
 
-
 // TestConnection tests the API connection and authentication
 func (c *Client) TestConnection() (string, error) {
 	// Try to list projects with organizationId to test auth
 	start := time.Now()
-	
+
 	resp, err := c.httpClient.R().
 		SetQueryParam("organizationId", c.config.Org.ID).
 		Get("/projects")
-	
+
 	duration := time.Since(start)
-	
+
 	if err != nil {
 		return "", fmt.Errorf("connection test failed: %w", err)
 	}
-	
+
 	if resp.IsError() {
 		if resp.StatusCode() == 401 {
 			return "", fmt.Errorf("authentication failed: invalid API token")
 		}
 		return "", fmt.Errorf("API returned error status %d", resp.StatusCode())
 	}
-	
+
 	return duration.String(), nil
 }
-
 
 // ListProjects lists all projects for the organization
 func (c *Client) ListProjects() ([]*Project, error) {
@@ -593,11 +592,11 @@ func (c *Client) ListProjectsWithOptions(offset, limit int) ([]*Project, error) 
 			Message string `json:"message"`
 		} `json:"error,omitempty"`
 	}
-	
+
 	req := c.httpClient.R().
 		SetQueryParam("organizationId", c.config.Org.ID).
 		SetResult(&response)
-	
+
 	// Add pagination parameters if specified
 	if limit > 0 {
 		req.SetQueryParam("limit", strconv.Itoa(limit))
@@ -605,32 +604,32 @@ func (c *Client) ListProjectsWithOptions(offset, limit int) ([]*Project, error) 
 	if offset > 0 {
 		req.SetQueryParam("offset", strconv.Itoa(offset))
 	}
-	
+
 	resp, err := req.Get("/projects")
 
 	if err != nil {
 		return nil, fmt.Errorf("list projects request failed: %w", err)
 	}
-	
+
 	if resp.IsError() {
 		if response.Error != nil {
 			return nil, fmt.Errorf("list projects failed: %s", response.Error.Message)
 		}
 		return nil, fmt.Errorf("list projects failed with status %d: %s", resp.StatusCode(), resp.String())
 	}
-	
+
 	// Convert map to slice of pointers
 	projects := make([]*Project, 0, len(response.Map))
 	for _, project := range response.Map {
 		p := project // Create a copy to avoid pointer issues
 		projects = append(projects, &p)
 	}
-	
+
 	// Sort by ID for consistent ordering
 	sort.Slice(projects, func(i, j int) bool {
 		return projects[i].ID < projects[j].ID
 	})
-	
+
 	return projects, nil
 }
 
@@ -641,29 +640,29 @@ func (c *Client) ListGoals(projectID int) ([]*Goal, error) {
 		Items   []Goal `json:"items"`
 		Error   string `json:"error,omitempty"`
 	}
-	
+
 	resp, err := c.httpClient.R().
 		SetQueryParam("archived", "false").
 		SetResult(&response).
 		Get(fmt.Sprintf("/projects/%d/goals", projectID))
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("list goals request failed: %w", err)
 	}
-	
+
 	if resp.IsError() {
 		if response.Error != "" {
 			return nil, fmt.Errorf("list goals failed: %s", response.Error)
 		}
 		return nil, fmt.Errorf("list goals failed with status %d: %s", resp.StatusCode(), resp.String())
 	}
-	
+
 	// Convert to slice of pointers
 	goals := make([]*Goal, len(response.Items))
 	for i := range response.Items {
 		goals[i] = &response.Items[i]
 	}
-	
+
 	return goals, nil
 }
 
@@ -676,46 +675,46 @@ func (c *Client) ListJourneys(goalID, snapshotID int) ([]*Journey, error) {
 			Date string `json:"date"`
 		} `json:"lastChange"`
 	}
-	
+
 	var response struct {
-		Success bool                     `json:"success"`
+		Success bool                    `json:"success"`
 		Map     map[string]JourneyEntry `json:"map"`
 		Error   struct {
 			Code    string `json:"code,omitempty"`
 			Message string `json:"message,omitempty"`
 		} `json:"error,omitempty"`
 	}
-	
+
 	resp, err := c.httpClient.R().
 		SetQueryParam("snapshotId", fmt.Sprintf("%d", snapshotID)).
 		SetQueryParam("goalId", fmt.Sprintf("%d", goalID)).
 		SetQueryParam("includeSequencesDetails", "true").
 		SetResult(&response).
 		Get("/testsuites/latest_status")
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("list journeys request failed: %w", err)
 	}
-	
+
 	if resp.IsError() {
 		if response.Error.Message != "" {
 			return nil, fmt.Errorf("list journeys failed: %s", response.Error.Message)
 		}
 		return nil, fmt.Errorf("list journeys failed with status %d: %s", resp.StatusCode(), resp.String())
 	}
-	
+
 	// Convert map to slice of journey pointers
 	journeys := make([]*Journey, 0, len(response.Map))
 	for _, entry := range response.Map {
 		journey := entry.Journey
 		journeys = append(journeys, &journey)
 	}
-	
+
 	// Sort by ID to ensure consistent ordering (auto-created journey first)
 	sort.Slice(journeys, func(i, j int) bool {
 		return journeys[i].ID < journeys[j].ID
 	})
-	
+
 	return journeys, nil
 }
 
@@ -724,40 +723,40 @@ func (c *Client) UpdateJourney(journeyID int, name string) (*Journey, error) {
 	body := map[string]interface{}{
 		"title": name,
 	}
-	
+
 	var response struct {
 		Success bool    `json:"success"`
 		Item    Journey `json:"item"`
 		Error   string  `json:"error,omitempty"`
 	}
-	
+
 	resp, err := c.httpClient.R().
 		SetBody(body).
 		SetResult(&response).
 		Put(fmt.Sprintf("/testsuites/%d", journeyID))
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("update journey request failed: %w", err)
 	}
-	
+
 	if resp.IsError() {
 		if response.Error != "" {
 			return nil, fmt.Errorf("update journey failed: %s", response.Error)
 		}
 		return nil, fmt.Errorf("update journey failed with status %d: %s", resp.StatusCode(), resp.String())
 	}
-	
+
 	// Check if we have the journey in the wrapped response
 	if response.Item.ID != 0 {
 		return &response.Item, nil
 	}
-	
+
 	// Try parsing as direct journey (in case API doesn't wrap)
 	var journey Journey
 	if err := json.Unmarshal(resp.Body(), &journey); err == nil && journey.ID != 0 {
 		return &journey, nil
 	}
-	
+
 	return nil, fmt.Errorf("could not parse journey response")
 }
 
@@ -768,33 +767,33 @@ func (c *Client) GetJourney(journeyID int) (*Journey, error) {
 		Item    Journey `json:"item"`
 		Error   string  `json:"error,omitempty"`
 	}
-	
+
 	resp, err := c.httpClient.R().
 		SetResult(&response).
 		Get(fmt.Sprintf("/testsuites/%d", journeyID))
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("get journey request failed: %w", err)
 	}
-	
+
 	if resp.IsError() {
 		if response.Error != "" {
 			return nil, fmt.Errorf("get journey failed: %s", response.Error)
 		}
 		return nil, fmt.Errorf("get journey failed with status %d: %s", resp.StatusCode(), resp.String())
 	}
-	
+
 	// Check if we have the journey in the wrapped response
 	if response.Item.ID != 0 {
 		return &response.Item, nil
 	}
-	
+
 	// Try parsing as direct journey (in case API doesn't wrap)
 	var journey Journey
 	if err := json.Unmarshal(resp.Body(), &journey); err == nil && journey.ID != 0 {
 		return &journey, nil
 	}
-	
+
 	return nil, fmt.Errorf("could not parse journey response")
 }
 
@@ -805,33 +804,33 @@ func (c *Client) GetStep(stepID int) (*Step, error) {
 		Item    Step   `json:"item"`
 		Error   string `json:"error,omitempty"`
 	}
-	
+
 	resp, err := c.httpClient.R().
 		SetResult(&response).
 		Get(fmt.Sprintf("/teststeps/%d", stepID))
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("get step request failed: %w", err)
 	}
-	
+
 	if resp.IsError() {
 		if response.Error != "" {
 			return nil, fmt.Errorf("get step failed: %s", response.Error)
 		}
 		return nil, fmt.Errorf("get step failed with status %d: %s", resp.StatusCode(), resp.String())
 	}
-	
+
 	// Check if we have the step in the wrapped response
 	if response.Item.ID != 0 {
 		return &response.Item, nil
 	}
-	
+
 	// Try parsing as direct step (in case API doesn't wrap)
 	var step Step
 	if err := json.Unmarshal(resp.Body(), &step); err == nil && step.ID != 0 {
 		return &step, nil
 	}
-	
+
 	return nil, fmt.Errorf("could not parse step response")
 }
 
@@ -841,7 +840,7 @@ func (c *Client) UpdateNavigationStep(stepID int, canonicalID, url string, useNe
 	if url == "" {
 		return nil, fmt.Errorf("URL cannot be empty")
 	}
-	
+
 	body := map[string]interface{}{
 		"id":          stepID,
 		"canonicalId": canonicalID,
@@ -858,22 +857,22 @@ func (c *Client) UpdateNavigationStep(stepID int, canonicalID, url string, useNe
 		"ignoreOutcome": false,
 		"skip":          false,
 	}
-	
+
 	var response struct {
 		Success bool   `json:"success"`
 		Item    Step   `json:"item"`
 		Error   string `json:"error,omitempty"`
 	}
-	
+
 	resp, err := c.httpClient.R().
 		SetBody(body).
 		SetResult(&response).
 		Put(fmt.Sprintf("/teststeps/%d/properties", stepID))
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("update navigation step request failed: %w", err)
 	}
-	
+
 	if resp.IsError() {
 		// Check for canonical ID mismatch
 		if resp.StatusCode() == 400 || resp.StatusCode() == 409 {
@@ -884,18 +883,18 @@ func (c *Client) UpdateNavigationStep(stepID int, canonicalID, url string, useNe
 		}
 		return nil, fmt.Errorf("update navigation step failed with status %d: %s", resp.StatusCode(), resp.String())
 	}
-	
+
 	// Check if we have the step in the wrapped response
 	if response.Item.ID != 0 {
 		return &response.Item, nil
 	}
-	
+
 	// Try parsing as direct step (in case API doesn't wrap)
 	var step Step
 	if err := json.Unmarshal(resp.Body(), &step); err == nil && step.ID != 0 {
 		return &step, nil
 	}
-	
+
 	return nil, fmt.Errorf("could not parse step response")
 }
 
@@ -906,22 +905,22 @@ func (c *Client) ListCheckpoints(journeyID int) (*JourneyWithCheckpoints, error)
 		Item    JourneyWithCheckpoints `json:"item"`
 		Error   string                 `json:"error,omitempty"`
 	}
-	
+
 	resp, err := c.httpClient.R().
 		SetResult(&response).
 		Get(fmt.Sprintf("/testsuites/%d", journeyID))
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("list checkpoints request failed: %w", err)
 	}
-	
+
 	if resp.IsError() {
 		if response.Error != "" {
 			return nil, fmt.Errorf("list checkpoints failed: %s", response.Error)
 		}
 		return nil, fmt.Errorf("list checkpoints failed with status %d: %s", resp.StatusCode(), resp.String())
 	}
-	
+
 	// Check if we have the journey in the wrapped response
 	if response.Item.ID != 0 {
 		// Process checkpoints to add position numbers
@@ -930,7 +929,7 @@ func (c *Client) ListCheckpoints(journeyID int) (*JourneyWithCheckpoints, error)
 		}
 		return &response.Item, nil
 	}
-	
+
 	// Try parsing as direct journey (in case API doesn't wrap)
 	var journey JourneyWithCheckpoints
 	if err := json.Unmarshal(resp.Body(), &journey); err == nil && journey.ID != 0 {
@@ -940,7 +939,7 @@ func (c *Client) ListCheckpoints(journeyID int) (*JourneyWithCheckpoints, error)
 		}
 		return &journey, nil
 	}
-	
+
 	return nil, fmt.Errorf("could not parse journey response")
 }
 
@@ -950,11 +949,11 @@ func (c *Client) GetFirstJourney(goalID, snapshotID int) (*Journey, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to list journeys: %w", err)
 	}
-	
+
 	if len(journeys) == 0 {
 		return nil, fmt.Errorf("no journeys found for goal %d", goalID)
 	}
-	
+
 	// Return the first journey (usually the auto-created one)
 	return journeys[0], nil
 }
@@ -965,11 +964,11 @@ func (c *Client) GetFirstCheckpoint(journeyID int) (*CheckpointDetail, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to list checkpoints: %w", err)
 	}
-	
+
 	if len(journey.Cases) == 0 {
 		return nil, fmt.Errorf("no checkpoints found for journey %d", journeyID)
 	}
-	
+
 	// Return the first checkpoint
 	return &journey.Cases[0], nil
 }
@@ -996,11 +995,11 @@ func (c *Client) AddFillStep(checkpointID int, selector, value string) (int, err
 		},
 		"value": value,
 		"meta": map[string]interface{}{
-			"kind": "WRITE",
+			"kind":   "WRITE",
 			"append": false,
 		},
 	}
-	
+
 	return c.addStep(checkpointID, 999, parsedStep)
 }
 
@@ -1019,7 +1018,7 @@ func (c *Client) CreateNavigationStep(checkpointID int, url string, position int
 		"value": url,
 		"meta":  map[string]interface{}{},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1027,15 +1026,15 @@ func (c *Client) CreateNavigationStep(checkpointID int, url string, position int
 func (c *Client) CreateWaitTimeStep(checkpointID int, seconds int, position int) (int, error) {
 	parsedStep := map[string]interface{}{
 		"action": "WAIT",
-		"value": fmt.Sprintf("%d", seconds * 1000), // Convert seconds to milliseconds
+		"value":  fmt.Sprintf("%d", seconds*1000), // Convert seconds to milliseconds
 		"meta": map[string]interface{}{
-			"kind": "WAIT",
-			"type": "TIME",
+			"kind":     "WAIT",
+			"type":     "TIME",
 			"duration": seconds * 1000,
-			"poll": 100,
+			"poll":     100,
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1054,7 +1053,7 @@ func (c *Client) CreateWaitElementStep(checkpointID int, element string, positio
 		"value": "20000", // Default 20 second timeout
 		"meta":  map[string]interface{}{},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1062,17 +1061,17 @@ func (c *Client) CreateWaitElementStep(checkpointID int, element string, positio
 func (c *Client) CreateWindowResizeStep(checkpointID int, width int, height int, position int) (int, error) {
 	parsedStep := map[string]interface{}{
 		"action": "WINDOW",
-		"value": "",
+		"value":  "",
 		"meta": map[string]interface{}{
 			"kind": "WINDOW",
 			"type": "RESIZE",
 			"dimension": map[string]interface{}{
-				"width": width,
+				"width":  width,
 				"height": height,
 			},
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1091,7 +1090,7 @@ func (c *Client) CreateClickStep(checkpointID int, element string, position int)
 		"value": "",
 		"meta":  map[string]interface{}{},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1099,7 +1098,7 @@ func (c *Client) CreateClickStep(checkpointID int, element string, position int)
 func (c *Client) CreateDoubleClickStep(checkpointID int, element string, position int) (int, error) {
 	parsedStep := map[string]interface{}{
 		"action": "MOUSE",
-		"value": "",
+		"value":  "",
 		"target": map[string]interface{}{
 			"selectors": []map[string]interface{}{
 				{
@@ -1109,11 +1108,11 @@ func (c *Client) CreateDoubleClickStep(checkpointID int, element string, positio
 			},
 		},
 		"meta": map[string]interface{}{
-			"kind": "MOUSE",
+			"kind":   "MOUSE",
 			"action": "DOUBLE_CLICK",
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1121,7 +1120,7 @@ func (c *Client) CreateDoubleClickStep(checkpointID int, element string, positio
 func (c *Client) CreateHoverStep(checkpointID int, element string, position int) (int, error) {
 	parsedStep := map[string]interface{}{
 		"action": "MOUSE",
-		"value": "",
+		"value":  "",
 		"target": map[string]interface{}{
 			"selectors": []map[string]interface{}{
 				{
@@ -1131,11 +1130,11 @@ func (c *Client) CreateHoverStep(checkpointID int, element string, position int)
 			},
 		},
 		"meta": map[string]interface{}{
-			"kind": "MOUSE",
+			"kind":   "MOUSE",
 			"action": "OVER",
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1143,7 +1142,7 @@ func (c *Client) CreateHoverStep(checkpointID int, element string, position int)
 func (c *Client) CreateRightClickStep(checkpointID int, element string, position int) (int, error) {
 	parsedStep := map[string]interface{}{
 		"action": "MOUSE",
-		"value": "",
+		"value":  "",
 		"target": map[string]interface{}{
 			"selectors": []map[string]interface{}{
 				{
@@ -1153,11 +1152,11 @@ func (c *Client) CreateRightClickStep(checkpointID int, element string, position
 			},
 		},
 		"meta": map[string]interface{}{
-			"kind": "MOUSE",
+			"kind":   "MOUSE",
 			"action": "RIGHT_CLICK",
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1175,11 +1174,11 @@ func (c *Client) CreateWriteStep(checkpointID int, text string, element string, 
 		},
 		"value": text,
 		"meta": map[string]interface{}{
-			"kind": "WRITE",
+			"kind":   "WRITE",
 			"append": false,
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1189,13 +1188,13 @@ func (c *Client) CreateKeyStep(checkpointID int, key string, position int) (int,
 	// This might need adjustment based on actual API requirements
 	parsedStep := map[string]interface{}{
 		"action": "KEY",
-		"value": key,
+		"value":  key,
 		"meta": map[string]interface{}{
 			"kind": "KEY",
-			"key": key,
+			"key":  key,
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1214,7 +1213,7 @@ func (c *Client) CreatePickStep(checkpointID int, value string, element string, 
 		"value": value,
 		"meta":  map[string]interface{}{},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1222,7 +1221,7 @@ func (c *Client) CreatePickStep(checkpointID int, value string, element string, 
 func (c *Client) CreateUploadStep(checkpointID int, filename string, element string, position int) (int, error) {
 	parsedStep := map[string]interface{}{
 		"action": "UPLOAD",
-		"value": filename,
+		"value":  filename,
 		"element": map[string]interface{}{
 			"target": map[string]interface{}{
 				"selectors": []map[string]interface{}{
@@ -1237,7 +1236,7 @@ func (c *Client) CreateUploadStep(checkpointID int, filename string, element str
 			"kind": "UPLOAD",
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1245,13 +1244,13 @@ func (c *Client) CreateUploadStep(checkpointID int, filename string, element str
 func (c *Client) CreateScrollTopStep(checkpointID int, position int) (int, error) {
 	parsedStep := map[string]interface{}{
 		"action": "SCROLL",
-		"value": "",
+		"value":  "",
 		"meta": map[string]interface{}{
 			"kind": "SCROLL",
 			"type": "TOP",
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1259,13 +1258,13 @@ func (c *Client) CreateScrollTopStep(checkpointID int, position int) (int, error
 func (c *Client) CreateScrollBottomStep(checkpointID int, position int) (int, error) {
 	parsedStep := map[string]interface{}{
 		"action": "SCROLL",
-		"value": "",
+		"value":  "",
 		"meta": map[string]interface{}{
 			"kind": "SCROLL",
 			"type": "BOTTOM",
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1286,7 +1285,7 @@ func (c *Client) CreateScrollElementStep(checkpointID int, element string, posit
 			"type": "ELEMENT",
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1305,7 +1304,7 @@ func (c *Client) CreateAssertExistsStep(checkpointID int, element string, positi
 		"value": fmt.Sprintf("see \"%s\"", element),
 		"meta":  map[string]interface{}{},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1324,7 +1323,7 @@ func (c *Client) CreateAssertNotExistsStep(checkpointID int, element string, pos
 		"value": fmt.Sprintf("do not see \"%s\"", element),
 		"meta":  map[string]interface{}{},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1343,7 +1342,7 @@ func (c *Client) CreateAssertEqualsStep(checkpointID int, element string, value 
 		"value": fmt.Sprintf("expect %s to have text \"%s\"", element, value),
 		"meta":  map[string]interface{}{},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1362,14 +1361,14 @@ func (c *Client) CreateAssertCheckedStep(checkpointID int, element string, posit
 		"value": fmt.Sprintf("see %s is checked", element),
 		"meta":  map[string]interface{}{},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
 // CreateStoreStep creates a store step that saves an element value to a variable
 func (c *Client) CreateStoreStep(checkpointID int, element string, variableName string, position int) (int, error) {
 	parsedStep := map[string]interface{}{
-		"action": "STORE",
+		"action":   "STORE",
 		"variable": variableName,
 		"target": map[string]interface{}{
 			"selectors": []map[string]interface{}{
@@ -1383,7 +1382,7 @@ func (c *Client) CreateStoreStep(checkpointID int, element string, variableName 
 			"kind": "STORE",
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1391,13 +1390,13 @@ func (c *Client) CreateStoreStep(checkpointID int, element string, variableName 
 func (c *Client) CreateExecuteJsStep(checkpointID int, javascript string, position int) (int, error) {
 	parsedStep := map[string]interface{}{
 		"action": "EXECUTE",
-		"value": javascript,
+		"value":  javascript,
 		"meta": map[string]interface{}{
 			"explicit": true,
-			"script": javascript,
+			"script":   javascript,
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1405,14 +1404,14 @@ func (c *Client) CreateExecuteJsStep(checkpointID int, javascript string, positi
 func (c *Client) CreateAddCookieStep(checkpointID int, name string, value string, position int) (int, error) {
 	parsedStep := map[string]interface{}{
 		"action": "ENVIRONMENT",
-		"value": value,
+		"value":  value,
 		"meta": map[string]interface{}{
 			"kind": "ENVIRONMENT",
 			"name": name,
 			"type": "ADD",
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1420,13 +1419,13 @@ func (c *Client) CreateAddCookieStep(checkpointID int, name string, value string
 func (c *Client) CreateDismissAlertStep(checkpointID int, position int) (int, error) {
 	parsedStep := map[string]interface{}{
 		"action": "DISMISS",
-		"value": "",
+		"value":  "",
 		"meta": map[string]interface{}{
 			"kind": "DISMISS",
 			"type": "ALERT",
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1434,12 +1433,12 @@ func (c *Client) CreateDismissAlertStep(checkpointID int, position int) (int, er
 func (c *Client) CreateCommentStep(checkpointID int, comment string, position int) (int, error) {
 	parsedStep := map[string]interface{}{
 		"action": "COMMENT",
-		"value": comment,
+		"value":  comment,
 		"meta": map[string]interface{}{
 			"kind": "COMMENT",
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1456,9 +1455,9 @@ func (c *Client) CreateAssertLessThanOrEqualStep(checkpointID int, element strin
 			},
 		},
 		"value": value,
-		"meta": map[string]interface{}{},
+		"meta":  map[string]interface{}{},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1475,9 +1474,9 @@ func (c *Client) CreateAssertLessThanStep(checkpointID int, element string, valu
 			},
 		},
 		"value": value,
-		"meta": map[string]interface{}{},
+		"meta":  map[string]interface{}{},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1494,24 +1493,24 @@ func (c *Client) CreateAssertSelectedStep(checkpointID int, element string, posi
 			},
 		},
 		"value": "",
-		"meta": map[string]interface{}{},
+		"meta":  map[string]interface{}{},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
 // CreateAssertVariableStep creates an assertion step that verifies a variable value
 func (c *Client) CreateAssertVariableStep(checkpointID int, variableName string, expectedValue string, position int) (int, error) {
 	parsedStep := map[string]interface{}{
-		"action": "ASSERT_VARIABLE",
+		"action":   "ASSERT_VARIABLE",
 		"variable": variableName,
-		"value": expectedValue,
+		"value":    expectedValue,
 		"meta": map[string]interface{}{
 			"kind": "ASSERT_VARIABLE",
 			"type": "EQUALS",
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1523,14 +1522,14 @@ func (c *Client) CreateDismissConfirmStep(checkpointID int, accept bool, positio
 	}
 	parsedStep := map[string]interface{}{
 		"action": "DISMISS",
-		"value": "",
+		"value":  "",
 		"meta": map[string]interface{}{
-			"kind": "DISMISS",
-			"type": "CONFIRM",
+			"kind":   "DISMISS",
+			"type":   "CONFIRM",
 			"action": action,
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1538,14 +1537,14 @@ func (c *Client) CreateDismissConfirmStep(checkpointID int, accept bool, positio
 func (c *Client) CreateDismissPromptStep(checkpointID int, text string, position int) (int, error) {
 	parsedStep := map[string]interface{}{
 		"action": "DISMISS",
-		"value": text,
+		"value":  text,
 		"meta": map[string]interface{}{
-			"kind": "DISMISS",
-			"type": "PROMPT",
+			"kind":   "DISMISS",
+			"type":   "PROMPT",
 			"action": "OK",
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1553,13 +1552,13 @@ func (c *Client) CreateDismissPromptStep(checkpointID int, text string, position
 func (c *Client) CreateClearCookiesStep(checkpointID int, position int) (int, error) {
 	parsedStep := map[string]interface{}{
 		"action": "ENVIRONMENT",
-		"value": "",
+		"value":  "",
 		"meta": map[string]interface{}{
 			"kind": "ENVIRONMENT",
 			"type": "CLEAR",
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1567,14 +1566,14 @@ func (c *Client) CreateClearCookiesStep(checkpointID int, position int) (int, er
 func (c *Client) CreateDeleteCookieStep(checkpointID int, name string, position int) (int, error) {
 	parsedStep := map[string]interface{}{
 		"action": "ENVIRONMENT",
-		"value": "",
+		"value":  "",
 		"meta": map[string]interface{}{
 			"kind": "ENVIRONMENT",
 			"name": name,
 			"type": "DELETE",
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1582,7 +1581,7 @@ func (c *Client) CreateDeleteCookieStep(checkpointID int, name string, position 
 func (c *Client) CreateMouseDownStep(checkpointID int, element string, position int) (int, error) {
 	parsedStep := map[string]interface{}{
 		"action": "MOUSE",
-		"value": "",
+		"value":  "",
 		"target": map[string]interface{}{
 			"selectors": []map[string]interface{}{
 				{
@@ -1592,11 +1591,11 @@ func (c *Client) CreateMouseDownStep(checkpointID int, element string, position 
 			},
 		},
 		"meta": map[string]interface{}{
-			"kind": "MOUSE",
+			"kind":   "MOUSE",
 			"action": "DOWN",
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1604,7 +1603,7 @@ func (c *Client) CreateMouseDownStep(checkpointID int, element string, position 
 func (c *Client) CreateMouseUpStep(checkpointID int, element string, position int) (int, error) {
 	parsedStep := map[string]interface{}{
 		"action": "MOUSE",
-		"value": "",
+		"value":  "",
 		"target": map[string]interface{}{
 			"selectors": []map[string]interface{}{
 				{
@@ -1614,11 +1613,11 @@ func (c *Client) CreateMouseUpStep(checkpointID int, element string, position in
 			},
 		},
 		"meta": map[string]interface{}{
-			"kind": "MOUSE",
+			"kind":   "MOUSE",
 			"action": "UP",
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1626,7 +1625,7 @@ func (c *Client) CreateMouseUpStep(checkpointID int, element string, position in
 func (c *Client) CreateMouseMoveStep(checkpointID int, element string, position int) (int, error) {
 	parsedStep := map[string]interface{}{
 		"action": "MOUSE",
-		"value": "",
+		"value":  "",
 		"target": map[string]interface{}{
 			"selectors": []map[string]interface{}{
 				{
@@ -1636,11 +1635,11 @@ func (c *Client) CreateMouseMoveStep(checkpointID int, element string, position 
 			},
 		},
 		"meta": map[string]interface{}{
-			"kind": "MOUSE",
+			"kind":   "MOUSE",
 			"action": "MOVE",
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1648,7 +1647,7 @@ func (c *Client) CreateMouseMoveStep(checkpointID int, element string, position 
 func (c *Client) CreateMouseEnterStep(checkpointID int, element string, position int) (int, error) {
 	parsedStep := map[string]interface{}{
 		"action": "MOUSE",
-		"value": "",
+		"value":  "",
 		"target": map[string]interface{}{
 			"selectors": []map[string]interface{}{
 				{
@@ -1658,11 +1657,11 @@ func (c *Client) CreateMouseEnterStep(checkpointID int, element string, position
 			},
 		},
 		"meta": map[string]interface{}{
-			"kind": "MOUSE",
+			"kind":   "MOUSE",
 			"action": "ENTER",
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1684,7 +1683,7 @@ func (c *Client) CreatePickValueStep(checkpointID int, value string, element str
 			"type": "VALUE",
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1692,7 +1691,7 @@ func (c *Client) CreatePickValueStep(checkpointID int, value string, element str
 func (c *Client) CreatePickTextStep(checkpointID int, text string, element string, position int) (int, error) {
 	parsedStep := map[string]interface{}{
 		"action": "PICK",
-		"value": text,
+		"value":  text,
 		"target": map[string]interface{}{
 			"selectors": []map[string]interface{}{
 				{
@@ -1706,7 +1705,7 @@ func (c *Client) CreatePickTextStep(checkpointID int, text string, element strin
 			"type": "VISIBLE_TEXT",
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1714,29 +1713,29 @@ func (c *Client) CreatePickTextStep(checkpointID int, text string, element strin
 func (c *Client) CreateScrollPositionStep(checkpointID int, x int, y int, position int) (int, error) {
 	parsedStep := map[string]interface{}{
 		"action": "SCROLL",
-		"value": "",
+		"value":  "",
 		"meta": map[string]interface{}{
 			"kind": "SCROLL",
 			"type": "POSITION",
-			"x": x,
-			"y": y,
+			"x":    x,
+			"y":    y,
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
 // CreateStoreValueStep creates a store value step (stores a literal value)
 func (c *Client) CreateStoreValueStep(checkpointID int, value string, variableName string, position int) (int, error) {
 	parsedStep := map[string]interface{}{
-		"action": "STORE",
+		"action":   "STORE",
 		"variable": variableName,
-		"value": value,
+		"value":    value,
 		"meta": map[string]interface{}{
 			"kind": "STORE",
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1744,14 +1743,14 @@ func (c *Client) CreateStoreValueStep(checkpointID int, value string, variableNa
 func (c *Client) CreateMouseMoveToStep(checkpointID int, x int, y int, position int) (int, error) {
 	parsedStep := map[string]interface{}{
 		"action": "MOUSE",
-		"value": "",
+		"value":  "",
 		"meta": map[string]interface{}{
 			"action": "MOVE",
-			"x": x,
-			"y": y,
+			"x":      x,
+			"y":      y,
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1759,14 +1758,14 @@ func (c *Client) CreateMouseMoveToStep(checkpointID int, x int, y int, position 
 func (c *Client) CreateMouseMoveByStep(checkpointID int, x int, y int, position int) (int, error) {
 	parsedStep := map[string]interface{}{
 		"action": "MOUSE",
-		"value": "",
+		"value":  "",
 		"meta": map[string]interface{}{
 			"action": "OFFSET",
-			"x": x,
-			"y": y,
+			"x":      x,
+			"y":      y,
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1786,7 +1785,7 @@ func (c *Client) CreateSwitchIFrameStep(checkpointID int, selector string, posit
 			"type": "FRAME_BY_ELEMENT",
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1798,7 +1797,7 @@ func (c *Client) CreateSwitchNextTabStep(checkpointID int, position int) (int, e
 			"type": "NEXT_TAB",
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1810,7 +1809,7 @@ func (c *Client) CreateSwitchParentFrameStep(checkpointID int, position int) (in
 			"type": "PARENT_FRAME",
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1822,7 +1821,7 @@ func (c *Client) CreateSwitchPrevTabStep(checkpointID int, position int) (int, e
 			"type": "PREV_TAB",
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1839,9 +1838,9 @@ func (c *Client) CreateAssertNotEqualsStep(checkpointID int, element string, val
 			},
 		},
 		"value": value,
-		"meta": map[string]interface{}{},
+		"meta":  map[string]interface{}{},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1858,9 +1857,9 @@ func (c *Client) CreateAssertGreaterThanStep(checkpointID int, element string, v
 			},
 		},
 		"value": value,
-		"meta": map[string]interface{}{},
+		"meta":  map[string]interface{}{},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1877,9 +1876,9 @@ func (c *Client) CreateAssertGreaterThanOrEqualStep(checkpointID int, element st
 			},
 		},
 		"value": value,
-		"meta": map[string]interface{}{},
+		"meta":  map[string]interface{}{},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1896,9 +1895,9 @@ func (c *Client) CreateAssertMatchesStep(checkpointID int, element string, regex
 			},
 		},
 		"value": regexPattern,
-		"meta": map[string]interface{}{},
+		"meta":  map[string]interface{}{},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -1906,19 +1905,19 @@ func (c *Client) CreateAssertMatchesStep(checkpointID int, element string, regex
 func (c *Client) ValidateCheckpoint(checkpointID int) error {
 	// Try to get the checkpoint details via the testcases endpoint
 	var response struct {
-		Success bool           `json:"success"`
-		Item    Checkpoint     `json:"item"`
-		Error   string         `json:"error,omitempty"`
+		Success bool       `json:"success"`
+		Item    Checkpoint `json:"item"`
+		Error   string     `json:"error,omitempty"`
 	}
-	
+
 	resp, err := c.httpClient.R().
 		SetResult(&response).
 		Get(fmt.Sprintf("/testcases/%d", checkpointID))
-	
+
 	if err != nil {
 		return fmt.Errorf("checkpoint validation request failed: %w", err)
 	}
-	
+
 	if resp.IsError() {
 		if resp.StatusCode() == 404 {
 			return fmt.Errorf("checkpoint %d not found", checkpointID)
@@ -1928,32 +1927,32 @@ func (c *Client) ValidateCheckpoint(checkpointID int) error {
 		}
 		return fmt.Errorf("checkpoint validation failed with status %d: %s", resp.StatusCode(), resp.String())
 	}
-	
+
 	if !response.Success {
 		return fmt.Errorf("checkpoint validation failed: API returned success=false")
 	}
-	
+
 	// Verify we got a valid checkpoint back
 	if response.Item.ID != checkpointID {
 		return fmt.Errorf("checkpoint validation failed: returned checkpoint ID %d does not match requested ID %d", response.Item.ID, checkpointID)
 	}
-	
+
 	return nil
 }
 
 // Execution represents a goal execution
 type Execution struct {
-	ID          string                 `json:"id"`
-	GoalID      int                    `json:"goalId"`
-	SnapshotID  int                    `json:"snapshotId"`
-	Status      string                 `json:"status"`
-	StartTime   time.Time              `json:"startTime"`
-	EndTime     *time.Time             `json:"endTime,omitempty"`
-	Duration    int                    `json:"duration,omitempty"`
-	Progress    *ExecutionProgress     `json:"progress,omitempty"`
-	ResultsURL  string                 `json:"resultsUrl,omitempty"`
-	ReportURL   string                 `json:"reportUrl,omitempty"`
-	Meta        map[string]interface{} `json:"meta,omitempty"`
+	ID         string                 `json:"id"`
+	GoalID     int                    `json:"goalId"`
+	SnapshotID int                    `json:"snapshotId"`
+	Status     string                 `json:"status"`
+	StartTime  time.Time              `json:"startTime"`
+	EndTime    *time.Time             `json:"endTime,omitempty"`
+	Duration   int                    `json:"duration,omitempty"`
+	Progress   *ExecutionProgress     `json:"progress,omitempty"`
+	ResultsURL string                 `json:"resultsUrl,omitempty"`
+	ReportURL  string                 `json:"reportUrl,omitempty"`
+	Meta       map[string]interface{} `json:"meta,omitempty"`
 }
 
 // ExecutionProgress represents execution progress details
@@ -2005,12 +2004,12 @@ type ExecutionFailure struct {
 
 // ExecutionPerformance represents performance metrics
 type ExecutionPerformance struct {
-	AverageStepTime   int `json:"averageStepTime"`
-	SlowestStepTime   int `json:"slowestStepTime"`
-	FastestStepTime   int `json:"fastestStepTime"`
-	NetworkRequests   int `json:"networkRequests"`
-	JavaScriptErrors  int `json:"javascriptErrors"`
-	PageLoadTime      int `json:"pageLoadTime"`
+	AverageStepTime  int `json:"averageStepTime"`
+	SlowestStepTime  int `json:"slowestStepTime"`
+	FastestStepTime  int `json:"fastestStepTime"`
+	NetworkRequests  int `json:"networkRequests"`
+	JavaScriptErrors int `json:"javascriptErrors"`
+	PageLoadTime     int `json:"pageLoadTime"`
 }
 
 // ExecuteGoal executes a goal and returns execution details
@@ -2019,33 +2018,33 @@ func (c *Client) ExecuteGoal(goalID, snapshotID int) (*Execution, error) {
 		"goalId":     goalID,
 		"snapshotId": snapshotID,
 	}
-	
+
 	var response struct {
 		Success bool      `json:"success"`
 		Item    Execution `json:"item"`
 		Error   string    `json:"error,omitempty"`
 	}
-	
+
 	resp, err := c.httpClient.R().
 		SetBody(body).
 		SetResult(&response).
 		Post(fmt.Sprintf("/goals/%d/snapshots/%d/execute", goalID, snapshotID))
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("execute goal request failed: %w", err)
 	}
-	
+
 	if resp.IsError() {
 		if response.Error != "" {
 			return nil, fmt.Errorf("execute goal failed: %s", response.Error)
 		}
 		return nil, fmt.Errorf("execute goal failed with status %d: %s", resp.StatusCode(), resp.String())
 	}
-	
+
 	if !response.Success {
 		return nil, fmt.Errorf("execute goal failed: API returned success=false")
 	}
-	
+
 	return &response.Item, nil
 }
 
@@ -2056,26 +2055,26 @@ func (c *Client) GetExecutionStatus(executionID string) (*Execution, error) {
 		Item    Execution `json:"item"`
 		Error   string    `json:"error,omitempty"`
 	}
-	
+
 	resp, err := c.httpClient.R().
 		SetResult(&response).
 		Get(fmt.Sprintf("/executions/%s", executionID))
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("get execution status request failed: %w", err)
 	}
-	
+
 	if resp.IsError() {
 		if response.Error != "" {
 			return nil, fmt.Errorf("get execution status failed: %s", response.Error)
 		}
 		return nil, fmt.Errorf("get execution status failed with status %d: %s", resp.StatusCode(), resp.String())
 	}
-	
+
 	if !response.Success {
 		return nil, fmt.Errorf("get execution status failed: API returned success=false")
 	}
-	
+
 	return &response.Item, nil
 }
 
@@ -2086,30 +2085,30 @@ func (c *Client) GetExecutionAnalysis(executionID string, includeAI bool) (*Exec
 		Item    ExecutionAnalysis `json:"item"`
 		Error   string            `json:"error,omitempty"`
 	}
-	
+
 	req := c.httpClient.R().SetResult(&response)
-	
+
 	if includeAI {
 		req = req.SetQueryParam("includeAI", "true")
 	}
-	
+
 	resp, err := req.Get(fmt.Sprintf("/executions/analysis/%s", executionID))
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("get execution analysis request failed: %w", err)
 	}
-	
+
 	if resp.IsError() {
 		if response.Error != "" {
 			return nil, fmt.Errorf("get execution analysis failed: %s", response.Error)
 		}
 		return nil, fmt.Errorf("get execution analysis failed with status %d: %s", resp.StatusCode(), resp.String())
 	}
-	
+
 	if !response.Success {
 		return nil, fmt.Errorf("get execution analysis failed: API returned success=false")
 	}
-	
+
 	return &response.Item, nil
 }
 
@@ -2139,33 +2138,33 @@ func (c *Client) CreateTestDataTable(name, description string, columns []string)
 		"description": description,
 		"columns":     columns,
 	}
-	
+
 	var response struct {
 		Success bool     `json:"success"`
 		Item    TestData `json:"item"`
 		Error   string   `json:"error,omitempty"`
 	}
-	
+
 	resp, err := c.httpClient.R().
 		SetBody(body).
 		SetResult(&response).
 		Post("/testdata/tables/create")
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("create test data table request failed: %w", err)
 	}
-	
+
 	if resp.IsError() {
 		if response.Error != "" {
 			return nil, fmt.Errorf("create test data table failed: %s", response.Error)
 		}
 		return nil, fmt.Errorf("create test data table failed with status %d: %s", resp.StatusCode(), resp.String())
 	}
-	
+
 	if !response.Success {
 		return nil, fmt.Errorf("create test data table failed: API returned success=false")
 	}
-	
+
 	return &response.Item, nil
 }
 
@@ -2176,26 +2175,26 @@ func (c *Client) GetTestDataTable(tableID string) (*TestData, error) {
 		Item    TestData `json:"item"`
 		Error   string   `json:"error,omitempty"`
 	}
-	
+
 	resp, err := c.httpClient.R().
 		SetResult(&response).
 		Get(fmt.Sprintf("/testdata/tables/%s", tableID))
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("get test data table request failed: %w", err)
 	}
-	
+
 	if resp.IsError() {
 		if response.Error != "" {
 			return nil, fmt.Errorf("get test data table failed: %s", response.Error)
 		}
 		return nil, fmt.Errorf("get test data table failed with status %d: %s", resp.StatusCode(), resp.String())
 	}
-	
+
 	if !response.Success {
 		return nil, fmt.Errorf("get test data table failed: API returned success=false")
 	}
-	
+
 	return &response.Item, nil
 }
 
@@ -2206,32 +2205,32 @@ func (c *Client) ImportTestDataFromCSV(tableID string, csvData [][]string) error
 		"data":    csvData,
 		"format":  "csv",
 	}
-	
+
 	var response struct {
 		Success bool   `json:"success"`
 		Error   string `json:"error,omitempty"`
 	}
-	
+
 	resp, err := c.httpClient.R().
 		SetBody(body).
 		SetResult(&response).
 		Post(fmt.Sprintf("/testdata/tables/%s/import", tableID))
-	
+
 	if err != nil {
 		return fmt.Errorf("import test data request failed: %w", err)
 	}
-	
+
 	if resp.IsError() {
 		if response.Error != "" {
 			return fmt.Errorf("import test data failed: %s", response.Error)
 		}
 		return fmt.Errorf("import test data failed with status %d: %s", resp.StatusCode(), resp.String())
 	}
-	
+
 	if !response.Success {
 		return fmt.Errorf("import test data failed: API returned success=false")
 	}
-	
+
 	return nil
 }
 
@@ -2252,33 +2251,33 @@ func (c *Client) CreateEnvironment(name, description string, variables map[strin
 		"description": description,
 		"variables":   variables,
 	}
-	
+
 	var response struct {
 		Success bool        `json:"success"`
 		Item    Environment `json:"item"`
 		Error   string      `json:"error,omitempty"`
 	}
-	
+
 	resp, err := c.httpClient.R().
 		SetBody(body).
 		SetResult(&response).
 		Post("/environments")
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("create environment request failed: %w", err)
 	}
-	
+
 	if resp.IsError() {
 		if response.Error != "" {
 			return nil, fmt.Errorf("create environment failed: %s", response.Error)
 		}
 		return nil, fmt.Errorf("create environment failed with status %d: %s", resp.StatusCode(), resp.String())
 	}
-	
+
 	if !response.Success {
 		return nil, fmt.Errorf("create environment failed: API returned success=false")
 	}
-	
+
 	return &response.Item, nil
 }
 
@@ -2292,30 +2291,30 @@ func (c *Client) createStepWithCustomBody(checkpointID int, parsedStepBody map[s
 		"stepIndex":    position,
 		"parsedStep":   parsedStepBody,
 	}
-	
+
 	var response struct {
 		Item struct {
 			ID int `json:"id"`
 		} `json:"item"`
 		Error string `json:"error,omitempty"`
 	}
-	
+
 	resp, err := c.httpClient.R().
 		SetBody(body).
 		SetResult(&response).
 		Post("/teststeps?envelope=false")
-	
+
 	if err != nil {
 		return 0, fmt.Errorf("create step request failed: %w", err)
 	}
-	
+
 	if resp.IsError() {
 		if response.Error != "" {
 			return 0, fmt.Errorf("create step failed: %s", response.Error)
 		}
 		return 0, fmt.Errorf("create step failed with status %d: %s", resp.StatusCode(), resp.String())
 	}
-	
+
 	return response.Item.ID, nil
 }
 
@@ -2329,7 +2328,7 @@ func (c *Client) CreateStepCookieCreate(checkpointID int, name, value string, po
 			"name": name,
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -2341,7 +2340,7 @@ func (c *Client) CreateStepCookieWipeAll(checkpointID int, position int) (int, e
 			"type": "CLEAR",
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -2355,14 +2354,14 @@ func (c *Client) CreateStepExecuteScript(checkpointID int, scriptName string, po
 			"script":   scriptName,
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
 // CreateStepUploadURL creates a step to upload a file from URL (Version B)
 func (c *Client) CreateStepUploadURL(checkpointID int, url, selector string, position int) (int, error) {
 	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
-	
+
 	parsedStep := map[string]interface{}{
 		"action": "UPLOAD",
 		"target": map[string]interface{}{
@@ -2374,9 +2373,9 @@ func (c *Client) CreateStepUploadURL(checkpointID int, url, selector string, pos
 			},
 		},
 		"value": url,
-		"meta": map[string]interface{}{},
+		"meta":  map[string]interface{}{},
 	}
-	
+
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
 
@@ -2390,14 +2389,14 @@ func (c *Client) CreateStepDismissPromptWithText(checkpointID int, text string, 
 			"action": "OK",
 		},
 	}
-	
+
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
 
 // CreateStepPickIndex creates a step to pick dropdown option by index (Version B)
 func (c *Client) CreateStepPickIndex(checkpointID int, selector string, index int, position int) (int, error) {
 	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
-	
+
 	parsedStep := map[string]interface{}{
 		"action": "PICK",
 		"target": map[string]interface{}{
@@ -2413,14 +2412,14 @@ func (c *Client) CreateStepPickIndex(checkpointID int, selector string, index in
 			"type": "INDEX",
 		},
 	}
-	
+
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
 
 // CreateStepPickLast creates a step to pick last dropdown option (Version B)
 func (c *Client) CreateStepPickLast(checkpointID int, selector string, position int) (int, error) {
 	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
-	
+
 	parsedStep := map[string]interface{}{
 		"action": "PICK",
 		"target": map[string]interface{}{
@@ -2436,14 +2435,14 @@ func (c *Client) CreateStepPickLast(checkpointID int, selector string, position 
 			"type": "INDEX",
 		},
 	}
-	
+
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
 
 // CreateStepWaitForElementTimeout creates a step to wait for element with custom timeout (Version B)
 func (c *Client) CreateStepWaitForElementTimeout(checkpointID int, selector string, timeoutMs int, position int) (int, error) {
 	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
-	
+
 	parsedStep := map[string]interface{}{
 		"action": "WAIT",
 		"target": map[string]interface{}{
@@ -2455,16 +2454,16 @@ func (c *Client) CreateStepWaitForElementTimeout(checkpointID int, selector stri
 			},
 		},
 		"value": fmt.Sprintf("%d", timeoutMs),
-		"meta": map[string]interface{}{},
+		"meta":  map[string]interface{}{},
 	}
-	
+
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
 
 // CreateStepWaitForElementDefault creates a step to wait for element with default timeout (Version B)
 func (c *Client) CreateStepWaitForElementDefault(checkpointID int, selector string, position int) (int, error) {
 	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
-	
+
 	parsedStep := map[string]interface{}{
 		"action": "WAIT",
 		"target": map[string]interface{}{
@@ -2476,16 +2475,16 @@ func (c *Client) CreateStepWaitForElementDefault(checkpointID int, selector stri
 			},
 		},
 		"value": "20000",
-		"meta": map[string]interface{}{},
+		"meta":  map[string]interface{}{},
 	}
-	
+
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
 
 // CreateStepStoreElementText creates a step to store element text in variable (Version B)
 func (c *Client) CreateStepStoreElementText(checkpointID int, selector, variableName string, position int) (int, error) {
 	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
-	
+
 	parsedStep := map[string]interface{}{
 		"action": "STORE",
 		"target": map[string]interface{}{
@@ -2496,11 +2495,11 @@ func (c *Client) CreateStepStoreElementText(checkpointID int, selector, variable
 				},
 			},
 		},
-		"value": "",
-		"meta": map[string]interface{}{},
+		"value":    "",
+		"meta":     map[string]interface{}{},
 		"variable": variableName,
 	}
-	
+
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
 
@@ -2512,7 +2511,7 @@ func (c *Client) CreateStepStoreLiteralValue(checkpointID int, value, variableNa
 		"meta":     map[string]interface{}{},
 		"variable": variableName,
 	}
-	
+
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
 
@@ -2526,7 +2525,7 @@ func (c *Client) CreateStepMouseMoveTo(checkpointID int, x, y, position int) (in
 			"y":      y,
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
@@ -2540,14 +2539,14 @@ func (c *Client) CreateStepMouseMoveBy(checkpointID int, x, y, position int) (in
 			"y":      y,
 		},
 	}
-	
+
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
 // CreateStepSwitchIframe creates a step to switch to iframe by element selector (Version B)
 func (c *Client) CreateStepSwitchIframe(checkpointID int, selector string, position int) (int, error) {
 	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
-	
+
 	parsedStep := map[string]interface{}{
 		"action": "SWITCH",
 		"target": map[string]interface{}{
@@ -2562,7 +2561,7 @@ func (c *Client) CreateStepSwitchIframe(checkpointID int, selector string, posit
 			"type": "FRAME_BY_ELEMENT",
 		},
 	}
-	
+
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
 
@@ -2574,7 +2573,7 @@ func (c *Client) CreateStepSwitchNextTab(checkpointID int, position int) (int, e
 			"type": "NEXT_TAB",
 		},
 	}
-	
+
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
 
@@ -2586,7 +2585,7 @@ func (c *Client) CreateStepSwitchParentFrame(checkpointID int, position int) (in
 			"type": "PARENT_FRAME",
 		},
 	}
-	
+
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
 
@@ -2598,14 +2597,14 @@ func (c *Client) CreateStepSwitchPrevTab(checkpointID int, position int) (int, e
 			"type": "PREV_TAB",
 		},
 	}
-	
+
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
 
 // CreateStepAssertNotEquals creates a step to assert element does not equal value (Version B)
 func (c *Client) CreateStepAssertNotEquals(checkpointID int, selector, value string, position int) (int, error) {
 	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
-	
+
 	parsedStep := map[string]interface{}{
 		"action": "ASSERT_NOT_EQUALS",
 		"target": map[string]interface{}{
@@ -2617,16 +2616,16 @@ func (c *Client) CreateStepAssertNotEquals(checkpointID int, selector, value str
 			},
 		},
 		"value": value,
-		"meta": map[string]interface{}{},
+		"meta":  map[string]interface{}{},
 	}
-	
+
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
 
 // CreateStepAssertGreaterThan creates a step to assert element is greater than value (Version B)
 func (c *Client) CreateStepAssertGreaterThan(checkpointID int, selector, value string, position int) (int, error) {
 	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
-	
+
 	parsedStep := map[string]interface{}{
 		"action": "ASSERT_GREATER_THAN",
 		"target": map[string]interface{}{
@@ -2638,16 +2637,16 @@ func (c *Client) CreateStepAssertGreaterThan(checkpointID int, selector, value s
 			},
 		},
 		"value": value,
-		"meta": map[string]interface{}{},
+		"meta":  map[string]interface{}{},
 	}
-	
+
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
 
 // CreateStepAssertGreaterThanOrEqual creates a step to assert element is greater than or equal to value (Version B)
 func (c *Client) CreateStepAssertGreaterThanOrEqual(checkpointID int, selector, value string, position int) (int, error) {
 	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
-	
+
 	parsedStep := map[string]interface{}{
 		"action": "ASSERT_GREATER_THAN_OR_EQUAL",
 		"target": map[string]interface{}{
@@ -2659,16 +2658,16 @@ func (c *Client) CreateStepAssertGreaterThanOrEqual(checkpointID int, selector, 
 			},
 		},
 		"value": value,
-		"meta": map[string]interface{}{},
+		"meta":  map[string]interface{}{},
 	}
-	
+
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
 
 // CreateStepAssertMatches creates a step to assert element matches regex pattern (Version B)
 func (c *Client) CreateStepAssertMatches(checkpointID int, selector, pattern string, position int) (int, error) {
 	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
-	
+
 	parsedStep := map[string]interface{}{
 		"action": "ASSERT_MATCHES",
 		"target": map[string]interface{}{
@@ -2680,9 +2679,9 @@ func (c *Client) CreateStepAssertMatches(checkpointID int, selector, pattern str
 			},
 		},
 		"value": pattern,
-		"meta": map[string]interface{}{},
+		"meta":  map[string]interface{}{},
 	}
-	
+
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
 
@@ -2693,18 +2692,18 @@ func (c *Client) CreateStepNavigate(checkpointID int, url string, useNewTab bool
 		"value":  url,
 		"meta":   map[string]interface{}{},
 	}
-	
+
 	if useNewTab {
 		parsedStep["meta"].(map[string]interface{})["useNewTab"] = true
 	}
-	
+
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
 
 // CreateStepClick creates a click step (Version B)
 func (c *Client) CreateStepClick(checkpointID int, selector string, position int) (int, error) {
 	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
-	
+
 	parsedStep := map[string]interface{}{
 		"action": "CLICK",
 		"target": map[string]interface{}{
@@ -2718,14 +2717,14 @@ func (c *Client) CreateStepClick(checkpointID int, selector string, position int
 		"value": "",
 		"meta":  map[string]interface{}{},
 	}
-	
+
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
 
 // CreateStepClickWithVariable creates a click step with variable target (Version B)
 func (c *Client) CreateStepClickWithVariable(checkpointID int, variable string, position int) (int, error) {
 	clueJSON := fmt.Sprintf(`{"clue":"","variable":"%s"}`, variable)
-	
+
 	parsedStep := map[string]interface{}{
 		"action": "CLICK",
 		"target": map[string]interface{}{
@@ -2739,14 +2738,14 @@ func (c *Client) CreateStepClickWithVariable(checkpointID int, variable string, 
 		"value": "",
 		"meta":  map[string]interface{}{},
 	}
-	
+
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
 
 // CreateStepClickWithDetails creates a click step with position and element type (Version B)
 func (c *Client) CreateStepClickWithDetails(checkpointID int, selector, positionType, elementType string, position int) (int, error) {
 	clueJSON := fmt.Sprintf(`{"clue":"%s","position":"%s","elementType":"%s"}`, selector, positionType, elementType)
-	
+
 	parsedStep := map[string]interface{}{
 		"action": "CLICK",
 		"target": map[string]interface{}{
@@ -2760,14 +2759,14 @@ func (c *Client) CreateStepClickWithDetails(checkpointID int, selector, position
 		"value": "",
 		"meta":  map[string]interface{}{},
 	}
-	
+
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
 
 // CreateStepWrite creates a write/input step (Version B)
 func (c *Client) CreateStepWrite(checkpointID int, selector, value string, position int) (int, error) {
 	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
-	
+
 	parsedStep := map[string]interface{}{
 		"action": "WRITE",
 		"target": map[string]interface{}{
@@ -2781,14 +2780,14 @@ func (c *Client) CreateStepWrite(checkpointID int, selector, value string, posit
 		"value": value,
 		"meta":  map[string]interface{}{},
 	}
-	
+
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
 
 // CreateStepWriteWithVariable creates a write step with variable storage (Version B)
 func (c *Client) CreateStepWriteWithVariable(checkpointID int, selector, value, variable string, position int) (int, error) {
 	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
-	
+
 	parsedStep := map[string]interface{}{
 		"action": "WRITE",
 		"target": map[string]interface{}{
@@ -2803,7 +2802,7 @@ func (c *Client) CreateStepWriteWithVariable(checkpointID int, selector, value, 
 		"meta":     map[string]interface{}{},
 		"variable": variable,
 	}
-	
+
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
 
@@ -2818,7 +2817,7 @@ func (c *Client) CreateStepScrollToPosition(checkpointID int, x, y, position int
 			"type": "POSITION",
 		},
 	}
-	
+
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
 
@@ -2833,7 +2832,7 @@ func (c *Client) CreateStepScrollByOffset(checkpointID int, x, y, position int) 
 			"type": "OFFSET",
 		},
 	}
-	
+
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
 
@@ -2846,7 +2845,7 @@ func (c *Client) CreateStepScrollToTop(checkpointID int, position int) (int, err
 			"type": "TOP",
 		},
 	}
-	
+
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
 
@@ -2863,7 +2862,7 @@ func (c *Client) CreateStepWindowResize(checkpointID int, width, height, positio
 			},
 		},
 	}
-	
+
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
 
@@ -2874,14 +2873,14 @@ func (c *Client) CreateStepKeyGlobal(checkpointID int, key string, position int)
 		"value":  key,
 		"meta":   map[string]interface{}{},
 	}
-	
+
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
 
 // CreateStepKeyTargeted creates a targeted key press step (Version B)
 func (c *Client) CreateStepKeyTargeted(checkpointID int, selector, key string, position int) (int, error) {
 	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
-	
+
 	parsedStep := map[string]interface{}{
 		"action": "KEY",
 		"target": map[string]interface{}{
@@ -2895,7 +2894,7 @@ func (c *Client) CreateStepKeyTargeted(checkpointID int, selector, key string, p
 		"value": key,
 		"meta":  map[string]interface{}{},
 	}
-	
+
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
 
@@ -2906,6 +2905,6 @@ func (c *Client) CreateStepComment(checkpointID int, comment string, position in
 		"value":  comment,
 		"meta":   map[string]interface{}{},
 	}
-	
+
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
