@@ -3,7 +3,13 @@
 ## 🎯 Project Overview
 This is a comprehensive CLI tool for interacting with the Virtuoso API to create test automation steps. The project has evolved from a basic proof-of-concept to a full-featured CLI with 28 commands across 17 categories.
 
-## 📊 Current State
+## 📊 Current State (Updated: 2025-01-13)
+
+### 🔧 Recent Updates
+- **Fixed API Authentication** - Resolved projects API response parsing (now handles `map` structure instead of `items` array)
+- **GitHub Actions Integration** - Added CI/CD workflows with proper API authentication
+- **Test Suite** - BATS tests covering all CLI commands
+- **API Key Configuration** - Proper config file structure with organization ID support
 
 ### ✅ **Fully Implemented (28 Commands)**
 The CLI now provides complete coverage of all major test automation actions:
@@ -112,14 +118,25 @@ src/
 
 ## 🚀 Usage Patterns
 
-### **Environment Configuration**
-```bash
-export VIRTUOSO_API_BASE_URL="https://api-app2.virtuoso.qa/api"
-export VIRTUOSO_API_TOKEN="your-token-here"
+### **Configuration Setup**
+Create `~/.api-cli/virtuoso-config.yaml` or `./config/virtuoso-config.yaml`:
+```yaml
+api:
+  auth_token: your-api-key-here
+  base_url: https://api-app2.virtuoso.qa/api
+organization:
+  id: "2242"
+headers:
+  X-Virtuoso-Client-ID: "api-cli-generator"
+  X-Virtuoso-Client-Name: "api-cli-generator"
 ```
 
 ### **Basic Command Pattern**
 ```bash
+# List projects
+./bin/api-cli list-projects
+
+# Create a step
 ./bin/api-cli create-step-[ACTION] CHECKPOINT_ID [ARGS...] POSITION [FLAGS]
 ```
 
@@ -159,21 +176,36 @@ export VIRTUOSO_API_TOKEN="your-token-here"
 
 ## 🧪 Testing
 
-### **Test Scripts**
-- `test-all-commands-variations.sh` - All 21 original commands
-- `test-new-commands.sh` - All 7 new commands
-- `test-fixed-commands.sh` - Comprehensive validation
+### **BATS Test Suite**
+Located in `src/cmd/tests/`:
+- `00_env.bats` - Environment setup and configuration
+- `10_auth.bats` - Authentication and API connectivity
+- `20_project.bats` - Project management commands
+- `30_journey_goal.bats` - Journey and goal creation
+- `40_checkpoint.bats` - Checkpoint operations
+- `50_steps.bats` - All step creation commands
+- `60_formats.bats` - Output format testing
+- `70_session.bats` - Session context management
+- `80_errors.bats` - Error handling scenarios
+- `99_report.bats` - Test reporting
 
-### **Test Checkpoints**
-- **1680437** - Original comprehensive testing
-- **1680438** - New commands testing
-- **1680431** - Fixed commands validation
+### **GitHub Actions Workflows**
+- `.github/workflows/test.yml` - Main test workflow with BATS
+- `.github/workflows/simple-test.yml` - Quick build and run test
+- `.github/workflows/test-api.yml` - API connectivity verification
+- `.github/workflows/ci.yml` - Full CI pipeline with linting
 
-### **Validation**
-- All commands tested with live API
-- Multiple output formats verified
-- Error handling confirmed
-- Edge cases covered
+### **Running Tests Locally**
+```bash
+# Run all BATS tests
+make test-bats
+
+# Run specific test file
+bats src/cmd/tests/20_project.bats
+
+# Run with verbose output
+bats -t src/cmd/tests/50_steps.bats
+```
 
 ## 🎯 Current Status: COMPLETE
 
@@ -225,9 +257,22 @@ export VIRTUOSO_API_TOKEN="your-token-here"
 - Comprehensive command validation
 - Output format verification
 
+## 🔑 API Authentication
+
+### **Known Issues Resolved**
+1. **Projects API Response Format** - The API returns projects in a `map` structure, not an `items` array. Fixed in `pkg/virtuoso/client.go`
+2. **Config File Location** - CLI looks for config in `~/.api-cli/virtuoso-config.yaml` or `./config/virtuoso-config.yaml`
+3. **Required Fields** - Must include `organization.id` in config for API calls to work
+
+### **GitHub Secrets Setup**
+For GitHub Actions to work:
+1. Go to Settings → Secrets and variables → Actions
+2. Add secret: `VIRTUOSO_API_KEY` with your API key
+3. Add variable: `VIRTUOSO_API_URL` with value `https://api-app2.virtuoso.qa/api`
+
 ---
 
-**Last Updated**: 2025-01-07  
+**Last Updated**: 2025-01-13  
 **Total Commands**: 28  
 **Status**: Production Ready  
-**API Integration**: Fully Functional
+**API Integration**: Fully Functional with Authentication Fix
