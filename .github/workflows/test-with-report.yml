@@ -1,0 +1,88 @@
+name: Tests with Report
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Install BATS
+      run: npm install -g bats
+    
+    - name: Install dependencies
+      run: make deps
+    
+    - name: Build CLI
+      run: make build-test
+    
+    - name: Run Go unit tests
+      run: make test
+    
+    - name: Run BATS integration tests with report
+      run: make test-bats
+    
+    - name: Upload test report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-report
+        path: src/cmd/tests/report.md
+    
+    - name: Display test summary in PR
+      if: github.event_name == 'pull_request' && always()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const reportPath = 'src/cmd/tests/report.md';
+          
+          if (fs.existsSync(reportPath)) {
+            const report = fs.readFileSync(reportPath, 'utf8');
+            
+            // Extract summary section
+            const summaryMatch = report.match(/## Summary[\s\S]*?(?=##|$)/);
+            const summary = summaryMatch ? summaryMatch[0] : 'No summary found';
+            
+            // Check if there are failed tests
+            const hasFailed = report.includes('## Failed Tests');
+            const status = hasFailed ? '❌ Tests Failed' : '✅ All Tests Passed';
+            
+            // Create comment
+            const comment = `## Test Results ${status}
+            
+${summary}
+
+<details>
+<summary>View Full Report</summary>
+
+\`\`\`markdown
+${report}
+\`\`\`
+
+</details>`;
+            
+            // Post comment
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+          }

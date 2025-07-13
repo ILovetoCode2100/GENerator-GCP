@@ -27,4 +27,4 @@ session:
     current_journey_id: null
     current_project_id: null
     current_snapshot_id: null
-    next_position: 6
+    next_position: 47

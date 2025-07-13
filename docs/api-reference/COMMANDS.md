@@ -149,6 +149,68 @@ source ./scripts/setup-virtuoso.sh
 ./bin/api-cli create-step-comment <checkpoint-id> "This validates the login flow" <position>
 ```
 
+## List Commands
+
+### List Projects
+```bash
+# List all projects with default pagination
+./bin/api-cli list-projects
+
+# List with custom pagination
+./bin/api-cli list-projects --limit 10 --offset 20
+
+# List projects in JSON format
+./bin/api-cli list-projects -o json
+
+# List projects in YAML format  
+./bin/api-cli list-projects -o yaml
+
+# List projects in AI-optimized format
+./bin/api-cli list-projects -o ai
+```
+
+### List Goals
+```bash
+# List goals for a project
+./bin/api-cli list-goals <project-id>
+
+# List goals with pagination
+./bin/api-cli list-goals <project-id> --limit 5 --offset 10
+
+# Different output formats
+./bin/api-cli list-goals <project-id> -o json
+./bin/api-cli list-goals <project-id> -o yaml
+./bin/api-cli list-goals <project-id> -o ai
+```
+
+### List Journeys
+```bash
+# List journeys for a goal
+./bin/api-cli list-journeys <goal-id>
+
+# List journeys with pagination
+./bin/api-cli list-journeys <goal-id> --limit 10 --offset 0
+
+# Different output formats
+./bin/api-cli list-journeys <goal-id> -o json
+./bin/api-cli list-journeys <goal-id> -o yaml
+./bin/api-cli list-journeys <goal-id> -o ai
+```
+
+### List Checkpoints
+```bash
+# List checkpoints for a journey
+./bin/api-cli list-checkpoints <journey-id>
+
+# List checkpoints with pagination
+./bin/api-cli list-checkpoints <journey-id> --limit 20 --offset 40
+
+# Different output formats
+./bin/api-cli list-checkpoints <journey-id> -o json
+./bin/api-cli list-checkpoints <journey-id> -o yaml
+./bin/api-cli list-checkpoints <journey-id> -o ai
+```
+
 ## Batch Structure Creation
 ```bash
 # Preview what will be created (dry run)

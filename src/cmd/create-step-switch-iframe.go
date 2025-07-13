@@ -1,104 +1,99 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 
-	"github.com/marklovelady/api-cli-generator/pkg/virtuoso"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
+
+	"github.com/marklovelady/api-cli-generator/pkg/virtuoso"
 )
 
-func newCreateStepSwitchIFrameCmd() *cobra.Command {
-	var checkpointFlag int
-	
+// newCreateStepSwitchIframeCmd creates the command for switching to iframe by element selector
+func newCreateStepSwitchIframeCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create-step-switch-iframe SELECTOR [POSITION]",
-		Short: "Create a switch to iframe step at a specific position in a checkpoint",
-		Long: `Create a switch to iframe step that switches to an iframe by element selector at the specified position in the checkpoint.
+		Use:   "create-step-switch-iframe CHECKPOINT_ID SELECTOR POSITION",
+		Short: "Switch to iframe by element selector",
+		Long: `Creates a step that switches to an iframe identified by an element selector.
+This corresponds to the SWITCH action with FRAME_BY_ELEMENT type.
 
-Modern usage (with session context):
-  api-cli set-checkpoint 1678318
-  api-cli create-step-switch-iframe "#content-frame"
-  api-cli create-step-switch-iframe "search iframe" 2
-  api-cli create-step-switch-iframe "#frame" --checkpoint 1678319
-
-Legacy usage (backward compatible):
-  api-cli create-step-switch-iframe 1678318 "#content-frame" 1
-  api-cli create-step-switch-iframe 1678318 "search iframe" 2 -o json`,
-		Args: cobra.RangeArgs(1, 3),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			var selector string
-			var ctx *StepContext
-			var err error
-			
-			// Handle both modern and legacy argument patterns
-			if len(args) == 3 {
-				// Legacy: CHECKPOINT_ID SELECTOR POSITION
-				checkpointID, err := strconv.Atoi(args[0])
-				if err != nil {
-					return fmt.Errorf("invalid checkpoint ID: %w", err)
-				}
-				selector = args[1]
-				position, err := strconv.Atoi(args[2])
-				if err != nil {
-					return fmt.Errorf("invalid position: %w", err)
-				}
-				
-				ctx = &StepContext{
-					CheckpointID: checkpointID,
-					Position:     position,
-					UsingContext: false,
-					AutoPosition: false,
-				}
-			} else {
-				// Modern: SELECTOR [POSITION]
-				selector = args[0]
-				
-				// Use helper to resolve checkpoint and position
-				ctx, err = resolveStepContext(args, checkpointFlag, 1) // position at index 1
-				if err != nil {
-					return err
-				}
-			}
-			
-			// Validate selector
-			if selector == "" {
-				return fmt.Errorf("selector cannot be empty")
-			}
-			
-			// Create Virtuoso client
-			client := virtuoso.NewClient(cfg)
-			
-			// Create switch iframe step using the enhanced client
-			stepID, err := client.CreateSwitchIFrameStep(ctx.CheckpointID, selector, ctx.Position)
-			if err != nil {
-				return fmt.Errorf("failed to create switch iframe step: %w", err)
-			}
-			
-			// Save session context if needed
-			saveStepContext(ctx)
-			
-			// Output result using the unified format
-			output := &StepOutput{
-				Status:       "success",
-				StepType:     "SWITCH",
-				CheckpointID: ctx.CheckpointID,
-				StepID:       stepID,
-				Position:     ctx.Position,
-				ParsedStep:   fmt.Sprintf("switch to iframe by element: %s", selector),
-				UsingContext: ctx.UsingContext,
-				AutoPosition: ctx.AutoPosition,
-				Extra: map[string]interface{}{
-					"selector": selector,
-				},
-			}
-			
-			return outputStepResult(output)
-		},
+Example:
+  api-cli create-step-switch-iframe 1678318 "#myframe" 1`,
+		Args: cobra.ExactArgs(3),
+		RunE: runCreateStepSwitchIframe,
 	}
-	
-	// Add the checkpoint flag
-	addCheckpointFlag(cmd, &checkpointFlag)
+
+	cmd.Flags().StringP("output", "o", "human", "Output format (human, json, yaml, ai)")
 	
 	return cmd
+}
+
+func runCreateStepSwitchIframe(cmd *cobra.Command, args []string) error {
+	// Parse arguments
+	checkpointID, err := strconv.Atoi(args[0])
+	if err != nil {
+		return fmt.Errorf("invalid checkpoint ID: %w", err)
+	}
+
+	selector := args[1]
+
+	position, err := strconv.Atoi(args[2])
+	if err != nil {
+		return fmt.Errorf("invalid position: %w", err)
+	}
+
+	// Get API token from environment
+	token := os.Getenv("VIRTUOSO_API_TOKEN")
+	if token == "" {
+		return fmt.Errorf("VIRTUOSO_API_TOKEN environment variable is required")
+	}
+
+	// Get API base URL from environment
+	baseURL := os.Getenv("VIRTUOSO_API_BASE_URL")
+	if baseURL == "" {
+		baseURL = "https://api-app2.virtuoso.qa/api"
+	}
+
+	// Create client
+	client := virtuoso.NewClientDirect(baseURL, token)
+
+	// Create the switch iframe step
+	stepID, err := client.CreateStepSwitchIframe(checkpointID, selector, position)
+	if err != nil {
+		return fmt.Errorf("failed to create switch iframe step: %w", err)
+	}
+
+	// Get output format
+	outputFormat, _ := cmd.Flags().GetString("output")
+
+	// Format output
+	switch outputFormat {
+	case "json":
+		output, err := json.MarshalIndent(map[string]interface{}{"stepId": stepID, "checkpointId": checkpointID}, "", "  ")
+		if err != nil {
+			return fmt.Errorf("failed to marshal JSON: %w", err)
+		}
+		fmt.Println(string(output))
+	case "yaml":
+		output, err := yaml.Marshal(map[string]interface{}{"stepId": stepID, "checkpointId": checkpointID})
+		if err != nil {
+			return fmt.Errorf("failed to marshal YAML: %w", err)
+		}
+		fmt.Print(string(output))
+	case "ai":
+		fmt.Printf("Created switch iframe step with ID %d for checkpoint %d. Selector: %s, position: %d\n", 
+			stepID, checkpointID, selector, position)
+	default: // human
+		fmt.Printf("Switch iframe step created successfully!\n")
+		fmt.Printf("Step ID: %d\n", stepID)
+		fmt.Printf("Checkpoint ID: %d\n", checkpointID)
+		fmt.Printf("Iframe Selector: %s\n", selector)
+		fmt.Printf("Position: %d\n", position)
+		fmt.Printf("Effect: Browser will switch to iframe matching the selector\n")
+	}
+
+	return nil
 }

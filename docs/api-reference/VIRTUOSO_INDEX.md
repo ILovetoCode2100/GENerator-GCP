@@ -10,6 +10,7 @@
 
 ## Documentation
 - [`/VIRTUOSO_QUICK_START.md`](../VIRTUOSO_QUICK_START.md) - Complete usage guide
+- [`/docs/api-reference/list.md`](list.md) - List commands reference (list-projects, list-goals, list-journeys, list-checkpoints)
 - [`/documents/virtuoso-config-summary.md`](../../documents/virtuoso-config-summary.md) - Configuration summary
 - [`/documents/virtuoso-ready-for-endpoints.md`](../../documents/virtuoso-ready-for-endpoints.md) - What's needed next
 
@@ -32,6 +33,12 @@ make build
 # Create structure
 ./bin/api-cli create-structure --file examples/test-structure.json
 
+# List commands
+./bin/api-cli list-projects                                    # List all projects
+./bin/api-cli list-goals <project-id>                         # List goals in project
+./bin/api-cli list-journeys <goal-id> <snapshot-id>          # List journeys in goal
+./bin/api-cli list-checkpoints <journey-id>                   # List checkpoints in journey
+
 # Add steps
 ./bin/api-cli add-step <checkpoint-id> navigate --url "https://example.com"
 ```
@@ -43,9 +50,13 @@ make build
 - Authentication setup
 - Client structure
 - Error handling
+- List commands (list-projects, list-goals, list-journeys, list-checkpoints)
+- Pagination support for list commands
+- Multiple output formats (JSON, YAML, human, AI)
+- Rich documentation with examples
 
 🔴 **Needed**:
-- API endpoint paths
-- Request/response formats
-- Step type definitions
+- Additional API endpoint paths
+- Complex request/response formats
+- Advanced step type definitions
 - Business rule clarifications

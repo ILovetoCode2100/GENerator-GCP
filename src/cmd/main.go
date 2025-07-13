@@ -117,16 +117,51 @@ func main() {
 	rootCmd.AddCommand(newCreateStepMouseDownCmd())
 	rootCmd.AddCommand(newCreateStepMouseUpCmd())
 	rootCmd.AddCommand(newCreateStepMouseMoveCmd())
-	// TODO: Add missing commands newCreateStepMouseMoveToCmd() and newCreateStepMouseMoveByCmd()
 	rootCmd.AddCommand(newCreateStepMouseEnterCmd())
 	rootCmd.AddCommand(newCreateStepPickValueCmd())
 	rootCmd.AddCommand(newCreateStepPickTextCmd())
 	rootCmd.AddCommand(newCreateStepScrollPositionCmd())
 	rootCmd.AddCommand(newCreateStepStoreValueCmd())
-	rootCmd.AddCommand(newCreateStepSwitchIFrameCmd())
+	rootCmd.AddCommand(newCreateStepSwitchIframeCmd())
 	rootCmd.AddCommand(newCreateStepSwitchNextTabCmd())
 	rootCmd.AddCommand(newCreateStepSwitchParentFrameCmd())
 	rootCmd.AddCommand(newCreateStepSwitchPrevTabCmd())
+	
+	// ===== VERSION B ENHANCED COMMANDS =====
+	// Cookie management commands (Version B)
+	rootCmd.AddCommand(newCreateStepCookieCreateCmd())
+	rootCmd.AddCommand(newCreateStepCookieWipeAllCmd())
+	
+	// Upload and dismiss commands (Version B)
+	rootCmd.AddCommand(newCreateStepUploadURLCmd())
+	rootCmd.AddCommand(newCreateStepDismissPromptWithTextCmd())
+	
+	// Execute script command (Version B)
+	rootCmd.AddCommand(newCreateStepExecuteScriptCmd())
+	
+	// Enhanced mouse commands (Version B) - Fixes TODO at line 120
+	rootCmd.AddCommand(newCreateStepMouseMoveToCmd())
+	rootCmd.AddCommand(newCreateStepMouseMoveByCmd())
+	
+	// Enhanced pick commands (Version B)
+	rootCmd.AddCommand(newCreateStepPickIndexCmd())
+	rootCmd.AddCommand(newCreateStepPickLastCmd())
+	
+	// Enhanced wait commands (Version B)
+	rootCmd.AddCommand(newCreateStepWaitForElementTimeoutCmd())
+	rootCmd.AddCommand(newCreateStepWaitForElementDefaultCmd())
+	
+	// Enhanced store commands (Version B)
+	rootCmd.AddCommand(newCreateStepStoreElementTextCmd())
+	rootCmd.AddCommand(newCreateStepStoreLiteralValueCmd())
+	
+	// Scroll commands (Version B)
+	rootCmd.AddCommand(newCreateStepScrollToPositionCmd())
+	rootCmd.AddCommand(newCreateStepScrollByOffsetCmd())
+	rootCmd.AddCommand(newCreateStepScrollToTopCmd())
+	
+	// Window resize command (Version B)
+	rootCmd.AddCommand(newCreateStepWindowResizeCmd())
 	
 	// High-priority execution and analysis commands
 	rootCmd.AddCommand(newExecuteGoalCmd())

@@ -1,91 +1,96 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
+	"os"
 	"strconv"
 
-	"github.com/marklovelady/api-cli-generator/pkg/virtuoso"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
+
+	"github.com/marklovelady/api-cli-generator/pkg/virtuoso"
 )
 
+// newCreateStepSwitchNextTabCmd creates the command for switching to next tab
 func newCreateStepSwitchNextTabCmd() *cobra.Command {
-	var checkpointFlag int
-	
 	cmd := &cobra.Command{
-		Use:   "create-step-switch-next-tab [POSITION]",
-		Short: "Create a switch to next tab step at a specific position in a checkpoint",
-		Long: `Create a switch to next tab step that switches to the next browser tab at the specified position in the checkpoint.
+		Use:   "create-step-switch-next-tab CHECKPOINT_ID POSITION",
+		Short: "Switch to next tab",
+		Long: `Creates a step that switches to the next tab in the browser.
+This corresponds to the SWITCH action with NEXT_TAB type.
 
-Modern usage (with session context):
-  api-cli set-checkpoint 1678318
-  api-cli create-step-switch-next-tab
-  api-cli create-step-switch-next-tab 2
-  api-cli create-step-switch-next-tab --checkpoint 1678319
-
-Legacy usage (backward compatible):
-  api-cli create-step-switch-next-tab 1678318 1
-  api-cli create-step-switch-next-tab 1678318 2 -o json`,
-		Args: cobra.RangeArgs(0, 2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			var ctx *StepContext
-			var err error
-			
-			// Handle both modern and legacy argument patterns
-			if len(args) == 2 {
-				// Legacy: CHECKPOINT_ID POSITION
-				checkpointID, err := strconv.Atoi(args[0])
-				if err != nil {
-					return err
-				}
-				position, err := strconv.Atoi(args[1])
-				if err != nil {
-					return err
-				}
-				
-				ctx = &StepContext{
-					CheckpointID: checkpointID,
-					Position:     position,
-					UsingContext: false,
-					AutoPosition: false,
-				}
-			} else {
-				// Modern: [POSITION]
-				// Use helper to resolve checkpoint and position
-				ctx, err = resolveStepContext(args, checkpointFlag, 0) // position at index 0
-				if err != nil {
-					return err
-				}
-			}
-			
-			// Create Virtuoso client
-			client := virtuoso.NewClient(cfg)
-			
-			// Create switch next tab step using the enhanced client
-			stepID, err := client.CreateSwitchNextTabStep(ctx.CheckpointID, ctx.Position)
-			if err != nil {
-				return err
-			}
-			
-			// Save session context if needed
-			saveStepContext(ctx)
-			
-			// Output result using the unified format
-			output := &StepOutput{
-				Status:       "success",
-				StepType:     "SWITCH",
-				CheckpointID: ctx.CheckpointID,
-				StepID:       stepID,
-				Position:     ctx.Position,
-				ParsedStep:   "switch to next tab",
-				UsingContext: ctx.UsingContext,
-				AutoPosition: ctx.AutoPosition,
-			}
-			
-			return outputStepResult(output)
-		},
+Example:
+  api-cli create-step-switch-next-tab 1678318 1`,
+		Args: cobra.ExactArgs(2),
+		RunE: runCreateStepSwitchNextTab,
 	}
-	
-	// Add the checkpoint flag
-	addCheckpointFlag(cmd, &checkpointFlag)
+
+	cmd.Flags().StringP("output", "o", "human", "Output format (human, json, yaml, ai)")
 	
 	return cmd
+}
+
+func runCreateStepSwitchNextTab(cmd *cobra.Command, args []string) error {
+	// Parse arguments
+	checkpointID, err := strconv.Atoi(args[0])
+	if err != nil {
+		return fmt.Errorf("invalid checkpoint ID: %w", err)
+	}
+
+	position, err := strconv.Atoi(args[1])
+	if err != nil {
+		return fmt.Errorf("invalid position: %w", err)
+	}
+
+	// Get API token from environment
+	token := os.Getenv("VIRTUOSO_API_TOKEN")
+	if token == "" {
+		return fmt.Errorf("VIRTUOSO_API_TOKEN environment variable is required")
+	}
+
+	// Get API base URL from environment
+	baseURL := os.Getenv("VIRTUOSO_API_BASE_URL")
+	if baseURL == "" {
+		baseURL = "https://api-app2.virtuoso.qa/api"
+	}
+
+	// Create client
+	client := virtuoso.NewClientDirect(baseURL, token)
+
+	// Create the switch next tab step
+	stepID, err := client.CreateStepSwitchNextTab(checkpointID, position)
+	if err != nil {
+		return fmt.Errorf("failed to create switch next tab step: %w", err)
+	}
+
+	// Get output format
+	outputFormat, _ := cmd.Flags().GetString("output")
+
+	// Format output
+	switch outputFormat {
+	case "json":
+		output, err := json.MarshalIndent(map[string]interface{}{"stepId": stepID, "checkpointId": checkpointID}, "", "  ")
+		if err != nil {
+			return fmt.Errorf("failed to marshal JSON: %w", err)
+		}
+		fmt.Println(string(output))
+	case "yaml":
+		output, err := yaml.Marshal(map[string]interface{}{"stepId": stepID, "checkpointId": checkpointID})
+		if err != nil {
+			return fmt.Errorf("failed to marshal YAML: %w", err)
+		}
+		fmt.Print(string(output))
+	case "ai":
+		fmt.Printf("Created switch next tab step with ID %d for checkpoint %d at position %d\n", 
+			stepID, checkpointID, position)
+	default: // human
+		fmt.Printf("Switch next tab step created successfully!\n")
+		fmt.Printf("Step ID: %d\n", stepID)
+		fmt.Printf("Checkpoint ID: %d\n", checkpointID)
+		fmt.Printf("Position: %d\n", position)
+		fmt.Printf("Effect: Browser will switch to the next tab\n")
+	}
+
+	return nil
 }

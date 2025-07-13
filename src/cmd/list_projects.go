@@ -12,19 +12,25 @@ import (
 )
 
 func newListProjectsCmd() *cobra.Command {
+	var (
+		limit  int
+		offset int
+	)
+	
 	cmd := &cobra.Command{
 		Use:   "list-projects",
 		Short: "List all projects in the organization",
 		Long: `List all projects in your Virtuoso organization.
 		
 This command retrieves all projects accessible to your organization
-and displays them in a table format by default.`,
+and displays them in a table format by default. Supports pagination
+for large result sets.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Create Virtuoso client
 			client := virtuoso.NewClient(cfg)
 			
-			// List projects
-			projects, err := client.ListProjects()
+			// List projects with pagination
+			projects, err := client.ListProjectsWithOptions(offset, limit)
 			if err != nil {
 				return fmt.Errorf("failed to list projects: %w", err)
 			}
@@ -118,6 +124,10 @@ and displays them in a table format by default.`,
 			return nil
 		},
 	}
+	
+	// Add pagination flags
+	cmd.Flags().IntVar(&limit, "limit", 50, "Maximum number of projects to return")
+	cmd.Flags().IntVar(&offset, "offset", 0, "Number of projects to skip")
 	
 	return cmd
 }

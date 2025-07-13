@@ -1,75 +1,113 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
+	"strconv"
+
+	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 
 	"github.com/marklovelady/api-cli-generator/pkg/virtuoso"
-	"github.com/spf13/cobra"
 )
 
+// newCreateStepNavigateCmd creates the command for creating a navigation step
 func newCreateStepNavigateCmd() *cobra.Command {
-	var checkpointFlag int
-	
 	cmd := &cobra.Command{
-		Use:   "create-step-navigate URL [POSITION]",
-		Short: "Create a navigation step at a specific position in a checkpoint",
-		Long: `Create a navigation step that goes to a specific URL at the specified position in the checkpoint.
-
-Uses the current checkpoint from session context by default. Override with --checkpoint flag.
-Position is auto-incremented if not specified and auto-increment is enabled.
+		Use:   "create-step-navigate CHECKPOINT_ID URL POSITION [flags]",
+		Short: "Navigate to a URL",
+		Long: `Creates a navigation step that navigates to the specified URL.
 
 Examples:
-  # Using current checkpoint context
-  api-cli create-step-navigate "https://example.com" 1
-  api-cli create-step-navigate "https://example.com"  # Auto-increment position
-  
-  # Override checkpoint explicitly
-  api-cli create-step-navigate "https://example.com" 1 --checkpoint 1678318`,
-		Args: cobra.RangeArgs(1, 2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			url := args[0]
-			
-			// Validate URL
-			if url == "" {
-				return fmt.Errorf("URL cannot be empty")
-			}
-			
-			// Resolve checkpoint and position
-			ctx, err := resolveStepContext(args, checkpointFlag, 1)
-			if err != nil {
-				return err
-			}
-			
-			// Create Virtuoso client
-			client := virtuoso.NewClient(cfg)
-			
-			// Create navigation step using the enhanced client
-			stepID, err := client.CreateNavigationStep(ctx.CheckpointID, url, ctx.Position)
-			if err != nil {
-				return fmt.Errorf("failed to create navigation step: %w", err)
-			}
-			
-			// Save config if position was auto-incremented
-			saveStepContext(ctx)
-			
-			// Output result
-			output := &StepOutput{
-				Status:       "success",
-				StepType:     "NAVIGATE",
-				CheckpointID: ctx.CheckpointID,
-				StepID:       stepID,
-				Position:     ctx.Position,
-				ParsedStep:   fmt.Sprintf("Navigate to \"%s\"", url),
-				UsingContext: ctx.UsingContext,
-				AutoPosition: ctx.AutoPosition,
-				Extra:        map[string]interface{}{"url": url},
-			}
-			
-			return outputStepResult(output)
-		},
+  api-cli create-step-navigate 1678318 "https://example.com" 1
+  api-cli create-step-navigate 1678318 "https://example.com" 1 --new-tab
+  api-cli create-step-navigate 1678318 "https://example.com" 1 -o json`,
+		Args: cobra.ExactArgs(3),
+		RunE: runCreateStepNavigate,
 	}
-	
-	addCheckpointFlag(cmd, &checkpointFlag)
+
+	cmd.Flags().StringP("output", "o", "human", "Output format (human, json, yaml, ai)")
+	cmd.Flags().Bool("new-tab", false, "Open URL in new tab")
 	
 	return cmd
+}
+
+func runCreateStepNavigate(cmd *cobra.Command, args []string) error {
+	// Parse arguments
+	checkpointID, err := strconv.Atoi(args[0])
+	if err != nil {
+		return fmt.Errorf("invalid checkpoint ID: %w", err)
+	}
+
+	url := args[1]
+	if url == "" {
+		return fmt.Errorf("URL cannot be empty")
+	}
+
+	position, err := strconv.Atoi(args[2])
+	if err != nil {
+		return fmt.Errorf("invalid position: %w", err)
+	}
+
+	// Get flags
+	useNewTab, _ := cmd.Flags().GetBool("new-tab")
+
+	// Get API configuration
+	token := os.Getenv("VIRTUOSO_API_TOKEN")
+	if token == "" {
+		return fmt.Errorf("VIRTUOSO_API_TOKEN environment variable is required")
+	}
+
+	// Get API base URL from environment
+	baseURL := os.Getenv("VIRTUOSO_API_BASE_URL")
+	if baseURL == "" {
+		baseURL = "https://api-app2.virtuoso.qa/api"
+	}
+
+	// Create client
+	client := virtuoso.NewClientDirect(baseURL, token)
+
+	// Create the navigation step
+	stepID, err := client.CreateStepNavigate(checkpointID, url, useNewTab, position)
+	if err != nil {
+		return fmt.Errorf("failed to create navigation step: %w", err)
+	}
+
+	// Get output format
+	outputFormat, _ := cmd.Flags().GetString("output")
+
+	// Format output
+	switch outputFormat {
+	case "json":
+		output, err := json.MarshalIndent(map[string]interface{}{"stepId": stepID, "checkpointId": checkpointID}, "", "  ")
+		if err != nil {
+			return fmt.Errorf("failed to marshal JSON: %w", err)
+		}
+		fmt.Println(string(output))
+	case "yaml":
+		output, err := yaml.Marshal(map[string]interface{}{"stepId": stepID, "checkpointId": checkpointID})
+		if err != nil {
+			return fmt.Errorf("failed to marshal YAML: %w", err)
+		}
+		fmt.Print(string(output))
+	case "ai":
+		tabInfo := ""
+		if useNewTab {
+			tabInfo = " in new tab"
+		}
+		fmt.Printf("Created navigation step with ID %d for checkpoint %d. URL: %s%s, position: %d\n", 
+			stepID, checkpointID, url, tabInfo, position)
+	default: // human
+		fmt.Printf("Navigation step created successfully!\n")
+		fmt.Printf("Step ID: %d\n", stepID)
+		fmt.Printf("Checkpoint ID: %d\n", checkpointID)
+		fmt.Printf("URL: %s\n", url)
+		if useNewTab {
+			fmt.Printf("New Tab: Yes\n")
+		}
+		fmt.Printf("Position: %d\n", position)
+	}
+
+	return nil
 }

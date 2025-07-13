@@ -56,3 +56,5 @@ coverage.html
 # Local configuration overrides
 config/local-*.yaml
 config/*.local.yaml
+# Test credentials - never commit
+scripts/test/.env
