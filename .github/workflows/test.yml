@@ -1,0 +1,141 @@
+name: Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+    
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/go/pkg/mod
+          ~/.cache/go-build
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y bats jq
+        go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
+        echo "$HOME/go/bin" >> $GITHUB_PATH
+    
+    - name: Build test
+      run: make build-test
+    
+    - name: Run bats tests
+      env:
+        GITHUB_RUN_ID: ${{ github.run_id }}
+        TEST_TAG_PREFIX: test-${{ github.run_id }}
+        VIRTUOSO_API_KEY: ${{ secrets.VIRTUOSO_API_KEY }}
+        VIRTUOSO_API_URL: ${{ vars.VIRTUOSO_API_URL }}
+      run: |
+        # Create config directory
+        mkdir -p ~/.api-cli
+        # Configure API credentials for tests
+        echo "api_key: $VIRTUOSO_API_KEY" > ~/.api-cli/config.yaml
+        echo "api_url: $VIRTUOSO_API_URL" >> ~/.api-cli/config.yaml
+        # Run tests
+        bats src/cmd/tests/*.bats
+      continue-on-error: true
+      id: bats-tests
+    
+    - name: Upload test report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-report
+        path: src/cmd/tests/report.md
+        if-no-files-found: ignore
+    
+    - name: Upload CLI log
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: api-cli-log
+        path: ~/.api-cli/api-cli.log
+        if-no-files-found: ignore
+    
+    - name: Set test result
+      if: steps.bats-tests.outcome == 'failure'
+      run: exit 1
+
+  cleanup:
+    runs-on: ubuntu-latest
+    needs: test
+    if: always()
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+    
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/go/pkg/mod
+          ~/.cache/go-build
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+    
+    - name: Install dependencies for cleanup
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y jq
+        go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
+        echo "$HOME/go/bin" >> $GITHUB_PATH
+    
+    - name: Build CLI for cleanup
+      run: make build
+    
+    - name: Configure API CLI
+      env:
+        VIRTUOSO_API_KEY: ${{ secrets.VIRTUOSO_API_KEY }}
+        VIRTUOSO_API_URL: ${{ vars.VIRTUOSO_API_URL }}
+      run: |
+        mkdir -p ~/.api-cli
+        echo "api_key: $VIRTUOSO_API_KEY" > ~/.api-cli/config.yaml
+        echo "api_url: $VIRTUOSO_API_URL" >> ~/.api-cli/config.yaml
+    
+    - name: Delete test resources
+      run: |
+        echo "Cleaning up test resources..."
+        
+        # Note: Since the CLI doesn't support tags yet, we'll use name-based cleanup
+        # This is a placeholder that should be updated once tag support is added
+        
+        # For now, we'll attempt to clean up any resources created during tests
+        # The tests use specific naming patterns that we can leverage
+        
+        # Clean up test projects (tests often use names like "Test Project", "steps-test-project-*")
+        ./bin/api-cli list-projects --format json 2>/dev/null | \
+          jq -r '.[] | select(.name | test("^(Test Project|steps-test-project-|test-)")) | .id' | \
+          xargs -I {} ./bin/api-cli delete-project {} 2>/dev/null || true
+        
+        # Clean up orphaned resources (if any remain)
+        # Note: Most resources will be cascade-deleted when projects are deleted
+        
+        echo "Cleanup completed"
+        echo "Note: Comprehensive cleanup requires tag support in the CLI"
