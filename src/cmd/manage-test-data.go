@@ -14,14 +14,14 @@ import (
 
 // TestDataOutput represents the output structure for test data operations
 type TestDataOutput struct {
-	Status      string                 `json:"status"`
-	Operation   string                 `json:"operation"`
-	TableID     string                 `json:"table_id,omitempty"`
-	TableName   string                 `json:"table_name,omitempty"`
-	Columns     []string               `json:"columns,omitempty"`
-	RowCount    int                    `json:"row_count,omitempty"`
-	ImportStats *ImportStats           `json:"import_stats,omitempty"`
-	NextSteps   []string               `json:"next_steps,omitempty"`
+	Status      string       `json:"status"`
+	Operation   string       `json:"operation"`
+	TableID     string       `json:"table_id,omitempty"`
+	TableName   string       `json:"table_name,omitempty"`
+	Columns     []string     `json:"columns,omitempty"`
+	RowCount    int          `json:"row_count,omitempty"`
+	ImportStats *ImportStats `json:"import_stats,omitempty"`
+	NextSteps   []string     `json:"next_steps,omitempty"`
 }
 
 // ImportStats represents statistics from a CSV import operation
@@ -40,7 +40,7 @@ func newManageTestDataCmd() *cobra.Command {
 	var importCsvFlag string
 	var exportCsvFlag string
 	var tableIDFlag string
-	
+
 	cmd := &cobra.Command{
 		Use:   "manage-test-data",
 		Short: "Manage test data tables and CSV import/export",
@@ -105,7 +105,7 @@ func createTestDataTable(client *virtuoso.Client, name, description, columnsStr,
 	if name == "" {
 		return fmt.Errorf("table name is required")
 	}
-	
+
 	if columnsStr == "" {
 		return fmt.Errorf("columns are required")
 	}
@@ -290,7 +290,7 @@ func outputTestDataResult(output *TestDataOutput, format string) error {
 			"import_stats": output.ImportStats,
 			"next_steps":   output.NextSteps,
 		}
-		
+
 		jsonData, err := json.MarshalIndent(yamlData, "", "  ")
 		if err != nil {
 			return fmt.Errorf("failed to marshal YAML: %w", err)
@@ -306,23 +306,23 @@ func outputTestDataResult(output *TestDataOutput, format string) error {
 
 	default: // human
 		fmt.Printf("📊 Test Data Management - %s\n\n", strings.Title(output.Operation))
-		
+
 		if output.TableID != "" {
 			fmt.Printf("🆔 Table ID: %s\n", output.TableID)
 		}
-		
+
 		if output.TableName != "" {
 			fmt.Printf("📋 Table Name: %s\n", output.TableName)
 		}
-		
+
 		if len(output.Columns) > 0 {
 			fmt.Printf("📝 Columns: %s\n", strings.Join(output.Columns, ", "))
 		}
-		
+
 		if output.RowCount > 0 {
 			fmt.Printf("📊 Row Count: %d\n", output.RowCount)
 		}
-		
+
 		if output.ImportStats != nil {
 			fmt.Printf("\n📥 Import Statistics:\n")
 			fmt.Printf("  • Total Rows: %d\n", output.ImportStats.TotalRows)
@@ -334,7 +334,7 @@ func outputTestDataResult(output *TestDataOutput, format string) error {
 				fmt.Printf("  • Error Rows: %d\n", output.ImportStats.ErrorRows)
 			}
 		}
-		
+
 		if len(output.NextSteps) > 0 {
 			fmt.Printf("\n💡 Next Steps:\n")
 			for _, step := range output.NextSteps {

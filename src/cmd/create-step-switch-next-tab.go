@@ -27,7 +27,7 @@ Example:
 	}
 
 	cmd.Flags().StringP("output", "o", "human", "Output format (human, json, yaml, ai)")
-	
+
 	return cmd
 }
 
@@ -82,7 +82,7 @@ func runCreateStepSwitchNextTab(cmd *cobra.Command, args []string) error {
 		}
 		fmt.Print(string(output))
 	case "ai":
-		fmt.Printf("Created switch next tab step with ID %d for checkpoint %d at position %d\n", 
+		fmt.Printf("Created switch next tab step with ID %d for checkpoint %d at position %d\n",
 			stepID, checkpointID, position)
 	default: // human
 		fmt.Printf("Switch next tab step created successfully!\n")

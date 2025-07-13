@@ -26,7 +26,7 @@ func newCreateStructureEnhancedCmd() *cobra.Command {
 		verbose   bool
 		projectID int
 	)
-	
+
 	cmd := &cobra.Command{
 		Use:   "create-structure",
 		Short: "Create test structure handling auto-creation behavior",
@@ -46,10 +46,10 @@ Use --project-id to use an existing project instead of creating a new one.`,
 			if err != nil {
 				return fmt.Errorf("failed to read file: %w", err)
 			}
-			
+
 			// Parse the structure
 			var structure virtuoso.TestStructure
-			
+
 			// Try YAML first
 			err = yaml.Unmarshal(data, &structure)
 			if err != nil {
@@ -59,52 +59,52 @@ Use --project-id to use an existing project instead of creating a new one.`,
 					return fmt.Errorf("failed to parse file as YAML or JSON: %w", err)
 				}
 			}
-			
+
 			// Override project ID if specified
 			if projectID > 0 {
 				structure.Project.ID = projectID
 			}
-			
+
 			// Validate the structure
 			if structure.Project.ID == 0 && structure.Project.Name == "" {
 				return fmt.Errorf("project name is required when not using existing project")
 			}
-			
+
 			if len(structure.Goals) == 0 {
 				return fmt.Errorf("at least one goal is required")
 			}
-			
+
 			// Preview in dry run mode
 			if dryRun {
 				return previewEnhancedStructure(&structure, verbose)
 			}
-			
+
 			// Create the structure
 			client := virtuoso.NewClient(cfg)
 			resources, err := createEnhancedStructure(client, &structure, verbose)
 			if err != nil {
 				return fmt.Errorf("failed to create structure: %w", err)
 			}
-			
+
 			// Output results
 			outputCreatedResources(resources, cfg.Output.DefaultFormat, &structure)
-			
+
 			return nil
 		},
 	}
-	
+
 	cmd.Flags().StringVarP(&filename, "file", "f", "", "Structure definition file (YAML or JSON)")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Preview what would be created without creating anything")
 	cmd.Flags().BoolVar(&verbose, "verbose", false, "Enable verbose logging")
 	cmd.Flags().IntVar(&projectID, "project-id", 0, "Use existing project ID instead of creating new")
 	cmd.MarkFlagRequired("file")
-	
+
 	return cmd
 }
 
 func previewEnhancedStructure(structure *virtuoso.TestStructure, verbose bool) error {
 	fmt.Printf("🔍 Preview mode - nothing will be created\n\n")
-	
+
 	if structure.Project.ID > 0 {
 		fmt.Printf("Using existing project ID: %d\n", structure.Project.ID)
 	} else {
@@ -113,20 +113,20 @@ func previewEnhancedStructure(structure *virtuoso.TestStructure, verbose bool) e
 			fmt.Printf("  Description: %s\n", structure.Project.Description)
 		}
 	}
-	
+
 	fmt.Printf("\nGoals: %d\n", len(structure.Goals))
-	
+
 	journeyCount := 0
 	checkpointCount := 0
 	stepCount := 0
-	
+
 	for i, g := range structure.Goals {
 		fmt.Printf("\n  Goal %d: %s\n", i+1, g.Name)
 		fmt.Printf("    URL: %s\n", g.URL)
 		if i == 0 {
 			fmt.Printf("    ⚠️  Note: Will use auto-created first journey\n")
 		}
-		
+
 		for j, journey := range g.Journeys {
 			if i == 0 && j == 0 {
 				fmt.Printf("    Journey %d: %s (will RENAME auto-created journey)\n", j+1, journey.Name)
@@ -134,7 +134,7 @@ func previewEnhancedStructure(structure *virtuoso.TestStructure, verbose bool) e
 				fmt.Printf("    Journey %d: %s\n", j+1, journey.Name)
 			}
 			journeyCount++
-			
+
 			for k, checkpoint := range journey.Checkpoints {
 				checkpointCount++
 				if j == 0 && k == 0 {
@@ -145,7 +145,7 @@ func previewEnhancedStructure(structure *virtuoso.TestStructure, verbose bool) e
 				} else {
 					fmt.Printf("      Checkpoint %d: %s\n", k+1, checkpoint.Name)
 				}
-				
+
 				if verbose && len(checkpoint.Steps) > 0 {
 					fmt.Printf("        Steps:\n")
 					for _, step := range checkpoint.Steps {
@@ -163,13 +163,13 @@ func previewEnhancedStructure(structure *virtuoso.TestStructure, verbose bool) e
 			}
 		}
 	}
-	
+
 	fmt.Printf("\nTotals:\n")
 	fmt.Printf("  Goals: %d\n", len(structure.Goals))
 	fmt.Printf("  Journeys: %d\n", journeyCount)
 	fmt.Printf("  Checkpoints: %d\n", checkpointCount)
 	fmt.Printf("  Steps: %d\n", stepCount)
-	
+
 	return nil
 }
 
@@ -177,9 +177,9 @@ func createEnhancedStructure(client *virtuoso.Client, structure *virtuoso.TestSt
 	resources := &virtuoso.CreatedResources{
 		Goals: make([]virtuoso.CreatedGoal, 0),
 	}
-	
+
 	log := transactionLog{}
-	
+
 	// Step 1: Create or use existing project
 	if structure.Project.ID > 0 {
 		fmt.Printf("Using existing project ID: %d\n", structure.Project.ID)
@@ -195,7 +195,7 @@ func createEnhancedStructure(client *virtuoso.Client, structure *virtuoso.TestSt
 		log.ProjectID = project.ID
 		fmt.Printf("  ✓ Created project ID: %d\n", project.ID)
 	}
-	
+
 	// Step 2: Create goals (which auto-create journeys)
 	for _, goalDef := range structure.Goals {
 		fmt.Printf("\nCreating goal: %s...\n", goalDef.Name)
@@ -206,26 +206,26 @@ func createEnhancedStructure(client *virtuoso.Client, structure *virtuoso.TestSt
 		}
 		log.Goals = append(log.Goals, goal.ID)
 		fmt.Printf("  ✓ Created goal ID: %d\n", goal.ID)
-		
+
 		// Get snapshot ID
 		snapshotID, err := client.GetGoalSnapshot(goal.ID)
 		if err != nil {
 			rollbackHint(&log)
 			return nil, fmt.Errorf("failed to get snapshot for goal %d: %w", goal.ID, err)
 		}
-		
+
 		snapshotIDInt, err := strconv.Atoi(snapshotID)
 		if err != nil {
 			return nil, fmt.Errorf("invalid snapshot ID: %w", err)
 		}
-		
+
 		createdGoal := virtuoso.CreatedGoal{
 			ID:       goal.ID,
 			Name:     goal.Name,
 			Snapshot: snapshotID,
 			Journeys: make([]virtuoso.CreatedJourney, 0),
 		}
-		
+
 		// Step 3: Get the auto-created journey
 		if verbose {
 			fmt.Printf("  Looking for auto-created journey...\n")
@@ -235,20 +235,20 @@ func createEnhancedStructure(client *virtuoso.Client, structure *virtuoso.TestSt
 			rollbackHint(&log)
 			return nil, fmt.Errorf("failed to list journeys: %w", err)
 		}
-		
+
 		if verbose {
 			fmt.Printf("  Found %d existing journeys\n", len(existingJourneys))
 		}
-		
+
 		// Process journeys
 		for journeyIdx, journeyDef := range goalDef.Journeys {
 			var journey *virtuoso.Journey
-			
+
 			if journeyIdx == 0 && len(existingJourneys) > 0 {
 				// Use the auto-created journey for the first journey definition
 				journey = existingJourneys[0]
 				fmt.Printf("  Using auto-created journey: %s (ID: %d)\n", journey.Name, journey.ID)
-				
+
 				// Update the journey name if needed
 				if journey.Name != journeyDef.Name {
 					fmt.Printf("    Renaming to: %s...\n", journeyDef.Name)
@@ -269,7 +269,7 @@ func createEnhancedStructure(client *virtuoso.Client, structure *virtuoso.TestSt
 					return nil, fmt.Errorf("failed to create journey %s: %w", journeyDef.Name, err)
 				}
 				fmt.Printf("    ✓ Created journey ID: %d\n", journey.ID)
-				
+
 				// Update the name if API used a default
 				if journey.Name != journeyDef.Name {
 					fmt.Printf("    Updating journey name to: %s...\n", journeyDef.Name)
@@ -282,32 +282,32 @@ func createEnhancedStructure(client *virtuoso.Client, structure *virtuoso.TestSt
 					}
 				}
 			}
-			
+
 			log.Journeys = append(log.Journeys, journey.ID)
-			
+
 			createdJourney := virtuoso.CreatedJourney{
 				ID:          journey.ID,
 				Name:        journey.Name,
 				Checkpoints: make([]virtuoso.CreatedCheckpoint, 0),
 			}
-			
+
 			// Process checkpoints
 			for checkpointIdx, checkpointDef := range journeyDef.Checkpoints {
 				if journeyIdx == 0 && checkpointIdx == 0 {
 					// Step 5: Handle first checkpoint (navigation)
 					fmt.Printf("    Handling navigation checkpoint: %s...\n", checkpointDef.Name)
-					
+
 					// Get the first checkpoint
 					firstCheckpoint, err := client.GetFirstCheckpoint(journey.ID)
 					if err != nil {
 						rollbackHint(&log)
 						return nil, fmt.Errorf("failed to get first checkpoint: %w", err)
 					}
-					
+
 					if verbose {
 						fmt.Printf("      Found existing checkpoint ID: %d\n", firstCheckpoint.ID)
 					}
-					
+
 					// Update navigation URL if specified
 					if checkpointDef.NavigationURL != "" {
 						fmt.Printf("      Updating navigation URL to: %s...\n", checkpointDef.NavigationURL)
@@ -321,7 +321,7 @@ func createEnhancedStructure(client *virtuoso.Client, structure *virtuoso.TestSt
 						}
 						fmt.Printf("        ✓ Updated navigation\n")
 					}
-					
+
 					// Add remaining steps to first checkpoint
 					for _, stepDef := range checkpointDef.Steps {
 						if err := addStepToCheckpoint(client, firstCheckpoint.ID, stepDef, verbose); err != nil {
@@ -331,7 +331,7 @@ func createEnhancedStructure(client *virtuoso.Client, structure *virtuoso.TestSt
 						log.StepsCreated++
 						resources.TotalSteps++
 					}
-					
+
 					createdJourney.Checkpoints = append(createdJourney.Checkpoints, virtuoso.CreatedCheckpoint{
 						ID:        firstCheckpoint.ID,
 						Name:      checkpointDef.Name,
@@ -347,20 +347,20 @@ func createEnhancedStructure(client *virtuoso.Client, structure *virtuoso.TestSt
 					}
 					fmt.Printf("      ✓ Created checkpoint ID: %d\n", checkpoint.ID)
 					log.Checkpoints = append(log.Checkpoints, checkpoint.ID)
-					
+
 					// Attach checkpoint to journey
 					position := checkpointIdx + 1 // Start at 1 for additional checkpoints
 					if journeyIdx > 0 {
 						position = checkpointIdx + 2 // For new journeys, start at position 2
 					}
-					
+
 					err = client.AttachCheckpoint(journey.ID, checkpoint.ID, position)
 					if err != nil {
 						rollbackHint(&log)
-						return nil, fmt.Errorf("failed to attach checkpoint %d to journey %d: %w", 
+						return nil, fmt.Errorf("failed to attach checkpoint %d to journey %d: %w",
 							checkpoint.ID, journey.ID, err)
 					}
-					
+
 					// Add steps
 					for _, stepDef := range checkpointDef.Steps {
 						if err := addStepToCheckpoint(client, checkpoint.ID, stepDef, verbose); err != nil {
@@ -370,7 +370,7 @@ func createEnhancedStructure(client *virtuoso.Client, structure *virtuoso.TestSt
 						log.StepsCreated++
 						resources.TotalSteps++
 					}
-					
+
 					createdJourney.Checkpoints = append(createdJourney.Checkpoints, virtuoso.CreatedCheckpoint{
 						ID:        checkpoint.ID,
 						Name:      checkpoint.Title,
@@ -378,13 +378,13 @@ func createEnhancedStructure(client *virtuoso.Client, structure *virtuoso.TestSt
 					})
 				}
 			}
-			
+
 			createdGoal.Journeys = append(createdGoal.Journeys, createdJourney)
 		}
-		
+
 		resources.Goals = append(resources.Goals, createdGoal)
 	}
-	
+
 	return resources, nil
 }
 
@@ -396,7 +396,7 @@ func addStepToCheckpoint(client *virtuoso.Client, checkpointID int, stepDef virt
 		}
 		fmt.Printf("...\n")
 	}
-	
+
 	var err error
 	switch stepDef.Type {
 	case "navigate":
@@ -414,15 +414,15 @@ func addStepToCheckpoint(client *virtuoso.Client, checkpointID int, stepDef virt
 	default:
 		return fmt.Errorf("unsupported step type: %s", stepDef.Type)
 	}
-	
+
 	if err != nil {
 		return fmt.Errorf("failed to add %s step: %w", stepDef.Type, err)
 	}
-	
+
 	if verbose {
 		fmt.Printf("          ✓ Added %s step\n", stepDef.Type)
 	}
-	
+
 	return nil
 }
 
@@ -452,7 +452,7 @@ func outputCreatedResources(resources *virtuoso.CreatedResources, format string,
 		encoder := json.NewEncoder(os.Stdout)
 		encoder.SetIndent("", "  ")
 		encoder.Encode(resources)
-		
+
 	case "yaml":
 		fmt.Printf("project_id: %d\n", resources.ProjectID)
 		fmt.Printf("total_steps: %d\n", resources.TotalSteps)
@@ -473,7 +473,7 @@ func outputCreatedResources(resources *virtuoso.CreatedResources, format string,
 				}
 			}
 		}
-		
+
 	case "ai":
 		fmt.Printf("\n✅ Successfully created test structure!\n\n")
 		fmt.Printf("Project: %s (ID: %d)\n", structure.Project.Name, resources.ProjectID)
@@ -490,17 +490,17 @@ func outputCreatedResources(resources *virtuoso.CreatedResources, format string,
 		fmt.Printf("- Journeys: %d (including renamed auto-created)\n", journeyCount)
 		fmt.Printf("- Checkpoints: %d (including updated navigation)\n", checkpointCount)
 		fmt.Printf("- Total steps: %d\n", resources.TotalSteps)
-		
+
 		fmt.Printf("\nImportant Notes:\n")
 		fmt.Printf("- First journey in each goal was auto-created and renamed\n")
 		fmt.Printf("- First checkpoint contains shared navigation step\n")
 		fmt.Printf("- All resources are ready for test execution\n")
-		
+
 		fmt.Printf("\nNext Steps:\n")
 		fmt.Printf("1. View in Virtuoso UI: https://app2.virtuoso.qa\n")
 		fmt.Printf("2. Run the test journeys\n")
 		fmt.Printf("3. Monitor test results\n")
-		
+
 	default: // human
 		fmt.Printf("\n✅ Created test structure successfully!\n\n")
 		if structure.Project.ID > 0 {
@@ -510,7 +510,7 @@ func outputCreatedResources(resources *virtuoso.CreatedResources, format string,
 		}
 		fmt.Printf("\n📊 Summary:\n")
 		fmt.Printf("   Goals created: %d\n", len(resources.Goals))
-		
+
 		journeyCount := 0
 		checkpointCount := 0
 		for _, g := range resources.Goals {
@@ -522,7 +522,7 @@ func outputCreatedResources(resources *virtuoso.CreatedResources, format string,
 		fmt.Printf("   Journeys: %d\n", journeyCount)
 		fmt.Printf("   Checkpoints: %d\n", checkpointCount)
 		fmt.Printf("   Steps created: %d\n", resources.TotalSteps)
-		
+
 		fmt.Printf("\n⚡ Special handling applied:\n")
 		fmt.Printf("   - Auto-created journeys were renamed\n")
 		fmt.Printf("   - Navigation checkpoints were updated\n")

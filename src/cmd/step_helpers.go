@@ -7,23 +7,23 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	
+
 	"github.com/spf13/cobra"
 )
 
 // StepContext holds the resolved checkpoint and position for a step command
 type StepContext struct {
-	CheckpointID   int
-	Position       int
-	UsingContext   bool
-	AutoPosition   bool
+	CheckpointID int
+	Position     int
+	UsingContext bool
+	AutoPosition bool
 }
 
 // resolveStepContext resolves the checkpoint ID and position for step commands
 // It handles both explicit arguments and session context
 func resolveStepContext(args []string, checkpointFlag int, positionIndex int) (*StepContext, error) {
 	ctx := &StepContext{}
-	
+
 	// Determine checkpoint ID
 	if checkpointFlag > 0 {
 		// Use explicit checkpoint from flag
@@ -36,7 +36,7 @@ func resolveStepContext(args []string, checkpointFlag int, positionIndex int) (*
 	} else {
 		return nil, fmt.Errorf("no checkpoint specified - use --checkpoint flag or set current checkpoint with 'api-cli set-checkpoint CHECKPOINT_ID'")
 	}
-	
+
 	// Determine position
 	if positionIndex < len(args) {
 		// Position provided as argument
@@ -51,7 +51,7 @@ func resolveStepContext(args []string, checkpointFlag int, positionIndex int) (*
 		ctx.Position = cfg.GetNextPosition()
 		ctx.AutoPosition = true
 	}
-	
+
 	return ctx, nil
 }
 
@@ -96,12 +96,12 @@ func outputStepResult(output *StepOutput) error {
 	if output.Timestamp == "" {
 		output.Timestamp = time.Now().Format(time.RFC3339)
 	}
-	
+
 	// Validate output format
 	if err := validateOutputFormat(cfg.Output.DefaultFormat); err != nil {
 		return err
 	}
-	
+
 	switch cfg.Output.DefaultFormat {
 	case "json":
 		return outputStepResultJSON(output)
@@ -136,11 +136,11 @@ func outputStepResultJSON(output *StepOutput) error {
 			"auto_position":         output.AutoPosition,
 		},
 	}
-	
+
 	if output.Extra != nil {
 		result["extra"] = output.Extra
 	}
-	
+
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", "  ")
 	if err := encoder.Encode(result); err != nil {
@@ -168,13 +168,13 @@ func outputStepResultYAML(output *StepOutput) error {
 	fmt.Printf("context:\n")
 	fmt.Printf("  using_session_context: %t\n", output.UsingContext)
 	fmt.Printf("  auto_position: %t\n", output.AutoPosition)
-	
+
 	if output.Extra != nil {
 		fmt.Printf("\n")
 		fmt.Printf("extra:\n")
 		fmt.Printf("  data: %v\n", output.Extra)
 	}
-	
+
 	return nil
 }
 
@@ -182,10 +182,10 @@ func outputStepResultYAML(output *StepOutput) error {
 func outputStepResultAI(output *StepOutput) error {
 	fmt.Printf("🎯 Step Creation Summary\n")
 	fmt.Printf("========================\n\n")
-	
+
 	// Main result
 	fmt.Printf("✅ Successfully created a %s step!\n\n", strings.ToUpper(output.StepType))
-	
+
 	// Key details
 	fmt.Printf("📋 Step Details:\n")
 	fmt.Printf("   • Step ID: %d\n", output.StepID)
@@ -194,7 +194,7 @@ func outputStepResultAI(output *StepOutput) error {
 	fmt.Printf("   • Checkpoint: %d\n", output.CheckpointID)
 	fmt.Printf("   • Description: %s\n", output.ParsedStep)
 	fmt.Printf("   • Created: %s\n", output.Timestamp)
-	
+
 	// Context information
 	fmt.Printf("\n🔄 Context Information:\n")
 	if output.UsingContext {
@@ -202,28 +202,28 @@ func outputStepResultAI(output *StepOutput) error {
 	} else {
 		fmt.Printf("   • ⚙️  Used explicit checkpoint specification\n")
 	}
-	
+
 	if output.AutoPosition {
 		fmt.Printf("   • ✅ Auto-incremented position to %d\n", output.Position)
 	} else {
 		fmt.Printf("   • ⚙️  Used explicit position %d\n", output.Position)
 	}
-	
+
 	// Next steps suggestions
 	fmt.Printf("\n🚀 What's Next?\n")
 	fmt.Printf("   1. Add another step: `api-cli create-step-[type] [args]`\n")
 	fmt.Printf("      (will use checkpoint %d and position %d)\n", output.CheckpointID, output.Position+1)
 	fmt.Printf("   2. View all steps: `api-cli list-checkpoints [journey_id]`\n")
 	fmt.Printf("   3. Execute the test: `api-cli execute-goal [goal_id]`\n")
-	
+
 	// Extra data if available
 	if output.Extra != nil {
 		fmt.Printf("\n📊 Additional Information:\n")
 		fmt.Printf("   %v\n", output.Extra)
 	}
-	
+
 	fmt.Printf("\n💡 Tip: Use `--checkpoint [id]` to override session context for specific steps\n")
-	
+
 	return nil
 }
 
@@ -234,14 +234,14 @@ func outputStepResultHuman(output *StepOutput) error {
 	if output.Status != "success" {
 		statusIcon = "❌"
 	}
-	
+
 	fmt.Printf("%s Created %s step at position %d\n", statusIcon, output.StepType, output.Position)
-	
+
 	// Core details with visual hierarchy
 	fmt.Printf("   📍 Step ID: %d\n", output.StepID)
 	fmt.Printf("   🎯 Checkpoint: %d\n", output.CheckpointID)
 	fmt.Printf("   📝 Description: %s\n", output.ParsedStep)
-	
+
 	// Context indicators
 	contextIndicators := []string{}
 	if output.UsingContext {
@@ -250,16 +250,16 @@ func outputStepResultHuman(output *StepOutput) error {
 	if output.AutoPosition {
 		contextIndicators = append(contextIndicators, "🔄 auto-position")
 	}
-	
+
 	if len(contextIndicators) > 0 {
 		fmt.Printf("   ⚙️  Context: %s\n", strings.Join(contextIndicators, ", "))
 	}
-	
+
 	// Extra information if available
 	if output.Extra != nil {
 		fmt.Printf("   📊 Extra: %v\n", output.Extra)
 	}
-	
+
 	return nil
 }
 

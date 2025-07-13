@@ -27,7 +27,7 @@ Example:
 	}
 
 	cmd.Flags().StringP("output", "o", "human", "Output format (human, json, yaml, ai)")
-	
+
 	return cmd
 }
 
@@ -85,7 +85,7 @@ func runCreateStepAssertNotEquals(cmd *cobra.Command, args []string) error {
 		}
 		fmt.Print(string(output))
 	case "ai":
-		fmt.Printf("Created assert not equals step with ID %d for checkpoint %d. Element '%s' should not equal '%s', position: %d\n", 
+		fmt.Printf("Created assert not equals step with ID %d for checkpoint %d. Element '%s' should not equal '%s', position: %d\n",
 			stepID, checkpointID, selector, value, position)
 	default: // human
 		fmt.Printf("Assert not equals step created successfully!\n")

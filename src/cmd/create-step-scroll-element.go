@@ -9,7 +9,7 @@ import (
 
 func newCreateStepScrollElementCmd() *cobra.Command {
 	var checkpointFlag int
-	
+
 	cmd := &cobra.Command{
 		Use:   "create-step-scroll-element ELEMENT [POSITION]",
 		Short: "Create a scroll to element step at a specific position in a checkpoint",
@@ -22,10 +22,10 @@ Examples:
   # Using current checkpoint context
   api-cli create-step-scroll-element "Contact form" 1
   api-cli create-step-scroll-element "#footer"  # Auto-increment position
-  
+
   # Override checkpoint explicitly
   api-cli create-step-scroll-element "Contact form" 1 --checkpoint 1678318
-  
+
   # Legacy format (deprecated but still supported)
   api-cli create-step-scroll-element 1678318 "Contact form" 1`,
 		Args: cobra.RangeArgs(1, 3),
@@ -42,21 +42,21 @@ Examples:
 				if err != nil {
 					return err
 				}
-				
+
 				// Validate element
 				if element == "" {
 					return fmt.Errorf("element cannot be empty")
 				}
-				
+
 				// Create Virtuoso client
 				client := virtuoso.NewClient(cfg)
-				
+
 				// Create scroll to element step using the enhanced client
 				stepID, err := client.CreateScrollElementStep(checkpointID, element, position)
 				if err != nil {
 					return fmt.Errorf("failed to create scroll to element step: %w", err)
 				}
-				
+
 				// Output result using legacy context flags
 				output := &StepOutput{
 					Status:       "success",
@@ -69,36 +69,36 @@ Examples:
 					AutoPosition: false,
 					Extra:        map[string]interface{}{"element": element},
 				}
-				
+
 				return outputStepResult(output)
 			}
-			
+
 			// Modern format: ELEMENT [POSITION]
 			element := args[0]
-			
+
 			// Validate element
 			if element == "" {
 				return fmt.Errorf("element cannot be empty")
 			}
-			
+
 			// Resolve checkpoint and position
 			ctx, err := resolveStepContext(args, checkpointFlag, 1)
 			if err != nil {
 				return err
 			}
-			
+
 			// Create Virtuoso client
 			client := virtuoso.NewClient(cfg)
-			
+
 			// Create scroll to element step using the enhanced client
 			stepID, err := client.CreateScrollElementStep(ctx.CheckpointID, element, ctx.Position)
 			if err != nil {
 				return fmt.Errorf("failed to create scroll to element step: %w", err)
 			}
-			
+
 			// Save config if position was auto-incremented
 			saveStepContext(ctx)
-			
+
 			// Output result
 			output := &StepOutput{
 				Status:       "success",
@@ -111,12 +111,12 @@ Examples:
 				AutoPosition: ctx.AutoPosition,
 				Extra:        map[string]interface{}{"element": element},
 			}
-			
+
 			return outputStepResult(output)
 		},
 	}
-	
+
 	addCheckpointFlag(cmd, &checkpointFlag)
-	
+
 	return cmd
 }

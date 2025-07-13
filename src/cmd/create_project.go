@@ -11,12 +11,12 @@ import (
 
 func newCreateProjectCmd() *cobra.Command {
 	var description string
-	
+
 	cmd := &cobra.Command{
 		Use:   "create-project NAME",
 		Short: "Create a new Virtuoso project",
 		Long: `Create a new project in Virtuoso with the specified name.
-		
+
 Example:
   api-cli create-project "My Test Project"
   api-cli create-project "My Test Project" --description "Project for testing"
@@ -24,16 +24,16 @@ Example:
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			projectName := args[0]
-			
+
 			// Create Virtuoso client
 			client := virtuoso.NewClient(cfg)
-			
+
 			// Create the project
 			project, err := client.CreateProject(projectName, description)
 			if err != nil {
 				return fmt.Errorf("failed to create project: %w", err)
 			}
-			
+
 			// Format output based on the format flag
 			switch cfg.Output.DefaultFormat {
 			case "json":
@@ -64,12 +64,12 @@ Example:
 			default: // human
 				fmt.Printf("✅ Created project '%s' with ID: %d\n", project.Name, project.ID)
 			}
-			
+
 			return nil
 		},
 	}
-	
+
 	cmd.Flags().StringVarP(&description, "description", "d", "", "Description for the project")
-	
+
 	return cmd
 }

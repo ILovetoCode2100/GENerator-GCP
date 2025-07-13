@@ -10,7 +10,7 @@ import (
 
 func newCreateStepDismissPromptCmd() *cobra.Command {
 	var checkpointFlag int
-	
+
 	cmd := &cobra.Command{
 		Use:   "create-step-dismiss-prompt TEXT [POSITION]",
 		Short: "Create a dismiss prompt step at a specific position in a checkpoint",
@@ -23,10 +23,10 @@ Examples:
   # Using current checkpoint context
   api-cli create-step-dismiss-prompt "John Doe" 1
   api-cli create-step-dismiss-prompt "user@example.com"  # Auto-increment position
-  
+
   # Override checkpoint explicitly
   api-cli create-step-dismiss-prompt "John Doe" 1 --checkpoint 1678318
-  
+
   # Legacy format (still supported)
   api-cli create-step-dismiss-prompt 1678318 "John Doe" 1`,
 		Args: cobra.RangeArgs(1, 3),
@@ -34,7 +34,7 @@ Examples:
 			var ctx *StepContext
 			var text string
 			var err error
-			
+
 			// Check for legacy format (3 args where first is checkpoint ID)
 			if len(args) == 3 {
 				// Try to parse first arg as checkpoint ID
@@ -58,31 +58,31 @@ Examples:
 			} else {
 				// Modern format - text is first argument
 				text = args[0]
-				
+
 				// Resolve checkpoint and position
 				ctx, err = resolveStepContext(args, checkpointFlag, 1)
 				if err != nil {
 					return err
 				}
 			}
-			
+
 			// Validate text
 			if text == "" {
 				return fmt.Errorf("text cannot be empty")
 			}
-			
+
 			// Create Virtuoso client
 			client := virtuoso.NewClient(cfg)
-			
+
 			// Create dismiss prompt step using the enhanced client
 			stepID, err := client.CreateDismissPromptStep(ctx.CheckpointID, text, ctx.Position)
 			if err != nil {
 				return fmt.Errorf("failed to create dismiss prompt step: %w", err)
 			}
-			
+
 			// Save config if position was auto-incremented
 			saveStepContext(ctx)
-			
+
 			// Output result
 			output := &StepOutput{
 				Status:       "success",
@@ -95,12 +95,12 @@ Examples:
 				AutoPosition: ctx.AutoPosition,
 				Extra:        map[string]interface{}{"text": text},
 			}
-			
+
 			return outputStepResult(output)
 		},
 	}
-	
+
 	addCheckpointFlag(cmd, &checkpointFlag)
-	
+
 	return cmd
 }

@@ -14,14 +14,14 @@ import (
 
 // EnvironmentOutput represents the output structure for environment operations
 type EnvironmentOutput struct {
-	Status          string                 `json:"status"`
-	EnvironmentID   string                 `json:"environment_id"`
-	Name            string                 `json:"name"`
-	Description     string                 `json:"description,omitempty"`
-	Variables       map[string]interface{} `json:"variables"`
-	VariableCount   int                    `json:"variable_count"`
-	CreatedAt       time.Time              `json:"created_at"`
-	NextSteps       []string               `json:"next_steps,omitempty"`
+	Status        string                 `json:"status"`
+	EnvironmentID string                 `json:"environment_id"`
+	Name          string                 `json:"name"`
+	Description   string                 `json:"description,omitempty"`
+	Variables     map[string]interface{} `json:"variables"`
+	VariableCount int                    `json:"variable_count"`
+	CreatedAt     time.Time              `json:"created_at"`
+	NextSteps     []string               `json:"next_steps,omitempty"`
 }
 
 func newCreateEnvironmentCmd() *cobra.Command {
@@ -30,7 +30,7 @@ func newCreateEnvironmentCmd() *cobra.Command {
 	var variablesFlag string
 	var variablesFileFlag string
 	var copyFromFlag string
-	
+
 	cmd := &cobra.Command{
 		Use:   "create-environment",
 		Short: "Create a new test environment with variables",
@@ -70,7 +70,7 @@ Examples:
 
 			// Parse variables from different sources
 			variables := make(map[string]interface{})
-			
+
 			// Parse variables from flag
 			if variablesFlag != "" {
 				vars, err := parseVariablesString(variablesFlag)
@@ -81,7 +81,7 @@ Examples:
 					variables[k] = v
 				}
 			}
-			
+
 			// Parse variables from file
 			if variablesFileFlag != "" {
 				vars, err := parseVariablesFile(variablesFileFlag)
@@ -92,7 +92,7 @@ Examples:
 					variables[k] = v
 				}
 			}
-			
+
 			// TODO: Handle copy-from functionality
 			if copyFromFlag != "" {
 				return fmt.Errorf("copy-from functionality not yet implemented")
@@ -136,28 +136,28 @@ Examples:
 // parseVariablesString parses a comma-separated string of key=value pairs
 func parseVariablesString(varsStr string) (map[string]interface{}, error) {
 	variables := make(map[string]interface{})
-	
+
 	if varsStr == "" {
 		return variables, nil
 	}
-	
+
 	pairs := strings.Split(varsStr, ",")
 	for _, pair := range pairs {
 		parts := strings.SplitN(strings.TrimSpace(pair), "=", 2)
 		if len(parts) != 2 {
 			return nil, fmt.Errorf("invalid variable format: %s (expected key=value)", pair)
 		}
-		
+
 		key := strings.TrimSpace(parts[0])
 		value := strings.TrimSpace(parts[1])
-		
+
 		if key == "" {
 			return nil, fmt.Errorf("empty variable key in: %s", pair)
 		}
-		
+
 		variables[key] = value
 	}
-	
+
 	return variables, nil
 }
 
@@ -192,16 +192,16 @@ func outputEnvironmentResult(output *EnvironmentOutput, format string) error {
 	case "yaml":
 		// Convert to YAML-friendly format
 		yamlData := map[string]interface{}{
-			"status":          output.Status,
-			"environment_id":  output.EnvironmentID,
-			"name":            output.Name,
-			"description":     output.Description,
-			"variables":       output.Variables,
-			"variable_count":  output.VariableCount,
-			"created_at":      output.CreatedAt.Format(time.RFC3339),
-			"next_steps":      output.NextSteps,
+			"status":         output.Status,
+			"environment_id": output.EnvironmentID,
+			"name":           output.Name,
+			"description":    output.Description,
+			"variables":      output.Variables,
+			"variable_count": output.VariableCount,
+			"created_at":     output.CreatedAt.Format(time.RFC3339),
+			"next_steps":     output.NextSteps,
 		}
-		
+
 		jsonData, err := json.MarshalIndent(yamlData, "", "  ")
 		if err != nil {
 			return fmt.Errorf("failed to marshal YAML: %w", err)
@@ -219,13 +219,13 @@ func outputEnvironmentResult(output *EnvironmentOutput, format string) error {
 		fmt.Printf("✅ Environment created successfully\n")
 		fmt.Printf("🆔 Environment ID: %s\n", output.EnvironmentID)
 		fmt.Printf("📋 Name: %s\n", output.Name)
-		
+
 		if output.Description != "" {
 			fmt.Printf("📝 Description: %s\n", output.Description)
 		}
-		
+
 		fmt.Printf("🔢 Variables: %d\n", output.VariableCount)
-		
+
 		if len(output.Variables) > 0 {
 			fmt.Printf("\n🔐 Environment Variables:\n")
 			for key, value := range output.Variables {
@@ -237,9 +237,9 @@ func outputEnvironmentResult(output *EnvironmentOutput, format string) error {
 				fmt.Printf("  • %s: %s\n", key, displayValue)
 			}
 		}
-		
+
 		fmt.Printf("\n⏰ Created: %s\n", output.CreatedAt.Format("2006-01-02 15:04:05"))
-		
+
 		if len(output.NextSteps) > 0 {
 			fmt.Printf("\n💡 Next Steps:\n")
 			for _, step := range output.NextSteps {
@@ -258,13 +258,13 @@ func isSensitiveKey(key string) bool {
 		"password", "token", "key", "secret", "auth", "credential",
 		"api_key", "access_token", "client_secret", "private_key",
 	}
-	
+
 	for _, sensitive := range sensitiveKeys {
 		if strings.Contains(key, sensitive) {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -273,6 +273,6 @@ func maskValue(value string) string {
 	if len(value) <= 4 {
 		return "***"
 	}
-	
+
 	return value[:2] + "***" + value[len(value)-2:]
 }

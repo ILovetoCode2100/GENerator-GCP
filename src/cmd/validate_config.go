@@ -14,7 +14,7 @@ func newValidateConfigCmd() *cobra.Command {
 		Use:   "validate-config",
 		Short: "Validate API configuration and connectivity",
 		Long: `Validate that the configuration file is properly set up and that the API is accessible.
-		
+
 This command checks:
 - Configuration file exists and is valid
 - API endpoint is reachable
@@ -28,11 +28,11 @@ This command checks:
 			default:
 				fmt.Println("🔍 Checking configuration file...")
 			}
-			
+
 			if cfg == nil {
 				return fmt.Errorf("configuration not loaded")
 			}
-			
+
 			// Check if config file exists
 			configPath := "./config/virtuoso-config.yaml"
 			if _, err := os.Stat(configPath); os.IsNotExist(err) {
@@ -43,20 +43,20 @@ This command checks:
 					fmt.Printf("⚠️  Config file not found at %s, using defaults\n", configPath)
 				}
 			}
-			
+
 			// Validate required fields
 			if cfg.API.BaseURL == "" {
 				return fmt.Errorf("base URL not configured")
 			}
-			
+
 			if cfg.API.AuthToken == "" {
 				return fmt.Errorf("auth token not configured")
 			}
-			
+
 			if cfg.Org.ID == "" {
 				return fmt.Errorf("organization ID not configured")
 			}
-			
+
 			// Step 2: Test API connectivity
 			switch cfg.Output.DefaultFormat {
 			case "json":
@@ -64,9 +64,9 @@ This command checks:
 			default:
 				fmt.Println("🌐 Testing API connectivity...")
 			}
-			
+
 			client := virtuoso.NewClient(cfg)
-			
+
 			// Step 3: Validate authentication by listing projects
 			switch cfg.Output.DefaultFormat {
 			case "json":
@@ -74,14 +74,14 @@ This command checks:
 			default:
 				fmt.Println("🔐 Validating authentication...")
 			}
-			
+
 			// We'll implement a simple health check by trying to list projects
 			// This will be replaced with ListProjects when we implement it
 			resp, err := client.TestConnection()
 			if err != nil {
 				return fmt.Errorf("API connection failed: %w", err)
 			}
-			
+
 			// Output results
 			switch cfg.Output.DefaultFormat {
 			case "json":
@@ -101,14 +101,14 @@ This command checks:
 				encoder := json.NewEncoder(os.Stdout)
 				encoder.SetIndent("", "  ")
 				encoder.Encode(result)
-				
+
 			case "yaml":
 				fmt.Println("status: valid")
 				fmt.Printf("base_url: %s\n", cfg.API.BaseURL)
 				fmt.Printf("organization_id: %s\n", cfg.Org.ID)
 				fmt.Println("api_reachable: true")
 				fmt.Println("authenticated: true")
-				
+
 			case "ai":
 				fmt.Println("Configuration validation successful!")
 				fmt.Printf("\nConfiguration Details:\n")
@@ -122,7 +122,7 @@ This command checks:
 				fmt.Printf("\nNext steps:\n")
 				fmt.Printf("1. List projects: api-cli list-projects\n")
 				fmt.Printf("2. Create a project: api-cli create-project \"My Project\"\n")
-				
+
 			default: // human
 				fmt.Println("✅ Configuration is valid!")
 				fmt.Printf("\n📋 Configuration:\n")
@@ -132,10 +132,10 @@ This command checks:
 				fmt.Println("\n✅ API connection successful")
 				fmt.Println("✅ Authentication valid")
 			}
-			
+
 			return nil
 		},
 	}
-	
+
 	return cmd
 }

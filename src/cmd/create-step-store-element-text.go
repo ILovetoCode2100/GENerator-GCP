@@ -27,7 +27,7 @@ Example:
 	}
 
 	cmd.Flags().StringP("output", "o", "human", "Output format (human, json, yaml, ai)")
-	
+
 	return cmd
 }
 
@@ -85,7 +85,7 @@ func runCreateStepStoreElementText(cmd *cobra.Command, args []string) error {
 		}
 		fmt.Print(string(output))
 	case "ai":
-		fmt.Printf("Created store element text step with ID %d for checkpoint %d. Selector: %s, variable: %s, position: %d\n", 
+		fmt.Printf("Created store element text step with ID %d for checkpoint %d. Selector: %s, variable: %s, position: %d\n",
 			stepID, checkpointID, selector, variableName, position)
 	default: // human
 		fmt.Printf("Store element text step created successfully!\n")

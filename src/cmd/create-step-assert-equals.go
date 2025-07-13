@@ -9,7 +9,7 @@ import (
 
 func newCreateStepAssertEqualsCmd() *cobra.Command {
 	var checkpointFlag int
-	
+
 	cmd := &cobra.Command{
 		Use:   "create-step-assert-equals ELEMENT VALUE [POSITION]",
 		Short: "Create an assertion step that verifies an element has a specific text value at a specific position",
@@ -22,42 +22,42 @@ Examples:
   # Using current checkpoint context
   api-cli create-step-assert-equals "Username field" "john@example.com" 1
   api-cli create-step-assert-equals "Username field" "john@example.com"  # Auto-increment position
-  
+
   # Override checkpoint explicitly
   api-cli create-step-assert-equals "Username field" "john@example.com" 1 --checkpoint 1678318`,
 		Args: cobra.RangeArgs(2, 3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			element := args[0]
 			value := args[1]
-			
+
 			// Validate element
 			if element == "" {
 				return fmt.Errorf("element cannot be empty")
 			}
-			
+
 			// Validate value
 			if value == "" {
 				return fmt.Errorf("value cannot be empty")
 			}
-			
+
 			// Resolve checkpoint and position
 			ctx, err := resolveStepContext(args, checkpointFlag, 2)
 			if err != nil {
 				return err
 			}
-			
+
 			// Create Virtuoso client
 			client := virtuoso.NewClient(cfg)
-			
+
 			// Create assert equals step using the client
 			stepID, err := client.CreateAssertEqualsStep(ctx.CheckpointID, element, value, ctx.Position)
 			if err != nil {
 				return fmt.Errorf("failed to create assert equals step: %w", err)
 			}
-			
+
 			// Save config if position was auto-incremented
 			saveStepContext(ctx)
-			
+
 			// Output result
 			output := &StepOutput{
 				Status:       "success",
@@ -70,12 +70,12 @@ Examples:
 				AutoPosition: ctx.AutoPosition,
 				Extra:        map[string]interface{}{"element": element, "value": value},
 			}
-			
+
 			return outputStepResult(output)
 		},
 	}
-	
+
 	addCheckpointFlag(cmd, &checkpointFlag)
-	
+
 	return cmd
 }

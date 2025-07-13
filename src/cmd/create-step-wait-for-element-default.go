@@ -27,7 +27,7 @@ Example:
 	}
 
 	cmd.Flags().StringP("output", "o", "human", "Output format (human, json, yaml, ai)")
-	
+
 	return cmd
 }
 
@@ -84,7 +84,7 @@ func runCreateStepWaitForElementDefault(cmd *cobra.Command, args []string) error
 		}
 		fmt.Print(string(output))
 	case "ai":
-		fmt.Printf("Created wait for element default step with ID %d for checkpoint %d. Selector: %s, timeout: 20000ms, position: %d\n", 
+		fmt.Printf("Created wait for element default step with ID %d for checkpoint %d. Selector: %s, timeout: 20000ms, position: %d\n",
 			stepID, checkpointID, selector, position)
 	default: // human
 		fmt.Printf("Wait for element default step created successfully!\n")

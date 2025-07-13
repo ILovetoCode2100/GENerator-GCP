@@ -10,7 +10,7 @@ import (
 
 func newCreateStepDeleteCookieCmd() *cobra.Command {
 	var checkpointFlag int
-	
+
 	cmd := &cobra.Command{
 		Use:   "create-step-delete-cookie NAME [POSITION]",
 		Short: "Create a delete cookie step at a specific position in a checkpoint",
@@ -31,7 +31,7 @@ Legacy usage (backward compatible):
 			var name string
 			var ctx *StepContext
 			var err error
-			
+
 			// Check for legacy syntax (first arg is numeric checkpoint ID)
 			if _, parseErr := strconv.Atoi(args[0]); parseErr == nil && len(args) >= 3 {
 				// Legacy syntax: CHECKPOINT_ID NAME POSITION
@@ -39,13 +39,13 @@ Legacy usage (backward compatible):
 				if err != nil {
 					return fmt.Errorf("invalid checkpoint ID: %w", err)
 				}
-				
+
 				name = args[1]
 				position, err := strconv.Atoi(args[2])
 				if err != nil {
 					return fmt.Errorf("invalid position: %w", err)
 				}
-				
+
 				ctx = &StepContext{
 					CheckpointID: checkpointID,
 					Position:     position,
@@ -55,7 +55,7 @@ Legacy usage (backward compatible):
 			} else {
 				// Modern syntax: NAME [POSITION]
 				name = args[0]
-				
+
 				// Determine position index for resolveStepContext
 				positionIndex := 1
 				ctx, err = resolveStepContext(args, checkpointFlag, positionIndex)
@@ -63,24 +63,24 @@ Legacy usage (backward compatible):
 					return err
 				}
 			}
-			
+
 			// Validate name
 			if name == "" {
 				return fmt.Errorf("cookie name cannot be empty")
 			}
-			
+
 			// Create Virtuoso client
 			client := virtuoso.NewClient(cfg)
-			
+
 			// Create delete cookie step using the enhanced client
 			stepID, err := client.CreateDeleteCookieStep(ctx.CheckpointID, name, ctx.Position)
 			if err != nil {
 				return fmt.Errorf("failed to create delete cookie step: %w", err)
 			}
-			
+
 			// Save session context if position was auto-incremented
 			saveStepContext(ctx)
-			
+
 			// Create step output
 			output := &StepOutput{
 				Status:       "success",
@@ -93,14 +93,14 @@ Legacy usage (backward compatible):
 				AutoPosition: ctx.AutoPosition,
 				Extra:        map[string]interface{}{"name": name},
 			}
-			
+
 			// Output the result
 			return outputStepResult(output)
 		},
 	}
-	
+
 	// Add checkpoint flag
 	addCheckpointFlag(cmd, &checkpointFlag)
-	
+
 	return cmd
 }

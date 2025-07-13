@@ -32,7 +32,7 @@ Examples:
 	cmd.Flags().String("variable", "", "Use variable as target instead of selector")
 	cmd.Flags().String("position", "", "Element position (e.g., TOP_RIGHT, BOTTOM_LEFT)")
 	cmd.Flags().String("element-type", "", "Element type (e.g., BUTTON, INPUT, LINK)")
-	
+
 	return cmd
 }
 
@@ -44,7 +44,7 @@ func runCreateStepClick(cmd *cobra.Command, args []string) error {
 	}
 
 	selector := args[1]
-	
+
 	position, err := strconv.Atoi(args[2])
 	if err != nil {
 		return fmt.Errorf("invalid position: %w", err)
@@ -106,7 +106,7 @@ func runCreateStepClick(cmd *cobra.Command, args []string) error {
 		if variable != "" {
 			target = fmt.Sprintf("variable '%s'", variable)
 		}
-		fmt.Printf("Created click step with ID %d for checkpoint %d. Target: %s, position: %d\n", 
+		fmt.Printf("Created click step with ID %d for checkpoint %d. Target: %s, position: %d\n",
 			stepID, checkpointID, target, position)
 	default: // human
 		fmt.Printf("Click step created successfully!\n")

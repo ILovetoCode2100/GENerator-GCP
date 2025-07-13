@@ -27,7 +27,7 @@ Examples:
 	}
 
 	cmd.Flags().StringP("output", "o", "human", "Output format (human, json, yaml, ai)")
-	
+
 	return cmd
 }
 
@@ -92,7 +92,7 @@ func runCreateStepScrollToPosition(cmd *cobra.Command, args []string) error {
 		}
 		fmt.Print(string(output))
 	case "ai":
-		fmt.Printf("Created scroll to position step with ID %d for checkpoint %d. Coordinates: (%d, %d), position: %d\n", 
+		fmt.Printf("Created scroll to position step with ID %d for checkpoint %d. Coordinates: (%d, %d), position: %d\n",
 			stepID, checkpointID, x, y, position)
 	default: // human
 		fmt.Printf("Scroll to position step created successfully!\n")
@@ -120,7 +120,7 @@ Examples:
 	}
 
 	cmd.Flags().StringP("output", "o", "human", "Output format (human, json, yaml, ai)")
-	
+
 	return cmd
 }
 
@@ -185,7 +185,7 @@ func runCreateStepScrollByOffset(cmd *cobra.Command, args []string) error {
 		}
 		fmt.Print(string(output))
 	case "ai":
-		fmt.Printf("Created scroll by offset step with ID %d for checkpoint %d. Offset: (%d, %d), position: %d\n", 
+		fmt.Printf("Created scroll by offset step with ID %d for checkpoint %d. Offset: (%d, %d), position: %d\n",
 			stepID, checkpointID, x, y, position)
 	default: // human
 		fmt.Printf("Scroll by offset step created successfully!\n")
@@ -213,7 +213,7 @@ Examples:
 	}
 
 	cmd.Flags().StringP("output", "o", "human", "Output format (human, json, yaml, ai)")
-	
+
 	return cmd
 }
 
@@ -268,7 +268,7 @@ func runCreateStepScrollToTop(cmd *cobra.Command, args []string) error {
 		}
 		fmt.Print(string(output))
 	case "ai":
-		fmt.Printf("Created scroll to top step with ID %d for checkpoint %d. Position: %d\n", 
+		fmt.Printf("Created scroll to top step with ID %d for checkpoint %d. Position: %d\n",
 			stepID, checkpointID, position)
 	default: // human
 		fmt.Printf("Scroll to top step created successfully!\n")

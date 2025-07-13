@@ -12,33 +12,33 @@ import (
 
 func newUpdateJourneyCmd() *cobra.Command {
 	var name string
-	
+
 	cmd := &cobra.Command{
 		Use:   "update-journey JOURNEY_ID",
 		Short: "Update a Virtuoso journey (testsuite) name",
 		Long: `Update the name of an existing journey (testsuite) in Virtuoso.
-		
+
 Example:
   api-cli update-journey 12345 --name "Updated Journey Name"
   api-cli update-journey 12345 --name "New Name" -o json`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			journeyIDStr := args[0]
-			
+
 			// Validate that name flag was provided
 			if name == "" {
 				return fmt.Errorf("--name flag is required")
 			}
-			
+
 			// Convert journey ID to int
 			journeyID, err := strconv.Atoi(journeyIDStr)
 			if err != nil {
 				return fmt.Errorf("invalid journey ID: %w", err)
 			}
-			
+
 			// Create Virtuoso client
 			client := virtuoso.NewClient(cfg)
-			
+
 			// Get current journey details for human output
 			var originalJourney *virtuoso.Journey
 			if cfg.Output.DefaultFormat == "human" || cfg.Output.DefaultFormat == "" {
@@ -48,13 +48,13 @@ Example:
 					fmt.Fprintf(os.Stderr, "Warning: Could not fetch current journey details: %v\n", err)
 				}
 			}
-			
+
 			// Update the journey
 			journey, err := client.UpdateJourney(journeyID, name)
 			if err != nil {
 				return fmt.Errorf("failed to update journey: %w", err)
 			}
-			
+
 			// Format output based on the format flag
 			switch cfg.Output.DefaultFormat {
 			case "json":
@@ -97,14 +97,14 @@ Example:
 					fmt.Printf("✅ Updated journey '%s' (ID: %d)\n", journey.Name, journey.ID)
 				}
 			}
-			
+
 			return nil
 		},
 	}
-	
+
 	// Add flags
 	cmd.Flags().StringVar(&name, "name", "", "New name for the journey (required)")
 	cmd.MarkFlagRequired("name")
-	
+
 	return cmd
 }

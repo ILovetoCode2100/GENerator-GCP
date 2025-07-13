@@ -27,7 +27,7 @@ Examples:
 	}
 
 	cmd.Flags().StringP("output", "o", "human", "Output format (human, json, yaml, ai)")
-	
+
 	return cmd
 }
 
@@ -92,7 +92,7 @@ func runCreateStepWindowResize(cmd *cobra.Command, args []string) error {
 		}
 		fmt.Print(string(output))
 	case "ai":
-		fmt.Printf("Created window resize step with ID %d for checkpoint %d. Size: %dx%d, position: %d\n", 
+		fmt.Printf("Created window resize step with ID %d for checkpoint %d. Size: %dx%d, position: %d\n",
 			stepID, checkpointID, width, height, position)
 	default: // human
 		fmt.Printf("Window resize step created successfully!\n")

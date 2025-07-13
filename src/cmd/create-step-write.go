@@ -29,7 +29,7 @@ Examples:
 
 	cmd.Flags().StringP("output", "o", "human", "Output format (human, json, yaml, ai)")
 	cmd.Flags().String("variable", "", "Store the value in a variable")
-	
+
 	return cmd
 }
 
@@ -42,7 +42,7 @@ func runCreateStepWrite(cmd *cobra.Command, args []string) error {
 
 	selector := args[1]
 	value := args[2]
-	
+
 	position, err := strconv.Atoi(args[3])
 	if err != nil {
 		return fmt.Errorf("invalid position: %w", err)
@@ -100,7 +100,7 @@ func runCreateStepWrite(cmd *cobra.Command, args []string) error {
 		if variable != "" {
 			varInfo = fmt.Sprintf(" (stored in variable '%s')", variable)
 		}
-		fmt.Printf("Created write step with ID %d for checkpoint %d. Selector: %s, value: %s%s, position: %d\n", 
+		fmt.Printf("Created write step with ID %d for checkpoint %d. Selector: %s, value: %s%s, position: %d\n",
 			stepID, checkpointID, selector, value, varInfo, position)
 	default: // human
 		fmt.Printf("Write step created successfully!\n")

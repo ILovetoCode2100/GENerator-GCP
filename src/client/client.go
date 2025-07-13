@@ -1,3 +1,5 @@
+// Package client provides an enhanced API client with features like retry logic,
+// circuit breaker patterns, and structured error handling for interacting with external APIs.
 package client
 
 import (
@@ -14,13 +16,13 @@ import (
 type EnhancedClient struct {
 	// Generated client
 	// apiClient *api.Client // TODO: Uncomment when generated API is available
-	
+
 	// Enhanced HTTP client
 	httpClient *resty.Client
-	
+
 	// Configuration
 	config Config
-	
+
 	// Logger
 	logger *logrus.Logger
 }
@@ -40,7 +42,7 @@ func NewEnhancedClient(cfg Config) (*EnhancedClient, error) {
 	if cfg.Debug {
 		logger.SetLevel(logrus.DebugLevel)
 	}
-	
+
 	// Create Resty client with retry and logging
 	httpClient := resty.New().
 		SetBaseURL(cfg.BaseURL).
@@ -62,18 +64,18 @@ func NewEnhancedClient(cfg Config) (*EnhancedClient, error) {
 			}).Debug("Received API response")
 			return nil
 		})
-	
+
 	// Add authentication if provided
 	if cfg.APIKey != "" {
 		httpClient.SetAuthToken(cfg.APIKey)
 	}
-	
+
 	// TODO: Create the generated client when API is available
 	// apiClient, err := api.NewClient(cfg.BaseURL, api.WithHTTPClient(httpClient.GetClient()))
 	// if err != nil {
 	// 	return nil, fmt.Errorf("failed to create API client: %w", err)
 	// }
-	
+
 	return &EnhancedClient{
 		// apiClient:  apiClient,
 		httpClient: httpClient,
@@ -99,23 +101,19 @@ func (c *EnhancedClient) HandleError(err error, operation string) error {
 	if err == nil {
 		return nil
 	}
-	
+
 	c.logger.WithError(err).WithField("operation", operation).Error("API operation failed")
-	
+
 	// Check for specific error types and wrap accordingly
-	switch err.(type) {
-	// TODO: Uncomment when generated API is available
-	// case *api.ErrorResponse:
-	// 	return fmt.Errorf("%s failed: %s (code: %d)", operation, e.Message, e.Code)
-	default:
-		return fmt.Errorf("%s failed: %w", operation, err)
-	}
+	// TODO: Add specific error type handling when generated API is available
+	// For now, return the wrapped error
+	return fmt.Errorf("%s failed: %w", operation, err)
 }
 
 // ExecuteWithRetry executes a function with retry logic
 func (c *EnhancedClient) ExecuteWithRetry(ctx context.Context, operation string, fn func() error) error {
 	var lastErr error
-	
+
 	for attempt := 0; attempt <= c.config.MaxRetries; attempt++ {
 		if attempt > 0 {
 			waitTime := time.Duration(attempt) * time.Second
@@ -125,14 +123,14 @@ func (c *EnhancedClient) ExecuteWithRetry(ctx context.Context, operation string,
 			}).Debug("Retrying operation")
 			time.Sleep(waitTime)
 		}
-		
+
 		if err := fn(); err != nil {
 			lastErr = err
 			continue
 		}
-		
+
 		return nil
 	}
-	
+
 	return c.HandleError(lastErr, operation)
 }

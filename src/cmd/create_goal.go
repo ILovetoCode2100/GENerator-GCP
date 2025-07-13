@@ -12,13 +12,13 @@ import (
 
 func newCreateGoalCmd() *cobra.Command {
 	var url string
-	
+
 	cmd := &cobra.Command{
 		Use:   "create-goal PROJECT_ID NAME",
 		Short: "Create a new Virtuoso goal with automatic initial journey",
 		Long: `Create a new goal in Virtuoso for the specified project.
 This command automatically creates an initial journey and retrieves the snapshot ID.
-		
+
 Example:
   api-cli create-goal 123 "My Test Goal"
   api-cli create-goal 123 "My Test Goal" --url "https://example.com"
@@ -27,28 +27,28 @@ Example:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			projectIDStr := args[0]
 			goalName := args[1]
-			
+
 			// Convert project ID to int
 			projectID, err := strconv.Atoi(projectIDStr)
 			if err != nil {
 				return fmt.Errorf("invalid project ID: %w", err)
 			}
-			
+
 			// Create Virtuoso client
 			client := virtuoso.NewClient(cfg)
-			
+
 			// Create the goal
 			goal, err := client.CreateGoal(projectID, goalName, url)
 			if err != nil {
 				return fmt.Errorf("failed to create goal: %w", err)
 			}
-			
+
 			// Get the snapshot ID
 			snapshotID, err := client.GetGoalSnapshot(goal.ID)
 			if err != nil {
 				return fmt.Errorf("failed to get snapshot ID: %w", err)
 			}
-			
+
 			// Format output based on the format flag
 			switch cfg.Output.DefaultFormat {
 			case "json":
@@ -82,12 +82,12 @@ Example:
 			default: // human
 				fmt.Printf("✅ Created goal '%s' with ID: %d, Snapshot ID: %s\n", goal.Name, goal.ID, snapshotID)
 			}
-			
+
 			return nil
 		},
 	}
-	
+
 	cmd.Flags().StringVar(&url, "url", "https://www.example.com", "URL for the goal")
-	
+
 	return cmd
 }

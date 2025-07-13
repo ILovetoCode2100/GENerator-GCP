@@ -13,7 +13,7 @@ func newCreateStepDismissConfirmCmd() *cobra.Command {
 	var checkpointFlag int
 	var acceptFlag bool
 	var cancelFlag bool
-	
+
 	cmd := &cobra.Command{
 		Use:   "create-step-dismiss-confirm ACCEPT [POSITION]",
 		Short: "Create a dismiss confirm dialog step at a specific position in a checkpoint",
@@ -31,10 +31,10 @@ Examples:
   api-cli create-step-dismiss-confirm false        # Cancel dialog, auto-increment position
   api-cli create-step-dismiss-confirm --accept     # Accept using flag
   api-cli create-step-dismiss-confirm --cancel 2   # Cancel using flag at position 2
-  
+
   # Override checkpoint explicitly
   api-cli create-step-dismiss-confirm true 1 --checkpoint 1678318
-  
+
   # Legacy format (still supported)
   api-cli create-step-dismiss-confirm 1678318 1 --accept
   api-cli create-step-dismiss-confirm 1678318 2 --cancel`,
@@ -44,7 +44,7 @@ Examples:
 			var accept bool
 			var err error
 			var acceptArgIndex int = -1
-			
+
 			// Determine accept value from flags first
 			if acceptFlag {
 				accept = true
@@ -58,7 +58,7 @@ Examples:
 					acceptArgIndex = 0
 				}
 			}
-			
+
 			// Check for legacy format (first arg is checkpoint ID)
 			if len(args) >= 2 {
 				// Try to parse first arg as checkpoint ID
@@ -104,24 +104,24 @@ Examples:
 			} else {
 				return fmt.Errorf("must specify accept/cancel action: use 'true'/'false' argument or --accept/--cancel flag")
 			}
-			
+
 			// Create Virtuoso client
 			client := virtuoso.NewClient(cfg)
-			
+
 			// Create dismiss confirm step using the enhanced client
 			stepID, err := client.CreateDismissConfirmStep(ctx.CheckpointID, accept, ctx.Position)
 			if err != nil {
 				return fmt.Errorf("failed to create dismiss confirm step: %w", err)
 			}
-			
+
 			// Save config if position was auto-incremented
 			saveStepContext(ctx)
-			
+
 			action := "cancel"
 			if accept {
 				action = "accept"
 			}
-			
+
 			// Output result
 			output := &StepOutput{
 				Status:       "success",
@@ -134,14 +134,14 @@ Examples:
 				AutoPosition: ctx.AutoPosition,
 				Extra:        map[string]interface{}{"action": action},
 			}
-			
+
 			return outputStepResult(output)
 		},
 	}
-	
+
 	addCheckpointFlag(cmd, &checkpointFlag)
 	cmd.Flags().BoolVar(&acceptFlag, "accept", false, "Accept the confirm dialog")
 	cmd.Flags().BoolVar(&cancelFlag, "cancel", false, "Cancel the confirm dialog")
-	
+
 	return cmd
 }

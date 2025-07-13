@@ -10,12 +10,12 @@ import (
 
 func newCreateStepExecuteJsCmd() *cobra.Command {
 	var checkpointFlag int
-	
+
 	cmd := &cobra.Command{
 		Use:   "create-step-execute-js JAVASCRIPT [VARIABLE_NAME] [POSITION]",
 		Short: "Create an execute JavaScript step at a specific position in a checkpoint",
 		Long: `Create an execute JavaScript step that runs custom JavaScript code at the specified position in the checkpoint.
-		
+
 Modern usage (with session context):
   api-cli set-checkpoint 1678318
   api-cli create-step-execute-js "window.scrollTo(0, 0)"
@@ -32,7 +32,7 @@ Legacy usage:
 			var javascript, variableName string
 			var ctx *StepContext
 			var err error
-			
+
 			// Handle both modern and legacy patterns
 			if len(args) >= 3 {
 				// Check if first arg is a checkpoint ID (legacy pattern)
@@ -99,31 +99,31 @@ Legacy usage:
 					}
 				}
 			}
-			
+
 			// Validate JavaScript
 			if javascript == "" {
 				return fmt.Errorf("javascript cannot be empty")
 			}
-			
+
 			// Create Virtuoso client
 			client := virtuoso.NewClient(cfg)
-			
+
 			// Create execute JavaScript step using the enhanced client
 			// Note: The client method doesn't support variable name, so we'll need to handle that separately if needed
 			stepID, err := client.CreateExecuteJsStep(ctx.CheckpointID, javascript, ctx.Position)
 			if err != nil {
 				return fmt.Errorf("failed to create execute JavaScript step: %w", err)
 			}
-			
+
 			// Save session context if position was auto-incremented
 			saveStepContext(ctx)
-			
+
 			// Build parsed step description
 			parsedStep := fmt.Sprintf("execute JS \"%s\"", javascript)
 			if variableName != "" {
 				parsedStep = fmt.Sprintf("execute JS \"%s\" and store in $%s", javascript, variableName)
 			}
-			
+
 			// Output the result
 			extra := map[string]interface{}{
 				"javascript": javascript,
@@ -131,7 +131,7 @@ Legacy usage:
 			if variableName != "" {
 				extra["variable_name"] = variableName
 			}
-			
+
 			output := &StepOutput{
 				Status:       "success",
 				StepType:     "EXECUTE_JS",
@@ -143,13 +143,13 @@ Legacy usage:
 				AutoPosition: ctx.AutoPosition,
 				Extra:        extra,
 			}
-			
+
 			return outputStepResult(output)
 		},
 	}
-	
+
 	// Add the --checkpoint flag
 	addCheckpointFlag(cmd, &checkpointFlag)
-	
+
 	return cmd
 }

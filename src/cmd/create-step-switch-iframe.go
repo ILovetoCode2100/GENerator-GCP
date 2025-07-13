@@ -27,7 +27,7 @@ Example:
 	}
 
 	cmd.Flags().StringP("output", "o", "human", "Output format (human, json, yaml, ai)")
-	
+
 	return cmd
 }
 
@@ -84,7 +84,7 @@ func runCreateStepSwitchIframe(cmd *cobra.Command, args []string) error {
 		}
 		fmt.Print(string(output))
 	case "ai":
-		fmt.Printf("Created switch iframe step with ID %d for checkpoint %d. Selector: %s, position: %d\n", 
+		fmt.Printf("Created switch iframe step with ID %d for checkpoint %d. Selector: %s, position: %d\n",
 			stepID, checkpointID, selector, position)
 	default: // human
 		fmt.Printf("Switch iframe step created successfully!\n")

@@ -8,7 +8,7 @@ type TestStructure struct {
 
 // ProjectDef defines a project in the structure
 type ProjectDef struct {
-	ID          int    `yaml:"id,omitempty" json:"id,omitempty"`           // Optional existing project ID
+	ID          int    `yaml:"id,omitempty" json:"id,omitempty"` // Optional existing project ID
 	Name        string `yaml:"name" json:"name"`
 	Description string `yaml:"description,omitempty" json:"description,omitempty"`
 }
@@ -35,33 +35,33 @@ type CheckpointDef struct {
 
 // StepDef defines a step in the structure
 type StepDef struct {
-	Type     string `yaml:"type" json:"type"`         // navigate, click, wait, fill
+	Type     string `yaml:"type" json:"type"` // navigate, click, wait, fill
 	URL      string `yaml:"url,omitempty" json:"url,omitempty"`
 	Selector string `yaml:"selector,omitempty" json:"selector,omitempty"`
-	Value    string `yaml:"value,omitempty" json:"value,omitempty"`     // For fill steps
+	Value    string `yaml:"value,omitempty" json:"value,omitempty"` // For fill steps
 	Timeout  int    `yaml:"timeout,omitempty" json:"timeout,omitempty"`
 }
 
 // CreatedResources tracks all resources created during structure creation
 type CreatedResources struct {
-	ProjectID  int                   `json:"project_id"`
-	Goals      []CreatedGoal         `json:"goals"`
-	TotalSteps int                   `json:"total_steps"`
+	ProjectID  int           `json:"project_id"`
+	Goals      []CreatedGoal `json:"goals"`
+	TotalSteps int           `json:"total_steps"`
 }
 
 // CreatedGoal tracks a created goal and its resources
 type CreatedGoal struct {
-	ID        int               `json:"id"`
-	Name      string            `json:"name"`
-	Snapshot  string            `json:"snapshot_id"`
-	Journeys  []CreatedJourney  `json:"journeys"`
+	ID       int              `json:"id"`
+	Name     string           `json:"name"`
+	Snapshot string           `json:"snapshot_id"`
+	Journeys []CreatedJourney `json:"journeys"`
 }
 
 // CreatedJourney tracks a created journey and its resources
 type CreatedJourney struct {
-	ID          int                  `json:"id"`
-	Name        string               `json:"name"`
-	Checkpoints []CreatedCheckpoint  `json:"checkpoints"`
+	ID          int                 `json:"id"`
+	Name        string              `json:"name"`
+	Checkpoints []CreatedCheckpoint `json:"checkpoints"`
 }
 
 // CreatedCheckpoint tracks a created checkpoint

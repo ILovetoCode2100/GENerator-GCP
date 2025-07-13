@@ -26,7 +26,7 @@ func newMonitorExecutionCmd() *cobra.Command {
 	var followFlag bool
 	var intervalFlag int
 	var timeoutFlag int
-	
+
 	cmd := &cobra.Command{
 		Use:   "monitor-execution EXECUTION_ID",
 		Short: "Monitor execution progress with real-time updates",
@@ -128,7 +128,7 @@ func followExecution(client *virtuoso.Client, executionID string, interval, time
 	defer ticker.Stop()
 
 	timeoutChan := time.After(time.Duration(timeout) * time.Second)
-	
+
 	// Print header for human format
 	if format == "human" {
 		fmt.Printf("🔄 Following execution %s (press Ctrl+C to stop)\n", executionID)
@@ -156,7 +156,7 @@ func followExecution(client *virtuoso.Client, executionID string, interval, time
 					Progress:     execution.Progress,
 					LastUpdated:  time.Now(),
 				}
-				
+
 				if !execution.StartTime.IsZero() {
 					var endTime time.Time
 					if execution.EndTime != nil {
@@ -167,7 +167,7 @@ func followExecution(client *virtuoso.Client, executionID string, interval, time
 					duration := endTime.Sub(execution.StartTime)
 					output.Duration = formatDuration(duration)
 				}
-				
+
 				outputMonitorResult(output, format)
 			}
 
@@ -184,25 +184,25 @@ func followExecution(client *virtuoso.Client, executionID string, interval, time
 
 // displayExecutionStatus displays execution status in human-readable format
 func displayExecutionStatus(execution *virtuoso.Execution) {
-	fmt.Printf("\r⏰ %s | Status: %s", 
-		time.Now().Format("15:04:05"), 
+	fmt.Printf("\r⏰ %s | Status: %s",
+		time.Now().Format("15:04:05"),
 		execution.Status)
-	
+
 	if execution.Progress != nil {
-		fmt.Printf(" | Progress: %.1f%% (%d/%d steps)", 
+		fmt.Printf(" | Progress: %.1f%% (%d/%d steps)",
 			execution.Progress.PercentComplete,
 			execution.Progress.CompletedSteps,
 			execution.Progress.TotalSteps)
-		
+
 		if execution.Progress.FailedSteps > 0 {
 			fmt.Printf(" | Failures: %d", execution.Progress.FailedSteps)
 		}
-		
+
 		if execution.Progress.CurrentJourney != "" {
 			fmt.Printf(" | Current: %s", execution.Progress.CurrentJourney)
 		}
 	}
-	
+
 	fmt.Print("                    ") // Clear any remaining characters
 }
 
@@ -239,7 +239,7 @@ func outputMonitorResult(output *MonitorOutput, format string) error {
 			"last_updated":  output.LastUpdated.Format(time.RFC3339),
 			"next_steps":    output.NextSteps,
 		}
-		
+
 		jsonData, err := json.MarshalIndent(yamlData, "", "  ")
 		if err != nil {
 			return fmt.Errorf("failed to marshal YAML: %w", err)
@@ -256,38 +256,38 @@ func outputMonitorResult(output *MonitorOutput, format string) error {
 	default: // human
 		fmt.Printf("📊 Execution Monitor - %s\n", output.ExecutionID)
 		fmt.Printf("🔄 Current State: %s\n", output.CurrentState)
-		
+
 		if output.Progress != nil {
-			fmt.Printf("📈 Progress: %.1f%% (%d/%d steps)\n", 
+			fmt.Printf("📈 Progress: %.1f%% (%d/%d steps)\n",
 				output.Progress.PercentComplete,
 				output.Progress.CompletedSteps,
 				output.Progress.TotalSteps)
-			
+
 			if output.Progress.TotalJourneys > 0 {
-				fmt.Printf("📋 Journeys: %d/%d completed\n", 
+				fmt.Printf("📋 Journeys: %d/%d completed\n",
 					output.Progress.CompletedJourneys,
 					output.Progress.TotalJourneys)
 			}
-			
+
 			if output.Progress.FailedSteps > 0 {
 				fmt.Printf("⚠️  Failed Steps: %d\n", output.Progress.FailedSteps)
 			}
-			
+
 			if output.Progress.CurrentJourney != "" {
 				fmt.Printf("🎯 Current Journey: %s\n", output.Progress.CurrentJourney)
 			}
-			
+
 			if output.Progress.SuccessRate > 0 {
 				fmt.Printf("✅ Success Rate: %.1f%%\n", output.Progress.SuccessRate)
 			}
 		}
-		
+
 		if output.Duration != "" {
 			fmt.Printf("⏱️  Duration: %s\n", output.Duration)
 		}
-		
+
 		fmt.Printf("🕐 Last Updated: %s\n", output.LastUpdated.Format("2006-01-02 15:04:05"))
-		
+
 		if len(output.NextSteps) > 0 {
 			fmt.Printf("\n💡 Next steps:\n")
 			for _, step := range output.NextSteps {

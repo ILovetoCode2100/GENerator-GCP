@@ -15,7 +15,7 @@ func newListCheckpointsCmd() *cobra.Command {
 		Use:   "list-checkpoints JOURNEY_ID",
 		Short: "List all checkpoints in a Virtuoso journey",
 		Long: `List all checkpoints (testcases) in a Virtuoso journey.
-		
+
 This command shows the checkpoints in order, identifies which checkpoint contains
 the shared navigation step, and displays the step count for each checkpoint.
 
@@ -25,22 +25,22 @@ Example:
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			journeyIDStr := args[0]
-			
+
 			// Convert journey ID to int
 			journeyID, err := strconv.Atoi(journeyIDStr)
 			if err != nil {
 				return fmt.Errorf("invalid journey ID: %w", err)
 			}
-			
+
 			// Create Virtuoso client
 			client := virtuoso.NewClient(cfg)
-			
+
 			// Get journey with checkpoints
 			journey, err := client.ListCheckpoints(journeyID)
 			if err != nil {
 				return fmt.Errorf("failed to list checkpoints: %w", err)
 			}
-			
+
 			// Format output based on the format flag
 			switch cfg.Output.DefaultFormat {
 			case "json":
@@ -51,10 +51,10 @@ Example:
 						checkpoints := make([]map[string]interface{}, len(journey.Cases))
 						for i, cp := range journey.Cases {
 							checkpoints[i] = map[string]interface{}{
-								"id":          cp.ID,
-								"position":    cp.Position,
-								"title":       cp.Title,
-								"step_count":  len(cp.Steps),
+								"id":            cp.ID,
+								"position":      cp.Position,
+								"title":         cp.Title,
+								"step_count":    len(cp.Steps),
 								"is_navigation": cp.Position == 1, // First checkpoint has navigation
 							}
 						}
@@ -83,7 +83,7 @@ Example:
 				fmt.Printf("Virtuoso Journey Checkpoints:\n")
 				fmt.Printf("Journey: %s (ID: %d)\n", journey.Name, journey.ID)
 				fmt.Printf("Total Checkpoints: %d\n\n", len(journey.Cases))
-				
+
 				for _, cp := range journey.Cases {
 					fmt.Printf("Checkpoint %d:\n", cp.Position)
 					fmt.Printf("- ID: %d\n", cp.ID)
@@ -94,7 +94,7 @@ Example:
 					}
 					fmt.Printf("\n")
 				}
-				
+
 				fmt.Printf("Usage:\n")
 				fmt.Printf("- To add steps to a checkpoint: api-cli add-step <checkpoint-id> <step-type>\n")
 				fmt.Printf("- The first checkpoint typically contains the navigation step shared by all tests\n")
@@ -110,14 +110,14 @@ Example:
 					if len(cp.Steps) != 1 {
 						stepWord = "steps"
 					}
-					fmt.Printf("%d. %s (ID: %d)%s - %d %s\n", 
+					fmt.Printf("%d. %s (ID: %d)%s - %d %s\n",
 						cp.Position, cp.Title, cp.ID, navigationMarker, len(cp.Steps), stepWord)
 				}
 			}
-			
+
 			return nil
 		},
 	}
-	
+
 	return cmd
 }

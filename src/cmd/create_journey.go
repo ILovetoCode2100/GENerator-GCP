@@ -15,7 +15,7 @@ func newCreateJourneyCmd() *cobra.Command {
 		Use:   "create-journey GOAL_ID SNAPSHOT_ID NAME",
 		Short: "Create a new Virtuoso journey (testsuite)",
 		Long: `Create a new journey (testsuite) in Virtuoso for the specified goal.
-		
+
 Example:
   api-cli create-journey 13776 43802 "My Test Journey"
   api-cli create-journey 13776 43802 "My Test Journey" -o json`,
@@ -24,28 +24,28 @@ Example:
 			goalIDStr := args[0]
 			snapshotIDStr := args[1]
 			journeyName := args[2]
-			
+
 			// Convert goal ID to int
 			goalID, err := strconv.Atoi(goalIDStr)
 			if err != nil {
 				return fmt.Errorf("invalid goal ID: %w", err)
 			}
-			
+
 			// Convert snapshot ID to int
 			snapshotID, err := strconv.Atoi(snapshotIDStr)
 			if err != nil {
 				return fmt.Errorf("invalid snapshot ID: %w", err)
 			}
-			
+
 			// Create Virtuoso client
 			client := virtuoso.NewClient(cfg)
-			
+
 			// Create the journey
 			journey, err := client.CreateJourney(goalID, snapshotID, journeyName)
 			if err != nil {
 				return fmt.Errorf("failed to create journey: %w", err)
 			}
-			
+
 			// Format output based on the format flag
 			switch cfg.Output.DefaultFormat {
 			case "json":
@@ -80,10 +80,10 @@ Example:
 			default: // human
 				fmt.Printf("✅ Created journey '%s' with ID: %d\n", journey.Name, journey.ID)
 			}
-			
+
 			return nil
 		},
 	}
-	
+
 	return cmd
 }

@@ -35,7 +35,7 @@ Common keys:
 
 	cmd.Flags().StringP("output", "o", "human", "Output format (human, json, yaml, ai)")
 	cmd.Flags().String("target", "", "Target element selector (if not specified, key is pressed globally)")
-	
+
 	return cmd
 }
 
@@ -110,7 +110,7 @@ func runCreateStepKey(cmd *cobra.Command, args []string) error {
 		} else {
 			targetInfo = " globally"
 		}
-		fmt.Printf("Created key press step with ID %d for checkpoint %d. Key: %s%s, position: %d\n", 
+		fmt.Printf("Created key press step with ID %d for checkpoint %d. Key: %s%s, position: %d\n",
 			stepID, checkpointID, key, targetInfo, position)
 	default: // human
 		fmt.Printf("Key press step created successfully!\n")

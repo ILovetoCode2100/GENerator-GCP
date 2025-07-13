@@ -11,10 +11,10 @@ import (
 var (
 	// Version is set at build time
 	Version = "1.0.0"
-	
+
 	// Global config
 	cfg *config.VirtuosoConfig
-	
+
 	// Flags
 	cfgFile string
 	verbose bool
@@ -26,7 +26,7 @@ var rootCmd = &cobra.Command{
 	Short: "Virtuoso API CLI - Intelligent orchestration for test automation",
 	Long: `A command-line interface for Virtuoso API that provides:
 - Automated multi-step workflows
-- Batch creation from JSON/YAML files  
+- Batch creation from JSON/YAML files
 - AI-friendly interfaces and output
 - Business rule enforcement`,
 	Version: Version,
@@ -34,7 +34,7 @@ var rootCmd = &cobra.Command{
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	
+
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is ./config/virtuoso-config.yaml)")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
 	rootCmd.PersistentFlags().StringVarP(&output, "output", "o", "human", "output format (json, yaml, human, ai)")
@@ -47,7 +47,7 @@ func initConfig() {
 		fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
 		os.Exit(1)
 	}
-	
+
 	// Apply command line flags
 	if verbose {
 		cfg.Output.Verbose = true
@@ -126,56 +126,55 @@ func main() {
 	rootCmd.AddCommand(newCreateStepSwitchNextTabCmd())
 	rootCmd.AddCommand(newCreateStepSwitchParentFrameCmd())
 	rootCmd.AddCommand(newCreateStepSwitchPrevTabCmd())
-	
+
 	// ===== VERSION B ENHANCED COMMANDS =====
 	// Cookie management commands (Version B)
 	rootCmd.AddCommand(newCreateStepCookieCreateCmd())
 	rootCmd.AddCommand(newCreateStepCookieWipeAllCmd())
-	
+
 	// Upload and dismiss commands (Version B)
 	rootCmd.AddCommand(newCreateStepUploadURLCmd())
 	rootCmd.AddCommand(newCreateStepDismissPromptWithTextCmd())
-	
+
 	// Execute script command (Version B)
 	rootCmd.AddCommand(newCreateStepExecuteScriptCmd())
-	
+
 	// Enhanced mouse commands (Version B) - Fixes TODO at line 120
 	rootCmd.AddCommand(newCreateStepMouseMoveToCmd())
 	rootCmd.AddCommand(newCreateStepMouseMoveByCmd())
-	
+
 	// Enhanced pick commands (Version B)
 	rootCmd.AddCommand(newCreateStepPickIndexCmd())
 	rootCmd.AddCommand(newCreateStepPickLastCmd())
-	
+
 	// Enhanced wait commands (Version B)
 	rootCmd.AddCommand(newCreateStepWaitForElementTimeoutCmd())
 	rootCmd.AddCommand(newCreateStepWaitForElementDefaultCmd())
-	
+
 	// Enhanced store commands (Version B)
 	rootCmd.AddCommand(newCreateStepStoreElementTextCmd())
 	rootCmd.AddCommand(newCreateStepStoreLiteralValueCmd())
-	
+
 	// Scroll commands (Version B)
 	rootCmd.AddCommand(newCreateStepScrollToPositionCmd())
 	rootCmd.AddCommand(newCreateStepScrollByOffsetCmd())
 	rootCmd.AddCommand(newCreateStepScrollToTopCmd())
-	
+
 	// Window resize command (Version B)
 	rootCmd.AddCommand(newCreateStepWindowResizeCmd())
-	
+
 	// High-priority execution and analysis commands
 	rootCmd.AddCommand(newExecuteGoalCmd())
 	rootCmd.AddCommand(newMonitorExecutionCmd())
 	rootCmd.AddCommand(newGetExecutionAnalysisCmd())
 	rootCmd.AddCommand(newManageTestDataCmd())
 	rootCmd.AddCommand(newCreateEnvironmentCmd())
-	
+
 	// Use enhanced version that handles auto-creation behavior
 	rootCmd.AddCommand(newCreateStructureEnhancedCmd())
-	
+
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
-

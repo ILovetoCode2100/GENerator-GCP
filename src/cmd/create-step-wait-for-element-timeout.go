@@ -27,7 +27,7 @@ Example:
 	}
 
 	cmd.Flags().StringP("output", "o", "human", "Output format (human, json, yaml, ai)")
-	
+
 	return cmd
 }
 
@@ -39,7 +39,7 @@ func runCreateStepWaitForElementTimeout(cmd *cobra.Command, args []string) error
 	}
 
 	selector := args[1]
-	
+
 	timeoutMs, err := strconv.Atoi(args[2])
 	if err != nil {
 		return fmt.Errorf("invalid timeout: %w", err)
@@ -89,7 +89,7 @@ func runCreateStepWaitForElementTimeout(cmd *cobra.Command, args []string) error
 		}
 		fmt.Print(string(output))
 	case "ai":
-		fmt.Printf("Created wait for element timeout step with ID %d for checkpoint %d. Selector: %s, timeout: %dms, position: %d\n", 
+		fmt.Printf("Created wait for element timeout step with ID %d for checkpoint %d. Selector: %s, timeout: %dms, position: %d\n",
 			stepID, checkpointID, selector, timeoutMs, position)
 	default: // human
 		fmt.Printf("Wait for element timeout step created successfully!\n")

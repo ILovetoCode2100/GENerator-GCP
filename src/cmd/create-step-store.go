@@ -10,12 +10,12 @@ import (
 
 func newCreateStepStoreCmd() *cobra.Command {
 	var checkpointFlag int
-	
+
 	cmd := &cobra.Command{
 		Use:   "create-step-store ELEMENT VARIABLE_NAME [POSITION]",
 		Short: "Create a store step at a specific position in a checkpoint",
 		Long: `Create a store step that stores a value from an element into a variable at the specified position in the checkpoint.
-		
+
 Modern usage (with session context):
   api-cli set-checkpoint 1678318
   api-cli create-step-store "#user-id" "userId"
@@ -30,7 +30,7 @@ Legacy usage:
 			var element, variableName string
 			var ctx *StepContext
 			var err error
-			
+
 			// Handle both modern and legacy patterns
 			if len(args) == 4 {
 				// Legacy: CHECKPOINT_ID ELEMENT VARIABLE_NAME POSITION
@@ -59,7 +59,7 @@ Legacy usage:
 					return err
 				}
 			}
-			
+
 			// Validate element and variable name
 			if element == "" {
 				return fmt.Errorf("element cannot be empty")
@@ -67,19 +67,19 @@ Legacy usage:
 			if variableName == "" {
 				return fmt.Errorf("variable name cannot be empty")
 			}
-			
+
 			// Create Virtuoso client
 			client := virtuoso.NewClient(cfg)
-			
+
 			// Create store step using the enhanced client
 			stepID, err := client.CreateStoreStep(ctx.CheckpointID, element, variableName, ctx.Position)
 			if err != nil {
 				return fmt.Errorf("failed to create store step: %w", err)
 			}
-			
+
 			// Save session context if position was auto-incremented
 			saveStepContext(ctx)
-			
+
 			// Output the result
 			output := &StepOutput{
 				Status:       "success",
@@ -95,13 +95,13 @@ Legacy usage:
 					"variable_name": variableName,
 				},
 			}
-			
+
 			return outputStepResult(output)
 		},
 	}
-	
+
 	// Add the --checkpoint flag
 	addCheckpointFlag(cmd, &checkpointFlag)
-	
+
 	return cmd
 }

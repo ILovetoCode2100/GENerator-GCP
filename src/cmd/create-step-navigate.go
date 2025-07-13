@@ -29,7 +29,7 @@ Examples:
 
 	cmd.Flags().StringP("output", "o", "human", "Output format (human, json, yaml, ai)")
 	cmd.Flags().Bool("new-tab", false, "Open URL in new tab")
-	
+
 	return cmd
 }
 
@@ -96,7 +96,7 @@ func runCreateStepNavigate(cmd *cobra.Command, args []string) error {
 		if useNewTab {
 			tabInfo = " in new tab"
 		}
-		fmt.Printf("Created navigation step with ID %d for checkpoint %d. URL: %s%s, position: %d\n", 
+		fmt.Printf("Created navigation step with ID %d for checkpoint %d. URL: %s%s, position: %d\n",
 			stepID, checkpointID, url, tabInfo, position)
 	default: // human
 		fmt.Printf("Navigation step created successfully!\n")

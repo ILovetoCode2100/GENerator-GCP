@@ -10,7 +10,7 @@ import (
 
 func newCreateStepMouseMoveCmd() *cobra.Command {
 	var checkpointFlag int
-	
+
 	cmd := &cobra.Command{
 		Use:   "create-step-mouse-move X Y [POSITION]",
 		Short: "Create a mouse move step to absolute coordinates at a specific position in a checkpoint",
@@ -23,10 +23,10 @@ Examples:
   # Using current checkpoint context
   api-cli create-step-mouse-move 100 200 1
   api-cli create-step-mouse-move 100 200  # Auto-increment position
-  
+
   # Override checkpoint explicitly
   api-cli create-step-mouse-move 100 200 1 --checkpoint 1678318
-  
+
   # Legacy syntax (still supported)
   api-cli create-step-mouse-move 1678318 100 200 1`,
 		Args: cobra.RangeArgs(2, 4),
@@ -34,7 +34,7 @@ Examples:
 			var x, y int
 			var ctx *StepContext
 			var err error
-			
+
 			// Handle both modern and legacy syntax
 			if len(args) == 4 {
 				// Legacy syntax: CHECKPOINT_ID X Y POSITION
@@ -64,25 +64,25 @@ Examples:
 					return err
 				}
 			}
-			
+
 			// Resolve checkpoint and position
 			ctx, err = resolveStepContext(args, checkpointFlag, 2)
 			if err != nil {
 				return err
 			}
-			
+
 			// Create Virtuoso client
 			client := virtuoso.NewClient(cfg)
-			
+
 			// Create mouse move step using the enhanced client
 			stepID, err := client.CreateMouseMoveToStep(ctx.CheckpointID, x, y, ctx.Position)
 			if err != nil {
 				return fmt.Errorf("failed to create mouse move step: %w", err)
 			}
-			
+
 			// Save config if position was auto-incremented
 			saveStepContext(ctx)
-			
+
 			// Output result
 			output := &StepOutput{
 				Status:       "success",
@@ -95,14 +95,14 @@ Examples:
 				AutoPosition: ctx.AutoPosition,
 				Extra:        map[string]interface{}{"x": x, "y": y},
 			}
-			
+
 			return outputStepResult(output)
 		},
 	}
-	
+
 	// Enable negative numbers for coordinate values
 	enableNegativeNumbers(cmd)
 	addCheckpointFlag(cmd, &checkpointFlag)
-	
+
 	return cmd
 }

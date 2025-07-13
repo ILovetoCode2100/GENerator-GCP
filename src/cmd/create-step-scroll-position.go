@@ -9,7 +9,7 @@ import (
 
 func newCreateStepScrollPositionCmd() *cobra.Command {
 	var checkpointFlag int
-	
+
 	cmd := &cobra.Command{
 		Use:   "create-step-scroll-position X Y [POSITION]",
 		Short: "Create a scroll position step at a specific position in a checkpoint",
@@ -26,10 +26,10 @@ Examples:
   api-cli create-step-scroll-position 0 500  # Auto-increment position
   api-cli create-step-scroll-position -- -10 -20  # Negative coordinates with auto-position
   api-cli create-step-scroll-position -- -10 -20 3  # Negative coordinates with position
-  
+
   # Override checkpoint explicitly
   api-cli create-step-scroll-position 100 200 1 --checkpoint 1678318
-  
+
   # Legacy format (deprecated but still supported)
   api-cli create-step-scroll-position 1678318 100 200 1`,
 		Args: cobra.RangeArgs(2, 4),
@@ -53,16 +53,16 @@ Examples:
 				if err != nil {
 					return err
 				}
-				
+
 				// Create Virtuoso client
 				client := virtuoso.NewClient(cfg)
-				
+
 				// Create scroll position step using the enhanced client
 				stepID, err := client.CreateScrollPositionStep(checkpointID, x, y, position)
 				if err != nil {
 					return fmt.Errorf("failed to create scroll position step: %w", err)
 				}
-				
+
 				// Output result using legacy context flags
 				output := &StepOutput{
 					Status:       "success",
@@ -75,39 +75,39 @@ Examples:
 					AutoPosition: false,
 					Extra:        map[string]interface{}{"x": x, "y": y},
 				}
-				
+
 				return outputStepResult(output)
 			}
-			
+
 			// Modern format: X Y [POSITION]
 			x, err := parseIntArg(args[0], "X coordinate")
 			if err != nil {
 				return err
 			}
-			
+
 			y, err := parseIntArg(args[1], "Y coordinate")
 			if err != nil {
 				return err
 			}
-			
+
 			// Resolve checkpoint and position
 			ctx, err := resolveStepContext(args, checkpointFlag, 2)
 			if err != nil {
 				return err
 			}
-			
+
 			// Create Virtuoso client
 			client := virtuoso.NewClient(cfg)
-			
+
 			// Create scroll position step using the enhanced client
 			stepID, err := client.CreateScrollPositionStep(ctx.CheckpointID, x, y, ctx.Position)
 			if err != nil {
 				return fmt.Errorf("failed to create scroll position step: %w", err)
 			}
-			
+
 			// Save config if position was auto-incremented
 			saveStepContext(ctx)
-			
+
 			// Output result
 			output := &StepOutput{
 				Status:       "success",
@@ -120,15 +120,15 @@ Examples:
 				AutoPosition: ctx.AutoPosition,
 				Extra:        map[string]interface{}{"x": x, "y": y},
 			}
-			
+
 			return outputStepResult(output)
 		},
 	}
-	
+
 	addCheckpointFlag(cmd, &checkpointFlag)
-	
+
 	// Enable negative number support
 	enableNegativeNumbers(cmd)
-	
+
 	return cmd
 }

@@ -9,7 +9,7 @@ import (
 
 func newCreateStepScrollBottomCmd() *cobra.Command {
 	var checkpointFlag int
-	
+
 	cmd := &cobra.Command{
 		Use:   "create-step-scroll-bottom [POSITION]",
 		Short: "Create a scroll to bottom step at a specific position in a checkpoint",
@@ -22,10 +22,10 @@ Examples:
   # Using current checkpoint context
   api-cli create-step-scroll-bottom 1
   api-cli create-step-scroll-bottom  # Auto-increment position
-  
+
   # Override checkpoint explicitly
   api-cli create-step-scroll-bottom 1 --checkpoint 1678318
-  
+
   # Legacy format (deprecated but still supported)
   api-cli create-step-scroll-bottom 1678318 1`,
 		Args: cobra.RangeArgs(0, 2),
@@ -41,16 +41,16 @@ Examples:
 				if err != nil {
 					return err
 				}
-				
+
 				// Create Virtuoso client
 				client := virtuoso.NewClient(cfg)
-				
+
 				// Create scroll to bottom step using the enhanced client
 				stepID, err := client.CreateScrollBottomStep(checkpointID, position)
 				if err != nil {
 					return fmt.Errorf("failed to create scroll to bottom step: %w", err)
 				}
-				
+
 				// Output result using legacy context flags
 				output := &StepOutput{
 					Status:       "success",
@@ -62,28 +62,28 @@ Examples:
 					UsingContext: false,
 					AutoPosition: false,
 				}
-				
+
 				return outputStepResult(output)
 			}
-			
+
 			// Modern format: use session context
 			ctx, err := resolveStepContext(args, checkpointFlag, 0)
 			if err != nil {
 				return err
 			}
-			
+
 			// Create Virtuoso client
 			client := virtuoso.NewClient(cfg)
-			
+
 			// Create scroll to bottom step using the enhanced client
 			stepID, err := client.CreateScrollBottomStep(ctx.CheckpointID, ctx.Position)
 			if err != nil {
 				return fmt.Errorf("failed to create scroll to bottom step: %w", err)
 			}
-			
+
 			// Save config if position was auto-incremented
 			saveStepContext(ctx)
-			
+
 			// Output result
 			output := &StepOutput{
 				Status:       "success",
@@ -95,12 +95,12 @@ Examples:
 				UsingContext: ctx.UsingContext,
 				AutoPosition: ctx.AutoPosition,
 			}
-			
+
 			return outputStepResult(output)
 		},
 	}
-	
+
 	addCheckpointFlag(cmd, &checkpointFlag)
-	
+
 	return cmd
 }

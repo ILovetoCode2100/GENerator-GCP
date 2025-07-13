@@ -26,7 +26,7 @@ func (m *Manager) RegisterTemplate(name, tmplStr string) error {
 	if err != nil {
 		return fmt.Errorf("invalid template %s: %w", name, err)
 	}
-	
+
 	m.templates[name] = tmpl
 	return nil
 }
@@ -37,12 +37,12 @@ func (m *Manager) Execute(name string, data interface{}) (string, error) {
 	if !exists {
 		return "", fmt.Errorf("template %s not found", name)
 	}
-	
+
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, data); err != nil {
 		return "", fmt.Errorf("template execution failed: %w", err)
 	}
-	
+
 	// Validate JSON output if applicable
 	result := buf.String()
 	if isJSON(result) {
@@ -51,7 +51,7 @@ func (m *Manager) Execute(name string, data interface{}) (string, error) {
 			return "", fmt.Errorf("template produced invalid JSON: %w", err)
 		}
 	}
-	
+
 	return result, nil
 }
 
@@ -64,13 +64,13 @@ func (m *Manager) LoadDefaults() error {
 			"email": "{{.Email}}",
 			"role": "{{.Role | default "user"}}"
 		}`,
-		
+
 		"update_item": `{
 			"id": {{.ID}},
 			"status": "{{.Status}}",
 			"updated_at": "{{.Timestamp}}"
 		}`,
-		
+
 		"search_query": `{
 			"query": "{{.Query}}",
 			"filters": {
@@ -81,13 +81,13 @@ func (m *Manager) LoadDefaults() error {
 			}
 		}`,
 	}
-	
+
 	for name, tmpl := range defaults {
 		if err := m.RegisterTemplate(name, tmpl); err != nil {
 			return err
 		}
 	}
-	
+
 	return nil
 }
 
@@ -115,7 +115,7 @@ func (td *TemplateData) Set(key string, value interface{}) error {
 	if !isValidKey(key) {
 		return fmt.Errorf("invalid parameter key: %s", key)
 	}
-	
+
 	// Validate value types
 	switch v := value.(type) {
 	case string, int, int64, float64, bool:
@@ -125,7 +125,7 @@ func (td *TemplateData) Set(key string, value interface{}) error {
 	default:
 		return fmt.Errorf("unsupported value type for %s", key)
 	}
-	
+
 	return nil
 }
 
@@ -138,10 +138,10 @@ func (td *TemplateData) Get() map[string]interface{} {
 func isValidKey(key string) bool {
 	// Only allow alphanumeric and underscore
 	for _, r := range key {
-		if !((r >= 'a' && r <= 'z') || 
-			 (r >= 'A' && r <= 'Z') || 
-			 (r >= '0' && r <= '9') || 
-			 r == '_') {
+		if !((r >= 'a' && r <= 'z') ||
+			(r >= 'A' && r <= 'Z') ||
+			(r >= '0' && r <= '9') ||
+			r == '_') {
 			return false
 		}
 	}

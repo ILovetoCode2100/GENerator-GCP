@@ -10,7 +10,7 @@ import (
 
 func newCreateStepPickValueCmd() *cobra.Command {
 	var checkpointFlag int
-	
+
 	cmd := &cobra.Command{
 		Use:   "create-step-pick-value ELEMENT VALUE [POSITION]",
 		Short: "Create a pick value step at a specific position in a checkpoint",
@@ -23,10 +23,10 @@ Examples:
   # Using current checkpoint context
   api-cli create-step-pick-value "Country dropdown" "option1" 1
   api-cli create-step-pick-value "#country-select" "us"  # Auto-increment position
-  
+
   # Override checkpoint explicitly
   api-cli create-step-pick-value "Country dropdown" "option1" 1 --checkpoint 1678318
-  
+
   # Legacy format (still supported)
   api-cli create-step-pick-value 1678318 "option1" "Country dropdown" 1`,
 		Args: cobra.RangeArgs(2, 4),
@@ -35,7 +35,7 @@ Examples:
 			var value string
 			var ctx *StepContext
 			var err error
-			
+
 			// Check if using legacy format (first arg is numeric)
 			if len(args) == 4 {
 				if _, err := strconv.Atoi(args[0]); err == nil {
@@ -47,7 +47,7 @@ Examples:
 					if err != nil {
 						return fmt.Errorf("invalid position: %w", err)
 					}
-					
+
 					ctx = &StepContext{
 						CheckpointID: checkpointID,
 						Position:     position,
@@ -62,14 +62,14 @@ Examples:
 				// Modern format: ELEMENT VALUE [POSITION]
 				element = args[0]
 				value = args[1]
-				
+
 				// Resolve checkpoint and position
 				ctx, err = resolveStepContext(args, checkpointFlag, 2)
 				if err != nil {
 					return err
 				}
 			}
-			
+
 			// Validate inputs
 			if element == "" {
 				return fmt.Errorf("element cannot be empty")
@@ -77,19 +77,19 @@ Examples:
 			if value == "" {
 				return fmt.Errorf("value cannot be empty")
 			}
-			
+
 			// Create Virtuoso client
 			client := virtuoso.NewClient(cfg)
-			
+
 			// Create pick value step using the enhanced client
 			stepID, err := client.CreatePickValueStep(ctx.CheckpointID, value, element, ctx.Position)
 			if err != nil {
 				return fmt.Errorf("failed to create pick value step: %w", err)
 			}
-			
+
 			// Save config if position was auto-incremented
 			saveStepContext(ctx)
-			
+
 			// Output result
 			output := &StepOutput{
 				Status:       "success",
@@ -105,12 +105,12 @@ Examples:
 					"value":   value,
 				},
 			}
-			
+
 			return outputStepResult(output)
 		},
 	}
-	
+
 	addCheckpointFlag(cmd, &checkpointFlag)
-	
+
 	return cmd
 }

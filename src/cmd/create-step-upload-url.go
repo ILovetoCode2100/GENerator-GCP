@@ -31,7 +31,7 @@ Arguments:
 Examples:
   # Upload a PDF from URL to a resume upload field
   api-cli create-step-upload-url 1234 https://example.com/resume.pdf "Résumé:" 1
-  
+
   # Upload with JSON output
   api-cli create-step-upload-url 1234 https://example.com/doc.pdf "Upload Document" 2 -o json`,
 		Args: cobra.ExactArgs(4),
@@ -39,7 +39,7 @@ Examples:
 	}
 
 	cmd.Flags().StringP("output", "o", "human", "Output format (human, json, yaml, ai)")
-	
+
 	return cmd
 }
 
@@ -52,7 +52,7 @@ func runCreateStepUploadURL(cmd *cobra.Command, args []string) error {
 
 	url := args[1]
 	selector := args[2]
-	
+
 	position, err := strconv.Atoi(args[3])
 	if err != nil {
 		return fmt.Errorf("invalid position: %w", err)
@@ -97,7 +97,7 @@ func runCreateStepUploadURL(cmd *cobra.Command, args []string) error {
 		}
 		fmt.Print(string(output))
 	case "ai":
-		fmt.Printf("Created upload URL step with ID %d for checkpoint %d. URL: %s, selector: %s, position: %d\n", 
+		fmt.Printf("Created upload URL step with ID %d for checkpoint %d. URL: %s, selector: %s, position: %d\n",
 			stepID, checkpointID, url, selector, position)
 	default: // human
 		fmt.Printf("Upload URL step created successfully!\n")

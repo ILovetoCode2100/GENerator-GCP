@@ -27,7 +27,7 @@ Example:
 	}
 
 	cmd.Flags().StringP("output", "o", "human", "Output format (human, json, yaml, ai)")
-	
+
 	return cmd
 }
 
@@ -85,7 +85,7 @@ func runCreateStepCookieCreate(cmd *cobra.Command, args []string) error {
 		}
 		fmt.Print(string(output))
 	case "ai":
-		fmt.Printf("Created cookie step with ID %d for checkpoint %d. Cookie name: %s, value: %s, position: %d\n", 
+		fmt.Printf("Created cookie step with ID %d for checkpoint %d. Cookie name: %s, value: %s, position: %d\n",
 			stepID, checkpointID, name, value, position)
 	default: // human
 		fmt.Printf("Cookie step created successfully!\n")

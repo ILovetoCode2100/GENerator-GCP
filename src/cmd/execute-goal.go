@@ -13,21 +13,21 @@ import (
 
 // ExecutionOutput represents the output structure for goal execution
 type ExecutionOutput struct {
-	Status       string                 `json:"status"`
-	ExecutionID  string                 `json:"execution_id"`
-	GoalID       int                    `json:"goal_id"`
-	SnapshotID   int                    `json:"snapshot_id"`
-	StartTime    time.Time              `json:"start_time"`
-	Progress     *virtuoso.ExecutionProgress `json:"progress,omitempty"`
-	ResultsURL   string                 `json:"results_url,omitempty"`
-	ReportURL    string                 `json:"report_url,omitempty"`
-	NextSteps    []string               `json:"next_steps,omitempty"`
+	Status      string                      `json:"status"`
+	ExecutionID string                      `json:"execution_id"`
+	GoalID      int                         `json:"goal_id"`
+	SnapshotID  int                         `json:"snapshot_id"`
+	StartTime   time.Time                   `json:"start_time"`
+	Progress    *virtuoso.ExecutionProgress `json:"progress,omitempty"`
+	ResultsURL  string                      `json:"results_url,omitempty"`
+	ReportURL   string                      `json:"report_url,omitempty"`
+	NextSteps   []string                    `json:"next_steps,omitempty"`
 }
 
 func newExecuteGoalCmd() *cobra.Command {
 	var waitFlag bool
 	var timeoutFlag int
-	
+
 	cmd := &cobra.Command{
 		Use:   "execute-goal GOAL_ID [SNAPSHOT_ID]",
 		Short: "Execute a goal with real-time monitoring",
@@ -172,17 +172,17 @@ func outputExecutionResult(output *ExecutionOutput, format string) error {
 	case "yaml":
 		// Convert to YAML-friendly format
 		yamlData := map[string]interface{}{
-			"status":        output.Status,
-			"execution_id":  output.ExecutionID,
-			"goal_id":       output.GoalID,
-			"snapshot_id":   output.SnapshotID,
-			"start_time":    output.StartTime.Format(time.RFC3339),
-			"progress":      output.Progress,
-			"results_url":   output.ResultsURL,
-			"report_url":    output.ReportURL,
-			"next_steps":    output.NextSteps,
+			"status":       output.Status,
+			"execution_id": output.ExecutionID,
+			"goal_id":      output.GoalID,
+			"snapshot_id":  output.SnapshotID,
+			"start_time":   output.StartTime.Format(time.RFC3339),
+			"progress":     output.Progress,
+			"results_url":  output.ResultsURL,
+			"report_url":   output.ReportURL,
+			"next_steps":   output.NextSteps,
 		}
-		
+
 		jsonData, err := json.MarshalIndent(yamlData, "", "  ")
 		if err != nil {
 			return fmt.Errorf("failed to marshal YAML: %w", err)
@@ -202,22 +202,22 @@ func outputExecutionResult(output *ExecutionOutput, format string) error {
 		fmt.Printf("🎯 Goal ID: %d\n", output.GoalID)
 		fmt.Printf("📸 Snapshot ID: %d\n", output.SnapshotID)
 		fmt.Printf("⏰ Started: %s\n", output.StartTime.Format("2006-01-02 15:04:05"))
-		
+
 		if output.Progress != nil {
-			fmt.Printf("📊 Progress: %.1f%% (%d/%d steps)\n", 
-				output.Progress.PercentComplete, 
-				output.Progress.CompletedSteps, 
+			fmt.Printf("📊 Progress: %.1f%% (%d/%d steps)\n",
+				output.Progress.PercentComplete,
+				output.Progress.CompletedSteps,
 				output.Progress.TotalSteps)
 		}
-		
+
 		if output.ResultsURL != "" {
 			fmt.Printf("🔗 Results: %s\n", output.ResultsURL)
 		}
-		
+
 		if output.ReportURL != "" {
 			fmt.Printf("📊 Report: %s\n", output.ReportURL)
 		}
-		
+
 		if len(output.NextSteps) > 0 {
 			fmt.Printf("\n💡 Next steps:\n")
 			for _, step := range output.NextSteps {

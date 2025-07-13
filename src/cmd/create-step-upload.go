@@ -10,7 +10,7 @@ import (
 
 func newCreateStepUploadCmd() *cobra.Command {
 	var checkpointFlag int
-	
+
 	cmd := &cobra.Command{
 		Use:   "create-step-upload ELEMENT FILE_PATH [POSITION]",
 		Short: "Create a file upload step at a specific position in a checkpoint",
@@ -23,10 +23,10 @@ Examples:
   # Using current checkpoint context
   api-cli create-step-upload "file upload" "document.pdf" 1
   api-cli create-step-upload "#file-input" "image.jpg"  # Auto-increment position
-  
+
   # Override checkpoint explicitly
   api-cli create-step-upload "file upload" "document.pdf" 1 --checkpoint 1678318
-  
+
   # Legacy syntax (still supported)
   api-cli create-step-upload 1678318 "document.pdf" "file upload" 1`,
 		Args: cobra.RangeArgs(2, 4),
@@ -34,7 +34,7 @@ Examples:
 			var element, filename string
 			var ctx *StepContext
 			var err error
-			
+
 			// Detect legacy syntax (first arg is numeric checkpoint ID)
 			if len(args) == 4 {
 				// Try to parse first arg as checkpoint ID
@@ -70,7 +70,7 @@ Examples:
 					return err
 				}
 			}
-			
+
 			// Validate inputs
 			if filename == "" {
 				return fmt.Errorf("filename cannot be empty")
@@ -78,19 +78,19 @@ Examples:
 			if element == "" {
 				return fmt.Errorf("element cannot be empty")
 			}
-			
+
 			// Create Virtuoso client
 			client := virtuoso.NewClient(cfg)
-			
+
 			// Create upload step using the enhanced client
 			stepID, err := client.CreateUploadStep(ctx.CheckpointID, filename, element, ctx.Position)
 			if err != nil {
 				return fmt.Errorf("failed to create upload step: %w", err)
 			}
-			
+
 			// Save config if position was auto-incremented
 			saveStepContext(ctx)
-			
+
 			// Output result
 			output := &StepOutput{
 				Status:       "success",
@@ -106,12 +106,12 @@ Examples:
 					"element":  element,
 				},
 			}
-			
+
 			return outputStepResult(output)
 		},
 	}
-	
+
 	addCheckpointFlag(cmd, &checkpointFlag)
-	
+
 	return cmd
 }

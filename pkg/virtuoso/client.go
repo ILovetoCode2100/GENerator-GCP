@@ -1934,7 +1934,8 @@ func (c *Client) ValidateCheckpoint(checkpointID int) error {
 
 	// Verify we got a valid checkpoint back
 	if response.Item.ID != checkpointID {
-		return fmt.Errorf("checkpoint validation failed: returned checkpoint ID %d does not match requested ID %d", response.Item.ID, checkpointID)
+		return fmt.Errorf("checkpoint validation failed: returned checkpoint ID %d does not match requested ID %d",
+			response.Item.ID, checkpointID)
 	}
 
 	return nil

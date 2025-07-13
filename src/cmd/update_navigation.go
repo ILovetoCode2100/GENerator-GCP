@@ -14,19 +14,19 @@ import (
 func newUpdateNavigationCmd() *cobra.Command {
 	var urlFlag string
 	var newTab bool
-	
+
 	cmd := &cobra.Command{
 		Use:   "update-navigation STEP_ID CANONICAL_ID",
 		Short: "Update a navigation step URL in Virtuoso",
 		Long: `Update the URL of an existing navigation step in Virtuoso.
-		
+
 This command requires both the step ID and canonical ID (obtained from get-step command).
 The canonical ID ensures you're updating the correct version of the step.
 
 Example:
   # First get the step details
   api-cli get-step 12345
-  
+
   # Then update the navigation URL
   api-cli update-navigation 12345 "abc-def-123" --url "https://example.com"
   api-cli update-navigation 12345 "abc-def-123" --url "https://example.com" --new-tab`,
@@ -34,23 +34,23 @@ Example:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			stepIDStr := args[0]
 			canonicalID := args[1]
-			
+
 			// Validate that URL flag was provided
 			if urlFlag == "" {
 				return fmt.Errorf("--url flag is required")
 			}
-			
+
 			// Convert step ID to int
 			stepID, err := strconv.Atoi(stepIDStr)
 			if err != nil {
 				return fmt.Errorf("invalid step ID: %w", err)
 			}
-			
+
 			// Validate canonical ID
 			if canonicalID == "" {
 				return fmt.Errorf("canonical ID cannot be empty")
 			}
-			
+
 			// Validate URL format
 			parsedURL, err := url.Parse(urlFlag)
 			if err != nil {
@@ -59,23 +59,23 @@ Example:
 			if parsedURL.Scheme == "" || parsedURL.Host == "" {
 				return fmt.Errorf("URL must include scheme (http/https) and host")
 			}
-			
+
 			// Create Virtuoso client
 			client := virtuoso.NewClient(cfg)
-			
+
 			// Get current step details for comparison (optional, for human output)
 			var originalStep *virtuoso.Step
 			if cfg.Output.DefaultFormat == "human" || cfg.Output.DefaultFormat == "" {
 				originalStep, _ = client.GetStep(stepID)
 				// Non-fatal if we can't get the original
 			}
-			
+
 			// Update the navigation step
 			step, err := client.UpdateNavigationStep(stepID, canonicalID, urlFlag, newTab)
 			if err != nil {
 				return fmt.Errorf("failed to update navigation step: %w", err)
 			}
-			
+
 			// Format output based on the format flag
 			switch cfg.Output.DefaultFormat {
 			case "json":
@@ -128,15 +128,15 @@ Example:
 					fmt.Printf("   Opens in: New tab\n")
 				}
 			}
-			
+
 			return nil
 		},
 	}
-	
+
 	// Add flags
 	cmd.Flags().StringVar(&urlFlag, "url", "", "New URL for the navigation step (required)")
 	cmd.Flags().BoolVar(&newTab, "new-tab", false, "Open URL in a new tab")
 	cmd.MarkFlagRequired("url")
-	
+
 	return cmd
 }

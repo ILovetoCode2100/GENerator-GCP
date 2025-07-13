@@ -27,7 +27,7 @@ Example:
 	}
 
 	cmd.Flags().StringP("output", "o", "human", "Output format (human, json, yaml, ai)")
-	
+
 	return cmd
 }
 
@@ -85,7 +85,7 @@ func runCreateStepAssertGreaterThanOrEqual(cmd *cobra.Command, args []string) er
 		}
 		fmt.Print(string(output))
 	case "ai":
-		fmt.Printf("Created assert greater than or equal step with ID %d for checkpoint %d. Element '%s' should be greater than or equal to '%s', position: %d\n", 
+		fmt.Printf("Created assert greater than or equal step with ID %d for checkpoint %d. Element '%s' should be greater than or equal to '%s', position: %d\n",
 			stepID, checkpointID, selector, value, position)
 	default: // human
 		fmt.Printf("Assert greater than or equal step created successfully!\n")

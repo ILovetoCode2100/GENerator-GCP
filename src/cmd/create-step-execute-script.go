@@ -92,7 +92,7 @@ func outputResponse(stepID, checkpointID int, scriptName string, position int, f
 		fmt.Print(string(yamlData))
 
 	case "ai":
-		fmt.Printf("Created execute script step with ID %d for checkpoint %d. Script: %s, position: %d\n", 
+		fmt.Printf("Created execute script step with ID %d for checkpoint %d. Script: %s, position: %d\n",
 			stepID, checkpointID, scriptName, position)
 
 	default: // human

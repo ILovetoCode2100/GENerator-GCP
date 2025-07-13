@@ -10,7 +10,7 @@ import (
 
 func newCreateStepAddCookieCmd() *cobra.Command {
 	var checkpointFlag int
-	
+
 	cmd := &cobra.Command{
 		Use:   "create-step-add-cookie NAME VALUE DOMAIN PATH [POSITION]",
 		Short: "Create an add cookie step at a specific position in a checkpoint",
@@ -31,7 +31,7 @@ Legacy usage (backward compatible):
 			var name, value, domain, path string
 			var ctx *StepContext
 			var err error
-			
+
 			// Check for legacy syntax (first arg is numeric checkpoint ID)
 			if _, parseErr := strconv.Atoi(args[0]); parseErr == nil && len(args) >= 4 {
 				// Legacy syntax: CHECKPOINT_ID NAME VALUE POSITION (or CHECKPOINT_ID NAME VALUE DOMAIN PATH POSITION)
@@ -39,7 +39,7 @@ Legacy usage (backward compatible):
 				if err != nil {
 					return fmt.Errorf("invalid checkpoint ID: %w", err)
 				}
-				
+
 				if len(args) == 4 {
 					// Legacy: CHECKPOINT_ID NAME VALUE POSITION
 					name = args[1]
@@ -79,7 +79,7 @@ Legacy usage (backward compatible):
 				value = args[1]
 				domain = args[2]
 				path = args[3]
-				
+
 				// Determine position index for resolveStepContext
 				positionIndex := 4
 				ctx, err = resolveStepContext(args, checkpointFlag, positionIndex)
@@ -87,7 +87,7 @@ Legacy usage (backward compatible):
 					return err
 				}
 			}
-			
+
 			// Validate name and value
 			if name == "" {
 				return fmt.Errorf("cookie name cannot be empty")
@@ -95,19 +95,19 @@ Legacy usage (backward compatible):
 			if value == "" {
 				return fmt.Errorf("cookie value cannot be empty")
 			}
-			
+
 			// Create Virtuoso client
 			client := virtuoso.NewClient(cfg)
-			
+
 			// Create add cookie step using the enhanced client
 			stepID, err := client.CreateAddCookieStep(ctx.CheckpointID, name, value, ctx.Position)
 			if err != nil {
 				return fmt.Errorf("failed to create add cookie step: %w", err)
 			}
-			
+
 			// Save session context if position was auto-incremented
 			saveStepContext(ctx)
-			
+
 			// Build parsed step description
 			parsedStep := fmt.Sprintf("add cookie \"%s\" with value \"%s\"", name, value)
 			if domain != "" {
@@ -116,7 +116,7 @@ Legacy usage (backward compatible):
 			if path != "" {
 				parsedStep += fmt.Sprintf(" with path \"%s\"", path)
 			}
-			
+
 			// Prepare extra data for output
 			extraData := map[string]interface{}{
 				"name":  name,
@@ -128,7 +128,7 @@ Legacy usage (backward compatible):
 			if path != "" {
 				extraData["path"] = path
 			}
-			
+
 			// Create step output
 			output := &StepOutput{
 				Status:       "success",
@@ -141,14 +141,14 @@ Legacy usage (backward compatible):
 				AutoPosition: ctx.AutoPosition,
 				Extra:        extraData,
 			}
-			
+
 			// Output the result
 			return outputStepResult(output)
 		},
 	}
-	
+
 	// Add checkpoint flag
 	addCheckpointFlag(cmd, &checkpointFlag)
-	
+
 	return cmd
 }

@@ -10,7 +10,7 @@ import (
 
 func newCreateStepDismissAlertCmd() *cobra.Command {
 	var checkpointFlag int
-	
+
 	cmd := &cobra.Command{
 		Use:   "create-step-dismiss-alert [POSITION]",
 		Short: "Create a dismiss alert step at a specific position in a checkpoint",
@@ -23,17 +23,17 @@ Examples:
   # Using current checkpoint context
   api-cli create-step-dismiss-alert 1
   api-cli create-step-dismiss-alert  # Auto-increment position
-  
+
   # Override checkpoint explicitly
   api-cli create-step-dismiss-alert 1 --checkpoint 1678318
-  
+
   # Legacy format (still supported)
   api-cli create-step-dismiss-alert 1678318 1`,
 		Args: cobra.RangeArgs(0, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var ctx *StepContext
 			var err error
-			
+
 			// Check for legacy format (2 args where first is checkpoint ID)
 			if len(args) == 2 {
 				// Try to parse first arg as checkpoint ID
@@ -60,19 +60,19 @@ Examples:
 					return err
 				}
 			}
-			
+
 			// Create Virtuoso client
 			client := virtuoso.NewClient(cfg)
-			
+
 			// Create dismiss alert step using the enhanced client
 			stepID, err := client.CreateDismissAlertStep(ctx.CheckpointID, ctx.Position)
 			if err != nil {
 				return fmt.Errorf("failed to create dismiss alert step: %w", err)
 			}
-			
+
 			// Save config if position was auto-incremented
 			saveStepContext(ctx)
-			
+
 			// Output result
 			output := &StepOutput{
 				Status:       "success",
@@ -84,12 +84,12 @@ Examples:
 				UsingContext: ctx.UsingContext,
 				AutoPosition: ctx.AutoPosition,
 			}
-			
+
 			return outputStepResult(output)
 		},
 	}
-	
+
 	addCheckpointFlag(cmd, &checkpointFlag)
-	
+
 	return cmd
 }

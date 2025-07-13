@@ -15,8 +15,8 @@ func newGetStepCmd() *cobra.Command {
 		Use:   "get-step STEP_ID",
 		Short: "Get details of a Virtuoso test step",
 		Long: `Retrieve detailed information about a test step in Virtuoso.
-		
-This command is particularly useful for getting the canonicalId, which is required 
+
+This command is particularly useful for getting the canonicalId, which is required
 for updating steps.
 
 Example:
@@ -25,22 +25,22 @@ Example:
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			stepIDStr := args[0]
-			
+
 			// Convert step ID to int
 			stepID, err := strconv.Atoi(stepIDStr)
 			if err != nil {
 				return fmt.Errorf("invalid step ID: %w", err)
 			}
-			
+
 			// Create Virtuoso client
 			client := virtuoso.NewClient(cfg)
-			
+
 			// Get the step
 			step, err := client.GetStep(stepID)
 			if err != nil {
 				return fmt.Errorf("failed to get step: %w", err)
 			}
-			
+
 			// Format output based on the format flag
 			switch cfg.Output.DefaultFormat {
 			case "json":
@@ -130,10 +130,10 @@ Example:
 					}
 				}
 			}
-			
+
 			return nil
 		},
 	}
-	
+
 	return cmd
 }

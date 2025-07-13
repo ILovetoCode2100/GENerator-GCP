@@ -10,7 +10,7 @@ import (
 
 func newCreateStepClearCookiesCmd() *cobra.Command {
 	var checkpointFlag int
-	
+
 	cmd := &cobra.Command{
 		Use:   "create-step-clear-cookies [POSITION]",
 		Short: "Create a clear all cookies step at a specific position in a checkpoint",
@@ -30,7 +30,7 @@ Legacy usage (backward compatible):
 			// Determine if using legacy or modern syntax
 			var ctx *StepContext
 			var err error
-			
+
 			// Check for legacy syntax (first arg is numeric checkpoint ID)
 			if len(args) >= 2 {
 				if _, parseErr := strconv.Atoi(args[0]); parseErr == nil {
@@ -39,12 +39,12 @@ Legacy usage (backward compatible):
 					if err != nil {
 						return fmt.Errorf("invalid checkpoint ID: %w", err)
 					}
-					
+
 					position, err := strconv.Atoi(args[1])
 					if err != nil {
 						return fmt.Errorf("invalid position: %w", err)
 					}
-					
+
 					ctx = &StepContext{
 						CheckpointID: checkpointID,
 						Position:     position,
@@ -67,19 +67,19 @@ Legacy usage (backward compatible):
 					return err
 				}
 			}
-			
+
 			// Create Virtuoso client
 			client := virtuoso.NewClient(cfg)
-			
+
 			// Create clear cookies step using the enhanced client
 			stepID, err := client.CreateClearCookiesStep(ctx.CheckpointID, ctx.Position)
 			if err != nil {
 				return fmt.Errorf("failed to create clear cookies step: %w", err)
 			}
-			
+
 			// Save session context if position was auto-incremented
 			saveStepContext(ctx)
-			
+
 			// Create step output
 			output := &StepOutput{
 				Status:       "success",
@@ -92,14 +92,14 @@ Legacy usage (backward compatible):
 				AutoPosition: ctx.AutoPosition,
 				Extra:        nil,
 			}
-			
+
 			// Output the result
 			return outputStepResult(output)
 		},
 	}
-	
+
 	// Add checkpoint flag
 	addCheckpointFlag(cmd, &checkpointFlag)
-	
+
 	return cmd
 }

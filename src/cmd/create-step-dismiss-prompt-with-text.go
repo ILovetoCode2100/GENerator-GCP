@@ -19,8 +19,8 @@ func newCreateStepDismissPromptWithTextCmd() *cobra.Command {
 		Short: "Create a step to dismiss a prompt with response text",
 		Long: `Create a step to dismiss a browser prompt dialog with specified response text.
 
-The command creates a step that dismisses a prompt dialog by clicking OK and 
-providing the specified text as the response. This is useful for handling 
+The command creates a step that dismisses a prompt dialog by clicking OK and
+providing the specified text as the response. This is useful for handling
 JavaScript prompt() dialogs that require user input.
 
 Arguments:
@@ -31,7 +31,7 @@ Arguments:
 Examples:
   # Dismiss prompt with user input
   api-cli create-step-dismiss-prompt-with-text 1234 "John Doe" 1
-  
+
   # Dismiss prompt with JSON output
   api-cli create-step-dismiss-prompt-with-text 1234 "user@example.com" 2 -o json`,
 		Args: cobra.ExactArgs(3),
@@ -39,7 +39,7 @@ Examples:
 	}
 
 	cmd.Flags().StringP("output", "o", "human", "Output format (human, json, yaml, ai)")
-	
+
 	return cmd
 }
 
@@ -51,7 +51,7 @@ func runCreateStepDismissPromptWithText(cmd *cobra.Command, args []string) error
 	}
 
 	text := args[1]
-	
+
 	position, err := strconv.Atoi(args[2])
 	if err != nil {
 		return fmt.Errorf("invalid position: %w", err)
@@ -96,7 +96,7 @@ func runCreateStepDismissPromptWithText(cmd *cobra.Command, args []string) error
 		}
 		fmt.Print(string(output))
 	case "ai":
-		fmt.Printf("Created dismiss prompt step with ID %d for checkpoint %d. Response text: %s, position: %d\n", 
+		fmt.Printf("Created dismiss prompt step with ID %d for checkpoint %d. Response text: %s, position: %d\n",
 			stepID, checkpointID, text, position)
 	default: // human
 		fmt.Printf("Dismiss prompt step created successfully!\n")

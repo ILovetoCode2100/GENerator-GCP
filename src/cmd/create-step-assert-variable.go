@@ -9,7 +9,7 @@ import (
 
 func newCreateStepAssertVariableCmd() *cobra.Command {
 	var checkpointFlag int
-	
+
 	cmd := &cobra.Command{
 		Use:   "create-step-assert-variable VARIABLE_NAME EXPECTED_VALUE [POSITION]",
 		Short: "Create an assert variable step at a specific position in a checkpoint",
@@ -24,14 +24,14 @@ Examples:
   api-cli set-checkpoint 1678318
   api-cli create-step-assert-variable "orderId" "12345"          # Auto-increment position
   api-cli create-step-assert-variable "username" "john.doe" 2     # Explicit position
-  
+
   # Override checkpoint for specific step
   api-cli create-step-assert-variable "orderId" "12345" 1 --checkpoint 1678319`,
 		Args: cobra.RangeArgs(2, 3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			variableName := args[0]
 			expectedValue := args[1]
-			
+
 			// Validate inputs
 			if variableName == "" {
 				return fmt.Errorf("variable name cannot be empty")
@@ -39,25 +39,25 @@ Examples:
 			if expectedValue == "" {
 				return fmt.Errorf("expected value cannot be empty")
 			}
-			
+
 			// Resolve checkpoint and position using session context
 			ctx, err := resolveStepContext(args, checkpointFlag, 2)
 			if err != nil {
 				return err
 			}
-			
+
 			// Create Virtuoso client
 			client := virtuoso.NewClient(cfg)
-			
+
 			// Create assert variable step using the enhanced client
 			stepID, err := client.CreateAssertVariableStep(ctx.CheckpointID, variableName, expectedValue, ctx.Position)
 			if err != nil {
 				return fmt.Errorf("failed to create assert variable step: %w", err)
 			}
-			
+
 			// Save session state if position was auto-incremented
 			saveStepContext(ctx)
-			
+
 			// Prepare output
 			output := &StepOutput{
 				Status:       "success",
@@ -70,11 +70,11 @@ Examples:
 				AutoPosition: ctx.AutoPosition,
 				Extra:        map[string]interface{}{"variable_name": variableName, "expected_value": expectedValue},
 			}
-			
+
 			return outputStepResult(output)
 		},
 	}
-	
+
 	addCheckpointFlag(cmd, &checkpointFlag)
 	return cmd
 }

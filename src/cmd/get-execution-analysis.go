@@ -11,19 +11,19 @@ import (
 
 // AnalysisOutput represents the output structure for execution analysis
 type AnalysisOutput struct {
-	Status       string                        `json:"status"`
-	ExecutionID  string                        `json:"execution_id"`
-	Summary      *virtuoso.ExecutionSummary    `json:"summary"`
-	Failures     []virtuoso.ExecutionFailure   `json:"failures"`
-	Performance  *virtuoso.ExecutionPerformance `json:"performance,omitempty"`
-	AIInsights   []string                      `json:"ai_insights,omitempty"`
-	NextSteps    []string                      `json:"next_steps,omitempty"`
+	Status      string                         `json:"status"`
+	ExecutionID string                         `json:"execution_id"`
+	Summary     *virtuoso.ExecutionSummary     `json:"summary"`
+	Failures    []virtuoso.ExecutionFailure    `json:"failures"`
+	Performance *virtuoso.ExecutionPerformance `json:"performance,omitempty"`
+	AIInsights  []string                       `json:"ai_insights,omitempty"`
+	NextSteps   []string                       `json:"next_steps,omitempty"`
 }
 
 func newGetExecutionAnalysisCmd() *cobra.Command {
 	var includeAIFlag bool
 	var failuresOnlyFlag bool
-	
+
 	cmd := &cobra.Command{
 		Use:   "get-execution-analysis EXECUTION_ID",
 		Short: "Get detailed execution analysis and failure insights",
@@ -88,7 +88,7 @@ Examples:
 						"Check screenshots and error messages",
 						"Consider updating selectors or wait conditions",
 					}
-					
+
 					if includeAIFlag && len(analysis.AIInsights) > 0 {
 						output.NextSteps = append(output.NextSteps, "Review AI suggestions for quick fixes")
 					}
@@ -132,7 +132,7 @@ func outputAnalysisResult(output *AnalysisOutput, format string) error {
 			"ai_insights":  output.AIInsights,
 			"next_steps":   output.NextSteps,
 		}
-		
+
 		jsonData, err := json.MarshalIndent(yamlData, "", "  ")
 		if err != nil {
 			return fmt.Errorf("failed to marshal YAML: %w", err)
@@ -148,7 +148,7 @@ func outputAnalysisResult(output *AnalysisOutput, format string) error {
 
 	default: // human
 		fmt.Printf("📊 Execution Analysis - %s\n\n", output.ExecutionID)
-		
+
 		// Summary section
 		if output.Summary != nil {
 			fmt.Printf("📋 Summary:\n")
@@ -158,16 +158,16 @@ func outputAnalysisResult(output *AnalysisOutput, format string) error {
 			fmt.Printf("  • Skipped Steps: %d\n", output.Summary.SkippedSteps)
 			fmt.Printf("  • Success Rate: %.1f%%\n", output.Summary.SuccessRate)
 			fmt.Printf("  • Duration: %s\n", output.Summary.Duration)
-			
+
 			if output.Summary.TotalJourneys > 0 {
 				fmt.Printf("  • Total Journeys: %d\n", output.Summary.TotalJourneys)
 				fmt.Printf("  • Passed Journeys: %d\n", output.Summary.PassedJourneys)
 				fmt.Printf("  • Failed Journeys: %d\n", output.Summary.FailedJourneys)
 			}
-			
+
 			fmt.Printf("\n")
 		}
-		
+
 		// Performance section
 		if output.Performance != nil {
 			fmt.Printf("⚡ Performance:\n")
@@ -179,7 +179,7 @@ func outputAnalysisResult(output *AnalysisOutput, format string) error {
 			fmt.Printf("  • Page Load Time: %dms\n", output.Performance.PageLoadTime)
 			fmt.Printf("\n")
 		}
-		
+
 		// Failures section
 		if len(output.Failures) > 0 {
 			fmt.Printf("❌ Failures (%d):\n", len(output.Failures))
@@ -197,7 +197,7 @@ func outputAnalysisResult(output *AnalysisOutput, format string) error {
 				fmt.Printf("\n")
 			}
 		}
-		
+
 		// AI Insights section
 		if len(output.AIInsights) > 0 {
 			fmt.Printf("🤖 AI Insights:\n")
@@ -206,7 +206,7 @@ func outputAnalysisResult(output *AnalysisOutput, format string) error {
 			}
 			fmt.Printf("\n")
 		}
-		
+
 		// Next steps section
 		if len(output.NextSteps) > 0 {
 			fmt.Printf("💡 Next Steps:\n")

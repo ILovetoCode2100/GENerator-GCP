@@ -10,7 +10,7 @@ import (
 
 func newCreateStepMouseDownCmd() *cobra.Command {
 	var checkpointFlag int
-	
+
 	cmd := &cobra.Command{
 		Use:   "create-step-mouse-down ELEMENT [POSITION]",
 		Short: "Create a mouse down step at a specific position in a checkpoint",
@@ -23,10 +23,10 @@ Examples:
   # Using current checkpoint context
   api-cli create-step-mouse-down "Drag handle" 1
   api-cli create-step-mouse-down "#draggable-item"  # Auto-increment position
-  
+
   # Override checkpoint explicitly
   api-cli create-step-mouse-down "Drag handle" 1 --checkpoint 1678318
-  
+
   # Legacy syntax (deprecated but still supported)
   api-cli create-step-mouse-down 1678318 "Drag handle" 1`,
 		Args: func(cmd *cobra.Command, args []string) error {
@@ -48,18 +48,18 @@ Examples:
 			var element string
 			var ctx *StepContext
 			var err error
-			
+
 			// Handle legacy syntax
 			if len(args) == 3 {
 				if checkpointID, err := strconv.Atoi(args[0]); err == nil {
 					// Legacy syntax detected
 					element = args[1]
-					
+
 					position, err := strconv.Atoi(args[2])
 					if err != nil {
 						return fmt.Errorf("invalid position: %w", err)
 					}
-					
+
 					ctx = &StepContext{
 						CheckpointID: checkpointID,
 						Position:     position,
@@ -68,35 +68,35 @@ Examples:
 					}
 				}
 			}
-			
+
 			// Modern syntax
 			if ctx == nil {
 				element = args[0]
-				
+
 				// Resolve checkpoint and position
 				ctx, err = resolveStepContext(args, checkpointFlag, 1)
 				if err != nil {
 					return err
 				}
 			}
-			
+
 			// Validate element
 			if element == "" {
 				return fmt.Errorf("element cannot be empty")
 			}
-			
+
 			// Create Virtuoso client
 			client := virtuoso.NewClient(cfg)
-			
+
 			// Create mouse down step using the enhanced client
 			stepID, err := client.CreateMouseDownStep(ctx.CheckpointID, element, ctx.Position)
 			if err != nil {
 				return fmt.Errorf("failed to create mouse down step: %w", err)
 			}
-			
+
 			// Save config if position was auto-incremented
 			saveStepContext(ctx)
-			
+
 			// Output result
 			output := &StepOutput{
 				Status:       "success",
@@ -109,12 +109,12 @@ Examples:
 				AutoPosition: ctx.AutoPosition,
 				Extra:        map[string]interface{}{"element": element},
 			}
-			
+
 			return outputStepResult(output)
 		},
 	}
-	
+
 	addCheckpointFlag(cmd, &checkpointFlag)
-	
+
 	return cmd
 }
