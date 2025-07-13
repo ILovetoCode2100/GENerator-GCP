@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-resty/resty/v2"
@@ -2905,6 +2906,698 @@ func (c *Client) CreateStepComment(checkpointID int, comment string, position in
 		"action": "COMMENT",
 		"value":  comment,
 		"meta":   map[string]interface{}{},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepAssertLessThan creates a step to assert element is less than value
+func (c *Client) CreateStepAssertLessThan(checkpointID int, selector, value string, position int) (int, error) {
+	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
+
+	parsedStep := map[string]interface{}{
+		"action": "ASSERT_LESS_THAN",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": clueJSON,
+				},
+			},
+		},
+		"value": value,
+		"meta":  map[string]interface{}{},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepAssertLessThanOrEqual creates a step to assert element is less than or equal to value
+func (c *Client) CreateStepAssertLessThanOrEqual(checkpointID int, selector, value string, position int) (int, error) {
+	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
+
+	parsedStep := map[string]interface{}{
+		"action": "ASSERT_LESS_THAN_OR_EQUAL",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": clueJSON,
+				},
+			},
+		},
+		"value": value,
+		"meta":  map[string]interface{}{},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepAssertSelected creates a step to assert an option is selected in a dropdown
+func (c *Client) CreateStepAssertSelected(checkpointID int, selector, value string, position int) (int, error) {
+	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
+
+	parsedStep := map[string]interface{}{
+		"action": "ASSERT_SELECTED",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": clueJSON,
+				},
+			},
+		},
+		"value": value,
+		"meta":  map[string]interface{}{},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepAssertVariable creates a step to assert a variable has a specific value
+func (c *Client) CreateStepAssertVariable(checkpointID int, variableName, expectedValue string, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action":   "ASSERT_VARIABLE",
+		"variable": variableName,
+		"value":    expectedValue,
+		"meta": map[string]interface{}{
+			"kind": "ASSERT_VARIABLE",
+			"type": "EQUALS",
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepAssertEquals creates a step to assert element equals value
+func (c *Client) CreateStepAssertEquals(checkpointID int, selector, value string, position int) (int, error) {
+	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
+
+	parsedStep := map[string]interface{}{
+		"action": "ASSERT_EQUALS",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": clueJSON,
+				},
+			},
+		},
+		"value": value,
+		"meta":  map[string]interface{}{},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepAssertExists creates a step to assert element exists
+func (c *Client) CreateStepAssertExists(checkpointID int, selector string, position int) (int, error) {
+	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
+
+	parsedStep := map[string]interface{}{
+		"action": "ASSERT_EXISTS",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": clueJSON,
+				},
+			},
+		},
+		"value": "",
+		"meta":  map[string]interface{}{},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepAssertNotExists creates a step to assert element does not exist
+func (c *Client) CreateStepAssertNotExists(checkpointID int, selector string, position int) (int, error) {
+	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
+
+	parsedStep := map[string]interface{}{
+		"action": "ASSERT_NOT_EXISTS",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": clueJSON,
+				},
+			},
+		},
+		"value": "",
+		"meta":  map[string]interface{}{},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepAssertChecked creates a step to assert checkbox/radio is checked
+func (c *Client) CreateStepAssertChecked(checkpointID int, selector string, position int) (int, error) {
+	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
+
+	parsedStep := map[string]interface{}{
+		"action": "ASSERT_CHECKED",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": clueJSON,
+				},
+			},
+		},
+		"value": "",
+		"meta":  map[string]interface{}{},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepAddCookie creates a step to add a cookie
+func (c *Client) CreateStepAddCookie(checkpointID int, name, value, domain string, position int) (int, error) {
+	// Note: domain parameter is included for compatibility but may not be used by API
+	parsedStep := map[string]interface{}{
+		"action": "ENVIRONMENT",
+		"value":  value,
+		"meta": map[string]interface{}{
+			"type": "ADD",
+			"name": name,
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepDeleteCookie creates a step to delete a specific cookie
+func (c *Client) CreateStepDeleteCookie(checkpointID int, name string, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "ENVIRONMENT",
+		"meta": map[string]interface{}{
+			"type": "DELETE",
+			"name": name,
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepClearCookies creates a step to clear all cookies
+func (c *Client) CreateStepClearCookies(checkpointID int, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "ENVIRONMENT",
+		"meta": map[string]interface{}{
+			"type": "CLEAR",
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepDismissAlert creates a step to dismiss an alert dialog
+func (c *Client) CreateStepDismissAlert(checkpointID int, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "DISMISS",
+		"value":  "",
+		"meta": map[string]interface{}{
+			"type": "ALERT",
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepDismissConfirm creates a step to dismiss a confirm dialog
+func (c *Client) CreateStepDismissConfirm(checkpointID int, accept bool, position int) (int, error) {
+	action := "CANCEL"
+	if accept {
+		action = "OK"
+	}
+	parsedStep := map[string]interface{}{
+		"action": "DISMISS",
+		"value":  "",
+		"meta": map[string]interface{}{
+			"type":   "CONFIRM",
+			"action": action,
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepDismissPrompt creates a step to dismiss a prompt dialog
+func (c *Client) CreateStepDismissPrompt(checkpointID int, text string, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "DISMISS",
+		"value":  text,
+		"meta": map[string]interface{}{
+			"type":   "PROMPT",
+			"action": "OK",
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepMouseDown creates a mouse down step
+func (c *Client) CreateStepMouseDown(checkpointID int, selector string, position int) (int, error) {
+	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
+
+	parsedStep := map[string]interface{}{
+		"action": "MOUSE",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": clueJSON,
+				},
+			},
+		},
+		"value": "",
+		"meta": map[string]interface{}{
+			"action": "DOWN",
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepMouseUp creates a mouse up step
+func (c *Client) CreateStepMouseUp(checkpointID int, selector string, position int) (int, error) {
+	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
+
+	parsedStep := map[string]interface{}{
+		"action": "MOUSE",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": clueJSON,
+				},
+			},
+		},
+		"value": "",
+		"meta": map[string]interface{}{
+			"action": "UP",
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepMouseEnter creates a mouse enter step
+func (c *Client) CreateStepMouseEnter(checkpointID int, selector string, position int) (int, error) {
+	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
+
+	parsedStep := map[string]interface{}{
+		"action": "MOUSE",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": clueJSON,
+				},
+			},
+		},
+		"value": "",
+		"meta": map[string]interface{}{
+			"action": "ENTER",
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepMouseMove creates a mouse move step
+func (c *Client) CreateStepMouseMove(checkpointID int, selector string, position int) (int, error) {
+	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
+
+	parsedStep := map[string]interface{}{
+		"action": "MOUSE",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": clueJSON,
+				},
+			},
+		},
+		"value": "",
+		"meta": map[string]interface{}{
+			"action": "MOVE",
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepPick creates a general pick dropdown option step
+func (c *Client) CreateStepPick(checkpointID int, selector, value string, position int) (int, error) {
+	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
+
+	parsedStep := map[string]interface{}{
+		"action": "PICK",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": clueJSON,
+				},
+			},
+		},
+		"value": value,
+		"meta":  map[string]interface{}{},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepPickText creates a pick by text step
+func (c *Client) CreateStepPickText(checkpointID int, selector, text string, position int) (int, error) {
+	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
+
+	parsedStep := map[string]interface{}{
+		"action": "PICK",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": clueJSON,
+				},
+			},
+		},
+		"value": text,
+		"meta": map[string]interface{}{
+			"type": "TEXT",
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepPickValue creates a pick by value step
+func (c *Client) CreateStepPickValue(checkpointID int, selector, value string, position int) (int, error) {
+	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
+
+	parsedStep := map[string]interface{}{
+		"action": "PICK",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": clueJSON,
+				},
+			},
+		},
+		"value": value,
+		"meta": map[string]interface{}{
+			"type": "VALUE",
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepScrollBottom creates a scroll to bottom step
+func (c *Client) CreateStepScrollBottom(checkpointID int, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "SCROLL",
+		"value":  "",
+		"meta": map[string]interface{}{
+			"type": "BOTTOM",
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepScrollElement creates a scroll to element step
+func (c *Client) CreateStepScrollElement(checkpointID int, selector string, position int) (int, error) {
+	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
+
+	parsedStep := map[string]interface{}{
+		"action": "SCROLL",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": clueJSON,
+				},
+			},
+		},
+		"value": "",
+		"meta": map[string]interface{}{
+			"type": "ELEMENT",
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepScrollPosition creates a scroll to position step
+func (c *Client) CreateStepScrollPosition(checkpointID int, x, y, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "SCROLL",
+		"value":  "",
+		"meta": map[string]interface{}{
+			"type": "POSITION",
+			"x":    x,
+			"y":    y,
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepScrollTop creates a scroll to top step
+func (c *Client) CreateStepScrollTop(checkpointID int, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "SCROLL",
+		"value":  "",
+		"meta": map[string]interface{}{
+			"type": "TOP",
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepStore creates a general store step
+func (c *Client) CreateStepStore(checkpointID int, selector, variableName string, position int) (int, error) {
+	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
+
+	parsedStep := map[string]interface{}{
+		"action": "STORE",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": clueJSON,
+				},
+			},
+		},
+		"value":    "",
+		"variable": variableName,
+		"meta":     map[string]interface{}{},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepStoreValue creates a store value step
+func (c *Client) CreateStepStoreValue(checkpointID int, selector, variableName string, position int) (int, error) {
+	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
+
+	parsedStep := map[string]interface{}{
+		"action": "STORE",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": clueJSON,
+				},
+			},
+		},
+		"value":    "",
+		"variable": variableName,
+		"meta": map[string]interface{}{
+			"type": "VALUE",
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepUpload creates a file upload step
+func (c *Client) CreateStepUpload(checkpointID int, selector, filePath string, position int) (int, error) {
+	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
+
+	parsedStep := map[string]interface{}{
+		"action": "UPLOAD",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": clueJSON,
+				},
+			},
+		},
+		"value": filePath,
+		"meta":  map[string]interface{}{},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepWaitElement creates a wait for element step
+func (c *Client) CreateStepWaitElement(checkpointID int, selector string, timeout int, position int) (int, error) {
+	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
+
+	parsedStep := map[string]interface{}{
+		"action": "WAIT",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": clueJSON,
+				},
+			},
+		},
+		"value": fmt.Sprintf("%d", timeout),
+		"meta":  map[string]interface{}{},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepWaitTime creates a wait for time step
+func (c *Client) CreateStepWaitTime(checkpointID int, milliseconds int, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "WAIT",
+		"value":  fmt.Sprintf("%d", milliseconds),
+		"meta": map[string]interface{}{
+			"type": "TIME",
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepWindow creates a window operation step
+func (c *Client) CreateStepWindow(checkpointID int, operation string, params map[string]interface{}, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "WINDOW",
+		"value":  "",
+		"meta": map[string]interface{}{
+			"type": strings.ToUpper(operation),
+		},
+	}
+
+	// Handle resize operation specifically
+	if strings.ToUpper(operation) == "RESIZE" {
+		if size, ok := params["size"].(string); ok && size != "" {
+			// Parse size in format "WIDTHxHEIGHT"
+			parts := strings.Split(size, "x")
+			if len(parts) == 2 {
+				if width, err := strconv.Atoi(parts[0]); err == nil {
+					if height, err := strconv.Atoi(parts[1]); err == nil {
+						parsedStep["meta"].(map[string]interface{})["dimension"] = map[string]interface{}{
+							"width":  width,
+							"height": height,
+						}
+					}
+				}
+			}
+		}
+	} else {
+		// Add any additional params to meta for non-resize operations
+		for k, v := range params {
+			if k != "size" { // Skip size since we handled it above
+				parsedStep["meta"].(map[string]interface{})[k] = v
+			}
+		}
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepExecuteJs creates an execute JavaScript step
+func (c *Client) CreateStepExecuteJs(checkpointID int, javascript string, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "EXECUTE",
+		"value":  javascript,
+		"meta": map[string]interface{}{
+			"explicit": true,
+			"script":   javascript,
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepDoubleClick creates a double-click step
+func (c *Client) CreateStepDoubleClick(checkpointID int, selector string, position int) (int, error) {
+	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
+
+	parsedStep := map[string]interface{}{
+		"action": "MOUSE",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": clueJSON,
+				},
+			},
+		},
+		"value": "",
+		"meta": map[string]interface{}{
+			"action": "DOUBLE_CLICK",
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepHover creates a hover step
+func (c *Client) CreateStepHover(checkpointID int, selector string, position int) (int, error) {
+	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
+
+	parsedStep := map[string]interface{}{
+		"action": "MOUSE",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": clueJSON,
+				},
+			},
+		},
+		"value": "",
+		"meta": map[string]interface{}{
+			"action": "OVER",
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepRightClick creates a right-click step
+func (c *Client) CreateStepRightClick(checkpointID int, selector string, position int) (int, error) {
+	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
+
+	parsedStep := map[string]interface{}{
+		"action": "MOUSE",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": clueJSON,
+				},
+			},
+		},
+		"value": "",
+		"meta": map[string]interface{}{
+			"action": "RIGHT_CLICK",
+		},
 	}
 
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
