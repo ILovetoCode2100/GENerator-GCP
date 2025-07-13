@@ -43,6 +43,23 @@ jobs:
         echo "api_key: $VIRTUOSO_API_KEY" > ~/.api-cli/config.yaml
         echo "api_url: $VIRTUOSO_API_URL" >> ~/.api-cli/config.yaml
         
-        ./bin/api-cli list-projects --output json || echo "list-projects failed"
+        # First try with simple config
+        ./bin/api-cli list-projects --output json || echo "list-projects failed with simple config"
+        
+        # Try with proper config structure
+        echo -e "\nCreating proper config file..."
+        cat > ~/.api-cli/virtuoso-config.yaml << EOF
+api:
+  auth_token: $VIRTUOSO_API_KEY
+  base_url: $VIRTUOSO_API_URL
+organization:
+  id: "2242"
+headers:
+  X-Virtuoso-Client-ID: "api-cli-generator"
+  X-Virtuoso-Client-Name: "api-cli-generator"
+EOF
+        
+        echo -e "\nTesting with proper config..."
+        ./bin/api-cli list-projects --output json || echo "list-projects failed with proper config"
         
         echo -e "\nQuick test completed!"
