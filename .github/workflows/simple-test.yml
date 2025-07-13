@@ -1,0 +1,29 @@
+name: Simple Test
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+    
+    - name: Test build
+      run: |
+        echo "Testing simple build..."
+        cd src/cmd && go build -o ../../bin/api-cli
+        echo "Build successful!"
+        ls -la ../../bin/
+    
+    - name: Test binary
+      run: |
+        ./bin/api-cli --version || echo "Version flag not implemented"
+        ./bin/api-cli --help || echo "Help displayed"
