@@ -36,13 +36,13 @@ generate: ## Generate client code from OpenAPI spec
 build: ## Build the CLI binary
 	@echo "Building $(BINARY_NAME)..."
 	@mkdir -p $(BUILD_DIR)
-	$(GOBUILD) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) ./$(SRC_DIR)/cmd
+	$(GOBUILD) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/api-cli
 	@echo "Build complete: $(BUILD_DIR)/$(BINARY_NAME)"
 
 build-test: ## Build the CLI binary for testing (fails fast on compilation errors)
 	@echo "Building $(BINARY_NAME) for testing..."
 	@mkdir -p $(BUILD_DIR)
-	@cd $(SRC_DIR)/cmd && $(GOBUILD) -o ../../$(BUILD_DIR)/$(BINARY_NAME) || (echo "Build failed!" && exit 1)
+	@cd cmd/api-cli && $(GOBUILD) -o ../../$(BUILD_DIR)/$(BINARY_NAME) || (echo "Build failed!" && exit 1)
 	@echo "Test build complete: $(BUILD_DIR)/$(BINARY_NAME)"
 
 clean: ## Clean build artifacts
@@ -133,7 +133,7 @@ coverage: ## Generate test coverage report
 test-bats: build-test ## Run BATS integration tests with report
 	@echo "Running BATS integration tests..."
 	@if command -v bats >/dev/null 2>&1; then \
-		./$(SRC_DIR)/cmd/tests/generate_report.sh; \
+		./src/cmd/tests/generate_report.sh; \
 	else \
 		echo "BATS not installed. Install with: npm install -g bats"; \
 		exit 1; \

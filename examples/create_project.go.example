@@ -1,0 +1,94 @@
+package cmd
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+
+	"github.com/marklovelady/api-cli-generator/pkg/config"
+	"github.com/marklovelady/api-cli-generator/pkg/virtuoso"
+	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
+)
+
+var createProjectCmd = &cobra.Command{
+	Use:   "create-project",
+	Short: "Create a new Virtuoso project",
+	Long: `Create a new project in Virtuoso.
+
+Examples:
+  # Create project with default output
+  api-cli create-project --name "Q1 Testing"
+
+  # Create project with description
+  api-cli create-project --name "Q1 Testing" --description "Quarterly test automation"
+
+  # Create project with JSON output
+  api-cli create-project --name "Q1 Testing" -o json`,
+	RunE: runCreateProject,
+}
+
+var (
+	projectName        string
+	projectDescription string
+)
+
+func init() {
+	createProjectCmd.Flags().StringVarP(&projectName, "name", "n", "", "Project name (required)")
+	createProjectCmd.Flags().StringVarP(&projectDescription, "description", "d", "", "Project description")
+	createProjectCmd.MarkFlagRequired("name")
+}
+
+func runCreateProject(cmd *cobra.Command, args []string) error {
+	// Load config
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		return fmt.Errorf("failed to load config: %w", err)
+	}
+
+	// Create client
+	client := virtuoso.NewClient(cfg)
+
+	// Create project
+	project, err := client.CreateProject(projectName, projectDescription)
+	if err != nil {
+		return fmt.Errorf("failed to create project: %w", err)
+	}
+
+	// Output based on format
+	outputFormat, _ := cmd.Flags().GetString("output")
+
+	switch outputFormat {
+	case "json":
+		output, err := json.MarshalIndent(project, "", "  ")
+		if err != nil {
+			return fmt.Errorf("failed to marshal JSON: %w", err)
+		}
+		fmt.Println(string(output))
+
+	case "yaml":
+		output, err := yaml.Marshal(project)
+		if err != nil {
+			return fmt.Errorf("failed to marshal YAML: %w", err)
+		}
+		fmt.Print(string(output))
+
+	case "ai":
+		aiOutput := map[string]interface{}{
+			"status":       "success",
+			"operation":    "create_project",
+			"project_id":   project.ID,
+			"project_name": project.Name,
+		}
+		output, _ := json.Marshal(aiOutput)
+		fmt.Println(string(output))
+
+	default: // human
+		fmt.Printf("✅ Created project \"%s\" (ID: %d)\n", project.Name, project.ID)
+		if projectDescription != "" {
+			fmt.Printf("   Description: %s\n", project.Description)
+		}
+	}
+
+	return nil
+}

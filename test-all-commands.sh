@@ -2,6 +2,7 @@
 
 # Test script for all Virtuoso API CLI commands
 # This script tests all 63 commands with example parameters
+# Updated to test both old (legacy) and new (consolidated) command formats
 
 set -e  # Exit on error
 
@@ -16,6 +17,10 @@ NC='\033[0m' # No Color
 PASSED=0
 FAILED=0
 TOTAL=0
+LEGACY_PASSED=0
+LEGACY_FAILED=0
+CONSOLIDATED_PASSED=0
+CONSOLIDATED_FAILED=0
 
 # Variables to store created IDs
 PROJECT_ID=""
@@ -41,10 +46,51 @@ test_command() {
     if eval "$cmd" > /dev/null 2>&1; then
         echo -e "${GREEN}PASSED${NC}"
         PASSED=$((PASSED + 1))
+        LEGACY_PASSED=$((LEGACY_PASSED + 1))
     else
         echo -e "${RED}FAILED${NC}"
         echo "  Command: $cmd"
         FAILED=$((FAILED + 1))
+        LEGACY_FAILED=$((LEGACY_FAILED + 1))
+    fi
+}
+
+# Function to test both legacy and consolidated commands
+test_dual_command() {
+    local legacy_cmd="$1"
+    local consolidated_cmd="$2"
+    local description="$3"
+
+    # Test legacy command
+    TOTAL=$((TOTAL + 1))
+    echo -n "Testing (Legacy): $description... "
+
+    if eval "$legacy_cmd" > /dev/null 2>&1; then
+        echo -e "${GREEN}PASSED${NC}"
+        PASSED=$((PASSED + 1))
+        LEGACY_PASSED=$((LEGACY_PASSED + 1))
+    else
+        echo -e "${RED}FAILED${NC}"
+        echo "  Command: $legacy_cmd"
+        FAILED=$((FAILED + 1))
+        LEGACY_FAILED=$((LEGACY_FAILED + 1))
+    fi
+
+    # Test consolidated command if provided
+    if [ -n "$consolidated_cmd" ]; then
+        TOTAL=$((TOTAL + 1))
+        echo -n "Testing (New): $description... "
+
+        if eval "$consolidated_cmd" > /dev/null 2>&1; then
+            echo -e "${GREEN}PASSED${NC}"
+            PASSED=$((PASSED + 1))
+            CONSOLIDATED_PASSED=$((CONSOLIDATED_PASSED + 1))
+        else
+            echo -e "${RED}FAILED${NC}"
+            echo "  Command: $consolidated_cmd"
+            FAILED=$((FAILED + 1))
+            CONSOLIDATED_FAILED=$((CONSOLIDATED_FAILED + 1))
+        fi
     fi
 }
 
@@ -83,8 +129,7 @@ extract_id() {
 
 # Step 1: Create a new project
 echo -e "${BLUE}Step 1: Creating new project...${NC}"
-PROJECT_OUTPUT=$(./bin/api-cli create-project "$PROJECT_NAME" --output json 2>&1)
-if [ $? -eq 0 ]; then
+if PROJECT_OUTPUT=$(./bin/api-cli create-project "$PROJECT_NAME" --output json 2>&1); then
     PROJECT_ID=$(extract_id "$PROJECT_OUTPUT" "project_id")
     if [ -n "$PROJECT_ID" ]; then
         echo -e "${GREEN}✓ Created project: $PROJECT_NAME (ID: $PROJECT_ID)${NC}"
@@ -101,8 +146,7 @@ fi
 
 # Step 2: Create a goal in the project
 echo -e "${BLUE}Step 2: Creating goal in project...${NC}"
-GOAL_OUTPUT=$(./bin/api-cli create-goal $PROJECT_ID "$GOAL_NAME" --output json 2>&1)
-if [ $? -eq 0 ]; then
+if GOAL_OUTPUT=$(./bin/api-cli create-goal "$PROJECT_ID" "$GOAL_NAME" --output json 2>&1); then
     GOAL_ID=$(extract_id "$GOAL_OUTPUT" "goal_id")
     SNAPSHOT_ID=$(extract_id "$GOAL_OUTPUT" "snapshot_id")
     if [ -n "$GOAL_ID" ]; then
@@ -120,8 +164,7 @@ fi
 
 # Step 3: Create a journey in the goal
 echo -e "${BLUE}Step 3: Creating journey in goal...${NC}"
-JOURNEY_OUTPUT=$(./bin/api-cli create-journey $GOAL_ID $SNAPSHOT_ID "$JOURNEY_NAME" --output json 2>&1)
-if [ $? -eq 0 ]; then
+if JOURNEY_OUTPUT=$(./bin/api-cli create-journey "$GOAL_ID" "$SNAPSHOT_ID" "$JOURNEY_NAME" --output json 2>&1); then
     JOURNEY_ID=$(extract_id "$JOURNEY_OUTPUT" "journey_id")
     if [ -n "$JOURNEY_ID" ]; then
         echo -e "${GREEN}✓ Created journey: $JOURNEY_NAME (ID: $JOURNEY_ID)${NC}"
@@ -138,8 +181,7 @@ fi
 
 # Step 4: Create a checkpoint in the journey
 echo -e "${BLUE}Step 4: Creating checkpoint in journey...${NC}"
-CHECKPOINT_OUTPUT=$(./bin/api-cli create-checkpoint $JOURNEY_ID $GOAL_ID $SNAPSHOT_ID "Test Checkpoint" --output json 2>&1)
-if [ $? -eq 0 ]; then
+if CHECKPOINT_OUTPUT=$(./bin/api-cli create-checkpoint "$JOURNEY_ID" "$GOAL_ID" "$SNAPSHOT_ID" "Test Checkpoint" --output json 2>&1); then
     CHECKPOINT_ID=$(extract_id "$CHECKPOINT_OUTPUT" "checkpoint_id")
     if [ -n "$CHECKPOINT_ID" ]; then
         echo -e "${GREEN}✓ Created checkpoint (ID: $CHECKPOINT_ID)${NC}"
@@ -156,8 +198,7 @@ fi
 
 # Set the checkpoint in session context for commands that support it
 echo -e "${BLUE}Step 5: Setting checkpoint in session context...${NC}"
-./bin/api-cli set-checkpoint $CHECKPOINT_ID > /dev/null 2>&1
-if [ $? -eq 0 ]; then
+if ./bin/api-cli set-checkpoint "$CHECKPOINT_ID" > /dev/null 2>&1; then
     echo -e "${GREEN}✓ Set checkpoint $CHECKPOINT_ID in session context${NC}"
 else
     echo -e "${YELLOW}⚠ Could not set checkpoint in session context (will use explicit IDs)${NC}"
@@ -279,10 +320,48 @@ test_command "./bin/api-cli create-step-key $CHECKPOINT_ID 'Tab' $POSITION --tar
 test_command "./bin/api-cli create-step-comment $CHECKPOINT_ID 'This is a test comment' $POSITION --output json" "create-step-comment"
 
 echo ""
+echo -e "${YELLOW}=== Testing Consolidated Commands (New Format) ===${NC}"
+echo ""
+
+# Test some key commands in both formats
+test_dual_command \
+    "./bin/api-cli create-step-assert-equals $CHECKPOINT_ID 'span.username' 'john.doe' $POSITION" \
+    "./bin/api-cli assert equals 'span.username' 'john.doe' $POSITION --checkpoint $CHECKPOINT_ID" \
+    "assert equals (dual format)"
+
+test_dual_command \
+    "./bin/api-cli create-step-click $CHECKPOINT_ID 'button.submit' $POSITION" \
+    "./bin/api-cli interact click 'button.submit' $POSITION --checkpoint $CHECKPOINT_ID" \
+    "interact click (dual format)"
+
+test_dual_command \
+    "./bin/api-cli create-step-navigate $CHECKPOINT_ID 'https://example.com' $POSITION" \
+    "./bin/api-cli navigate url 'https://example.com' $POSITION --checkpoint $CHECKPOINT_ID" \
+    "navigate url (dual format)"
+
+test_dual_command \
+    "./bin/api-cli create-step-write $CHECKPOINT_ID 'input#email' 'test@example.com' $POSITION" \
+    "./bin/api-cli interact write 'input#email' 'test@example.com' $POSITION --checkpoint $CHECKPOINT_ID" \
+    "interact write (dual format)"
+
+test_dual_command \
+    "./bin/api-cli create-step-wait-element $CHECKPOINT_ID 'div.spinner' $POSITION" \
+    "./bin/api-cli wait element 'div.spinner' $POSITION --checkpoint $CHECKPOINT_ID" \
+    "wait element (dual format)"
+
+echo ""
 echo "=== Test Summary ==="
 echo -e "Total tests: $TOTAL"
 echo -e "Passed: ${GREEN}$PASSED${NC}"
 echo -e "Failed: ${RED}$FAILED${NC}"
+echo ""
+echo "Legacy Commands:"
+echo -e "  Passed: ${GREEN}$LEGACY_PASSED${NC}"
+echo -e "  Failed: ${RED}$LEGACY_FAILED${NC}"
+echo ""
+echo "Consolidated Commands:"
+echo -e "  Passed: ${GREEN}$CONSOLIDATED_PASSED${NC}"
+echo -e "  Failed: ${RED}$CONSOLIDATED_FAILED${NC}"
 
 # Optional: Clean up the created test data
 echo ""
@@ -290,15 +369,14 @@ echo -e "${BLUE}Cleanup: Do you want to delete the test project? (y/N)${NC}"
 read -r CLEANUP_RESPONSE
 if [[ "$CLEANUP_RESPONSE" =~ ^[Yy]$ ]]; then
     echo "Deleting test project..."
-    ./bin/api-cli delete-project $PROJECT_ID > /dev/null 2>&1
-    if [ $? -eq 0 ]; then
+    if ./bin/api-cli delete-project "$PROJECT_ID" > /dev/null 2>&1; then
         echo -e "${GREEN}✓ Test project deleted${NC}"
     else
         echo -e "${YELLOW}⚠ Could not delete test project${NC}"
     fi
 fi
 
-if [ $FAILED -eq 0 ]; then
+if [ "$FAILED" -eq 0 ]; then
     echo -e "\n${GREEN}All tests passed!${NC}"
     exit 0
 else

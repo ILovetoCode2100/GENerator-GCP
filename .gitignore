@@ -61,6 +61,23 @@ scripts/test/.env
 
 # Backup files
 *.bak
+*.backup
+*.old
+*.orig
 
 # Log files
 *.log
+
+# Temporary and test files
+test-*.sh
+!test-all-commands.sh
+ultrathink-*
+*-checkpoint-*.sh
+fix-*.sh
+*-report.md
+*-REPORT.md
+
+# Temporary JSON files
+*-result.json
+*_analysis.json
+*_endpoints.json
