@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/marklovelady/api-cli-generator/pkg/api-cli/client"
-	"github.com/marklovelady/api-cli-generator/pkg/api-cli/commands/shared"
 	"github.com/spf13/cobra"
 )
 
@@ -223,7 +222,7 @@ Examples:
 
 // runNavigation executes a navigation command
 func runNavigation(cmd *cobra.Command, args []string, action string, options map[string]interface{}) error {
-	base := shared.NewBaseCommand()
+	base := NewBaseCommand()
 	if err := base.Init(cmd); err != nil {
 		return err
 	}
@@ -270,7 +269,7 @@ func runNavigation(cmd *cobra.Command, args []string, action string, options map
 	}
 
 	// Format and output the result
-	result := &shared.StepResult{
+	result := &StepResult{
 		ID:           fmt.Sprintf("%d", stepID),
 		CheckpointID: base.CheckpointID,
 		Type:         action,
@@ -288,7 +287,7 @@ func runNavigation(cmd *cobra.Command, args []string, action string, options map
 
 // executeNavigateToAction executes a navigate action using the client
 func executeNavigateToAction(c *client.Client, checkpointID int, url string, position int, options map[string]interface{}) (int, error) {
-	if err := shared.ValidateURL(url); err != nil {
+	if err := ValidateURL(url); err != nil {
 		return 0, err
 	}
 
@@ -310,7 +309,7 @@ func executeScrollBottomAction(c *client.Client, checkpointID int, position int,
 
 // executeScrollElementAction executes a scroll-to-element action using the client
 func executeScrollElementAction(c *client.Client, checkpointID int, selector string, position int, options map[string]interface{}) (int, error) {
-	if err := shared.ValidateSelector(selector); err != nil {
+	if err := ValidateSelector(selector); err != nil {
 		return 0, err
 	}
 

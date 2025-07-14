@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/marklovelady/api-cli-generator/pkg/api-cli/client"
-	"github.com/marklovelady/api-cli-generator/pkg/api-cli/commands/shared"
 	"github.com/spf13/cobra"
 )
 
@@ -239,7 +238,7 @@ Examples:
 
 // runInteraction executes an interaction command
 func runInteraction(cmd *cobra.Command, args []string, action string, options map[string]interface{}) error {
-	base := shared.NewBaseCommand()
+	base := NewBaseCommand()
 	if err := base.Init(cmd); err != nil {
 		return err
 	}
@@ -286,7 +285,7 @@ func runInteraction(cmd *cobra.Command, args []string, action string, options ma
 	}
 
 	// Format and output the result
-	result := &shared.StepResult{
+	result := &StepResult{
 		ID:           fmt.Sprintf("%d", stepID),
 		CheckpointID: base.CheckpointID,
 		Type:         action,
@@ -304,7 +303,7 @@ func runInteraction(cmd *cobra.Command, args []string, action string, options ma
 
 // executeClickAction executes a click action using the client
 func executeClickAction(c *client.Client, checkpointID int, selector string, position int, options map[string]interface{}) (int, error) {
-	if err := shared.ValidateSelector(selector); err != nil {
+	if err := ValidateSelector(selector); err != nil {
 		return 0, err
 	}
 
@@ -323,7 +322,7 @@ func executeClickAction(c *client.Client, checkpointID int, selector string, pos
 
 // executeDoubleClickAction executes a double-click action using the client
 func executeDoubleClickAction(c *client.Client, checkpointID int, selector string, position int, options map[string]interface{}) (int, error) {
-	if err := shared.ValidateSelector(selector); err != nil {
+	if err := ValidateSelector(selector); err != nil {
 		return 0, err
 	}
 
@@ -332,7 +331,7 @@ func executeDoubleClickAction(c *client.Client, checkpointID int, selector strin
 
 // executeRightClickAction executes a right-click action using the client
 func executeRightClickAction(c *client.Client, checkpointID int, selector string, position int, options map[string]interface{}) (int, error) {
-	if err := shared.ValidateSelector(selector); err != nil {
+	if err := ValidateSelector(selector); err != nil {
 		return 0, err
 	}
 
@@ -341,7 +340,7 @@ func executeRightClickAction(c *client.Client, checkpointID int, selector string
 
 // executeHoverAction executes a hover action using the client
 func executeHoverAction(c *client.Client, checkpointID int, selector string, position int, options map[string]interface{}) (int, error) {
-	if err := shared.ValidateSelector(selector); err != nil {
+	if err := ValidateSelector(selector); err != nil {
 		return 0, err
 	}
 
@@ -350,7 +349,7 @@ func executeHoverAction(c *client.Client, checkpointID int, selector string, pos
 
 // executeWriteAction executes a write action using the client
 func executeWriteAction(c *client.Client, checkpointID int, selector string, text string, position int, options map[string]interface{}) (int, error) {
-	if err := shared.ValidateSelector(selector); err != nil {
+	if err := ValidateSelector(selector); err != nil {
 		return 0, err
 	}
 
@@ -368,7 +367,7 @@ func executeKeyAction(c *client.Client, checkpointID int, key string, position i
 	target, _ := options["target"].(string)
 
 	if target != "" {
-		if err := shared.ValidateSelector(target); err != nil {
+		if err := ValidateSelector(target); err != nil {
 			return 0, err
 		}
 		return c.CreateStepKeyTargeted(checkpointID, target, key, position)

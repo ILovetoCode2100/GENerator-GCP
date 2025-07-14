@@ -8,6 +8,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // LegacyCommandMapping maps old command names to new consolidated commands
@@ -154,15 +155,31 @@ func CreateLegacyWrapper(oldCommand string) *cobra.Command {
 				return fmt.Errorf("failed to find new command '%s': %w", mapping.NewCommand, err)
 			}
 
-			// Build new command arguments
-			newArgs := []string{mapping.SubCommand}
-			newArgs = append(newArgs, args...)
+			// Find the subcommand
+			subCmd, _, err := newCmd.Find([]string{mapping.SubCommand})
+			if err != nil {
+				return fmt.Errorf("failed to find subcommand '%s %s': %w", mapping.NewCommand, mapping.SubCommand, err)
+			}
 
-			// Set up the new command with arguments
-			newCmd.SetArgs(newArgs)
+			// Copy flags from the original command to the subcommand
+			cmd.Flags().VisitAll(func(flag *pflag.Flag) {
+				if subCmd.Flags().Lookup(flag.Name) != nil {
+					subCmd.Flags().Set(flag.Name, flag.Value.String())
+				}
+			})
 
-			// Execute the new command
-			return newCmd.Execute()
+			// Execute the subcommand directly with the args
+			if subCmd.RunE != nil {
+				return subCmd.RunE(subCmd, args)
+			} else if subCmd.Run != nil {
+				subCmd.Run(subCmd, args)
+				return nil
+			} else {
+				// Fallback: execute the subcommand through its Execute method
+				// but set args to prevent re-parsing from os.Args
+				subCmd.SetArgs(args)
+				return subCmd.Execute()
+			}
 		},
 	}
 

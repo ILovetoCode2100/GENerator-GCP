@@ -71,6 +71,7 @@ scripts/test/.env
 # Temporary and test files
 test-*.sh
 !test-all-commands.sh
+!test-all-cli-commands.sh
 ultrathink-*
 *-checkpoint-*.sh
 fix-*.sh

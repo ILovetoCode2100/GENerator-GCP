@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/marklovelady/api-cli-generator/pkg/api-cli/commands/shared"
 	"github.com/spf13/cobra"
 )
 
@@ -82,7 +81,7 @@ The script can be any valid JavaScript expression or statement.`,
 
 // runMiscOperation handles the execution of misc operations
 func runMiscOperation(cmd *cobra.Command, args []string, operation string, options map[string]interface{}) error {
-	base := shared.NewBaseCommand()
+	base := NewBaseCommand()
 	if err := base.Init(cmd); err != nil {
 		return err
 	}
@@ -138,7 +137,7 @@ func runMiscOperation(cmd *cobra.Command, args []string, operation string, optio
 	}
 
 	// Create result
-	result := &shared.StepResult{
+	result := &StepResult{
 		ID:           fmt.Sprintf("%d", stepID),
 		Type:         stepType,
 		Position:     base.Position,

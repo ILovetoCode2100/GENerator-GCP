@@ -1,4 +1,4 @@
-package shared
+package commands
 
 // StepRequest represents a request to create a step
 type StepRequest struct {

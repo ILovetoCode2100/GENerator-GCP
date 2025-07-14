@@ -1,9 +1,9 @@
-package shared
+package commands
 
 import (
 	"encoding/json"
 	"fmt"
-	"os"
+	"strconv"
 	"strings"
 
 	"github.com/marklovelady/api-cli-generator/pkg/api-cli/client"
@@ -46,20 +46,18 @@ func NewBaseCommand() *BaseCommand {
 
 // Init initializes the base command with client and config
 func (bc *BaseCommand) Init(cmd *cobra.Command) error {
-	// Get API configuration from environment
-	token := os.Getenv("VIRTUOSO_API_TOKEN")
-	if token == "" {
-		return fmt.Errorf("VIRTUOSO_API_TOKEN environment variable is required")
+	// Check if global config is set
+	if cfg == nil {
+		return fmt.Errorf("configuration not loaded")
 	}
 
-	// Get API base URL from environment
-	baseURL := os.Getenv("VIRTUOSO_API_BASE_URL")
-	if baseURL == "" {
-		baseURL = "https://api-app2.virtuoso.qa/api"
+	// Check if API token is configured
+	if cfg.API.AuthToken == "" {
+		return fmt.Errorf("API token not configured. Please set api.auth_token in config or VIRTUOSO_API_TOKEN environment variable")
 	}
 
-	// Create client
-	bc.Client = client.NewClientDirect(baseURL, token)
+	// Create client using config
+	bc.Client = client.NewClientDirect(cfg.API.BaseURL, cfg.API.AuthToken)
 
 	// Get output format flag
 	format, _ := cmd.Flags().GetString("output")
@@ -73,8 +71,11 @@ func (bc *BaseCommand) Init(cmd *cobra.Command) error {
 // ResolveCheckpointAndPosition resolves checkpoint ID and position from arguments
 // Supports both modern (session-based) and legacy (explicit checkpoint) formats
 func (bc *BaseCommand) ResolveCheckpointAndPosition(args []string, requiresArgs int) ([]string, error) {
-	// Check if we have a checkpoint ID from session (environment variable)
-	sessionCheckpoint := os.Getenv("VIRTUOSO_SESSION_CHECKPOINT")
+	// Check if we have a checkpoint ID from session
+	var sessionCheckpoint string
+	if cfg != nil && cfg.Session.CurrentCheckpointID != nil {
+		sessionCheckpoint = strconv.Itoa(*cfg.Session.CurrentCheckpointID)
+	}
 
 	if len(args) < requiresArgs {
 		return nil, fmt.Errorf("insufficient arguments")

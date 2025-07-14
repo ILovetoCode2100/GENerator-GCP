@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/marklovelady/api-cli-generator/pkg/api-cli/client"
-	"github.com/marklovelady/api-cli-generator/pkg/api-cli/commands/shared"
 	"github.com/spf13/cobra"
 )
 
@@ -84,7 +83,7 @@ Examples:
 
 // runFileCommand executes a file command
 func runFileCommand(cmd *cobra.Command, args []string, action string, options map[string]interface{}) error {
-	base := shared.NewBaseCommand()
+	base := NewBaseCommand()
 	if err := base.Init(cmd); err != nil {
 		return err
 	}
@@ -101,7 +100,7 @@ func runFileCommand(cmd *cobra.Command, args []string, action string, options ma
 	filePathOrURL := args[1]
 
 	// Validate selector
-	if err := shared.ValidateSelector(selector); err != nil {
+	if err := ValidateSelector(selector); err != nil {
 		return err
 	}
 
@@ -127,7 +126,7 @@ func runFileCommand(cmd *cobra.Command, args []string, action string, options ma
 	}
 
 	// Format and output the result
-	result := &shared.StepResult{
+	result := &StepResult{
 		ID:           fmt.Sprintf("%d", stepID),
 		CheckpointID: base.CheckpointID,
 		Type:         "UPLOAD",
@@ -164,7 +163,7 @@ func executeUploadAction(c *client.Client, checkpointID int, selector, filePath 
 // executeUploadURLAction executes a URL file upload
 func executeUploadURLAction(c *client.Client, checkpointID int, selector, url string, position int) (int, error) {
 	// Validate URL format
-	if err := shared.ValidateURL(url); err != nil {
+	if err := ValidateURL(url); err != nil {
 		return 0, err
 	}
 
