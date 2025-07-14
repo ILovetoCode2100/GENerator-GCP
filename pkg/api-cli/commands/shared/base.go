@@ -166,11 +166,12 @@ func (bc *BaseCommand) FormatOutput(result interface{}, format string) (string, 
 		return string(data), nil
 
 	case "yaml":
-		data, err := yaml.Marshal(result)
+		// Using yaml.v3 for YAML formatting
+		yamlData, err := yaml.Marshal(result)
 		if err != nil {
 			return "", err
 		}
-		return string(data), nil
+		return string(yamlData), nil
 
 	case "ai":
 		// AI-friendly format

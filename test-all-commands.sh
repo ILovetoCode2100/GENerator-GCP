@@ -94,22 +94,6 @@ test_dual_command() {
     fi
 }
 
-# Function to test command with expected failure
-test_command_expect_fail() {
-    local cmd="$1"
-    local description="$2"
-    TOTAL=$((TOTAL + 1))
-
-    echo -n "Testing: $description (expect fail)... "
-
-    if eval "$cmd" > /dev/null 2>&1; then
-        echo -e "${RED}UNEXPECTED SUCCESS${NC}"
-        FAILED=$((FAILED + 1))
-    else
-        echo -e "${GREEN}FAILED AS EXPECTED${NC}"
-        PASSED=$((PASSED + 1))
-    fi
-}
 
 echo "=== Testing All Virtuoso API CLI Commands ==="
 echo ""
@@ -119,7 +103,8 @@ extract_id() {
     local json="$1"
     local field="$2"
     # Handle both numeric IDs and string IDs (with quotes)
-    local result=$(echo "$json" | grep -o "\"$field\"[[:space:]]*:[[:space:]]*[0-9]*" | grep -o "[0-9]*$")
+    local result
+    result=$(echo "$json" | grep -o "\"$field\"[[:space:]]*:[[:space:]]*[0-9]*" | grep -o "[0-9]*$")
     if [ -z "$result" ]; then
         # Try extracting string value
         result=$(echo "$json" | grep -o "\"$field\"[[:space:]]*:[[:space:]]*\"[^\"]*\"" | sed 's/.*"\([^"]*\)"$/\1/')
