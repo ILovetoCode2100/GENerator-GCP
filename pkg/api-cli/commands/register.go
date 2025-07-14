@@ -62,6 +62,9 @@ func RegisterCommands(rootCmd *cobra.Command) {
 	// 11. MISC - Miscellaneous actions (2 legacy commands → 1 group)
 	rootCmd.AddCommand(newMiscCmd()) // comment, execute (script)
 
+	// 12. LIBRARY - Library checkpoint operations (NEW)
+	rootCmd.AddCommand(LibraryCmd()) // add, get, attach
+
 	// ========================================
 	// LEGACY COMMAND SUPPORT
 	// ========================================

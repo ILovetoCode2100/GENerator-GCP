@@ -23,9 +23,9 @@ This is a comprehensive CLI tool for interacting with the Virtuoso API to create
 - **Removed Obsolete Files** - Cleaned up 54 old create-step-\*.go files, 10 consolidation docs, migration scripts
 - **Shared Infrastructure** - Reduced code duplication by ~60% through shared base command structure
 
-### ✅ **Consolidated Command Structure (11 Groups, 54 Commands)**
+### ✅ **Consolidated Command Structure (12 Groups, 57 Commands)**
 
-The CLI has been reorganized from 54 individual commands into 11 logical groups:
+The CLI has been reorganized from 54 individual commands into 12 logical groups (11 original + 1 new library group):
 
 #### **1. Assert Commands (12 subcommands)**
 
@@ -127,6 +127,18 @@ api-cli misc comment|execute-script|key
 - Miscellaneous operations like comments and script execution
 - Examples: `api-cli misc comment "Test login flow"`, `api-cli misc execute-script "return document.title"`
 
+#### **12. Library Commands (3 subcommands) - NEW**
+
+```bash
+api-cli library add|get|attach
+```
+
+- Library checkpoint operations for reusable test components
+- Examples:
+  - `api-cli library add 1680930` - Add checkpoint to library
+  - `api-cli library get 7023` - Get library checkpoint details
+  - `api-cli library attach 608926 7023 4` - Attach library checkpoint to journey
+
 ## 🔧 Technical Architecture
 
 ### **File Structure (Post-Consolidation)**
@@ -152,6 +164,7 @@ api-cli misc comment|execute-script|key
 │       │   ├── select.go         # Select command group
 │       │   ├── file.go           # File command group
 │       │   ├── misc.go           # Misc command group
+│       │   ├── library.go        # Library command group (NEW)
 │       │   ├── base.go           # Shared base command
 │       │   ├── types.go          # Shared types
 │       │   ├── legacy-wrapper.go # Backward compatibility
@@ -175,7 +188,7 @@ api-cli misc comment|execute-script|key
 
 #### **2. Consolidated Commands (`pkg/api-cli/commands/`)**
 
-- **11 command groups** replacing 54 individual files
+- **12 command groups** replacing 54 individual files (plus 3 new library commands)
 - Shared base command infrastructure
 - Multiple output formats (human, json, yaml, ai)
 - Consistent error handling and validation

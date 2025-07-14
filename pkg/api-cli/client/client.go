@@ -3678,3 +3678,124 @@ func (c *Client) CreateStepRightClick(checkpointID int, selector string, positio
 
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
+
+// ============= LIBRARY CHECKPOINT METHODS =============
+// These methods handle library checkpoint operations
+
+// LibraryCheckpoint represents a library checkpoint
+type LibraryCheckpoint struct {
+	ID          int                      `json:"id"`
+	Name        string                   `json:"name"`
+	Description string                   `json:"description,omitempty"`
+	Steps       []map[string]interface{} `json:"steps,omitempty"`
+	CreatedAt   string                   `json:"createdAt,omitempty"`
+	UpdatedAt   string                   `json:"updatedAt,omitempty"`
+}
+
+// AddCheckpointToLibrary converts a checkpoint to a library checkpoint
+func (c *Client) AddCheckpointToLibrary(checkpointID int) (*LibraryCheckpoint, error) {
+	var response struct {
+		Success bool              `json:"success"`
+		Item    LibraryCheckpoint `json:"item"`
+		Error   struct {
+			Code    string `json:"code,omitempty"`
+			Message string `json:"message,omitempty"`
+		} `json:"error,omitempty"`
+	}
+
+	resp, err := c.httpClient.R().
+		SetResult(&response).
+		Post(fmt.Sprintf("/testcases/%d/add-to-library", checkpointID))
+
+	if err != nil {
+		return nil, fmt.Errorf("add checkpoint to library request failed: %w", err)
+	}
+
+	if resp.IsError() {
+		if response.Error.Message != "" {
+			return nil, fmt.Errorf("add checkpoint to library failed: %s", response.Error.Message)
+		}
+		return nil, fmt.Errorf("add checkpoint to library failed with status %d: %s",
+			resp.StatusCode(), resp.String())
+	}
+
+	if !response.Success {
+		return nil, fmt.Errorf("add checkpoint to library failed: API returned success=false")
+	}
+
+	return &response.Item, nil
+}
+
+// GetLibraryCheckpoint retrieves details of a library checkpoint
+func (c *Client) GetLibraryCheckpoint(libraryCheckpointID int) (*LibraryCheckpoint, error) {
+	var response struct {
+		Success bool              `json:"success"`
+		Item    LibraryCheckpoint `json:"item"`
+		Error   struct {
+			Code    string `json:"code,omitempty"`
+			Message string `json:"message,omitempty"`
+		} `json:"error,omitempty"`
+	}
+
+	resp, err := c.httpClient.R().
+		SetResult(&response).
+		Get(fmt.Sprintf("/library/checkpoints/%d", libraryCheckpointID))
+
+	if err != nil {
+		return nil, fmt.Errorf("get library checkpoint request failed: %w", err)
+	}
+
+	if resp.IsError() {
+		if response.Error.Message != "" {
+			return nil, fmt.Errorf("get library checkpoint failed: %s", response.Error.Message)
+		}
+		return nil, fmt.Errorf("get library checkpoint failed with status %d: %s",
+			resp.StatusCode(), resp.String())
+	}
+
+	if !response.Success {
+		return nil, fmt.Errorf("get library checkpoint failed: API returned success=false")
+	}
+
+	return &response.Item, nil
+}
+
+// AttachLibraryCheckpoint attaches a library checkpoint to a journey at a specific position
+func (c *Client) AttachLibraryCheckpoint(journeyID, libraryCheckpointID, position int) (*Checkpoint, error) {
+	body := map[string]interface{}{
+		"libraryCheckpointId": libraryCheckpointID,
+		"position":            position,
+	}
+
+	var response struct {
+		Success bool       `json:"success"`
+		Item    Checkpoint `json:"item"`
+		Error   struct {
+			Code    string `json:"code,omitempty"`
+			Message string `json:"message,omitempty"`
+		} `json:"error,omitempty"`
+	}
+
+	resp, err := c.httpClient.R().
+		SetBody(body).
+		SetResult(&response).
+		Post(fmt.Sprintf("/testsuites/%d/checkpoints/attach", journeyID))
+
+	if err != nil {
+		return nil, fmt.Errorf("attach library checkpoint request failed: %w", err)
+	}
+
+	if resp.IsError() {
+		if response.Error.Message != "" {
+			return nil, fmt.Errorf("attach library checkpoint failed: %s", response.Error.Message)
+		}
+		return nil, fmt.Errorf("attach library checkpoint failed with status %d: %s",
+			resp.StatusCode(), resp.String())
+	}
+
+	if !response.Success {
+		return nil, fmt.Errorf("attach library checkpoint failed: API returned success=false")
+	}
+
+	return &response.Item, nil
+}
