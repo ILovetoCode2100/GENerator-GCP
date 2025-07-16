@@ -1,6 +1,9 @@
 package commands
 
 // StepRequest represents a request to create a step
+// This structure is the primary interface for AI systems to generate test steps
+// Type field maps to Virtuoso step types (NAVIGATE, CLICK, ASSERT_EXISTS, etc.)
+// Meta field allows flexible data for complex step configurations
 type StepRequest struct {
 	CheckpointID string                 `json:"checkpointId"`
 	Type         string                 `json:"type"`
@@ -12,6 +15,11 @@ type StepRequest struct {
 }
 
 // StepResult represents the result of creating a step
+// Used by AI systems to:
+// - Track created steps in test journeys
+// - Build test execution context
+// - Generate subsequent steps based on previous results
+// The Meta field contains step-specific data that AI can parse for test flow decisions
 type StepResult struct {
 	ID           string                 `json:"id"`
 	CheckpointID string                 `json:"checkpointId"`

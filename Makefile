@@ -74,3 +74,34 @@ test-library: build ## Test library commands
 	@echo "Testing library commands..."
 	@chmod +x ./test-library-commands.sh 2>/dev/null || true
 	@./test-library-commands.sh
+
+# AI documentation generation
+ai-generate-docs: build ## Generate AI-friendly command documentation
+	@echo "Generating AI-optimized documentation..."
+	@echo "## Command Reference (Auto-generated)" > docs/AI_COMMANDS.md
+	@echo "" >> docs/AI_COMMANDS.md
+	@echo "Generated on: $$(date)" >> docs/AI_COMMANDS.md
+	@echo "" >> docs/AI_COMMANDS.md
+	@./bin/api-cli help --format json 2>/dev/null | jq -r '.commands[]' | while read cmd; do \
+		echo "### $$cmd" >> docs/AI_COMMANDS.md; \
+		./bin/api-cli $$cmd --help 2>/dev/null | grep -A 100 "Usage:" >> docs/AI_COMMANDS.md || true; \
+		echo "" >> docs/AI_COMMANDS.md; \
+	done
+	@echo "AI documentation generated in docs/AI_COMMANDS.md"
+
+ai-schema-export: ## Export command schemas for AI parsing
+	@echo "Exporting command schemas..."
+	@mkdir -p schemas
+	@echo '{"version": "2.0", "commands": {' > schemas/commands.json
+	@first=true; \
+	for group in assert interact navigate data dialog wait window mouse select file misc library; do \
+		if [ "$$first" = "true" ]; then first=false; else echo -n "," >> schemas/commands.json; fi; \
+		echo -n "\"$$group\": {" >> schemas/commands.json; \
+		echo -n "\"description\": \"$$(./bin/api-cli $$group --help 2>/dev/null | head -1)\"," >> schemas/commands.json; \
+		echo -n "\"subcommands\": []" >> schemas/commands.json; \
+		echo -n "}" >> schemas/commands.json; \
+	done
+	@echo "}}" >> schemas/commands.json
+	@jq . schemas/commands.json > schemas/commands_formatted.json
+	@mv schemas/commands_formatted.json schemas/commands.json
+	@echo "Command schemas exported to schemas/commands.json"

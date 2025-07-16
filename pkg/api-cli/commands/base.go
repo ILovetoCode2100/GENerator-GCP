@@ -30,11 +30,12 @@ type StepCommand interface {
 }
 
 // BaseCommand provides common functionality for all step commands
+// This structure supports AI-friendly output formats and test structure generation
 type BaseCommand struct {
 	Client       *client.Client
 	CheckpointID string
 	Position     int
-	OutputFormat string
+	OutputFormat string // Supports: human, json, yaml, ai (with contextual test structure)
 }
 
 // NewBaseCommand creates a new base command instance
@@ -160,6 +161,11 @@ func IsNumeric(s string) bool {
 }
 
 // FormatOutput formats the output based on the specified format
+// Supports multiple formats for different use cases:
+// - json: Structured data for programmatic parsing
+// - yaml: Configuration-friendly format for test definitions
+// - ai: Enhanced output with context, next steps, and test structure
+// - human: Default readable format for manual inspection
 func (bc *BaseCommand) FormatOutput(result interface{}, format string) (string, error) {
 	switch format {
 	case "json":
@@ -178,7 +184,8 @@ func (bc *BaseCommand) FormatOutput(result interface{}, format string) (string, 
 		return string(yamlData), nil
 
 	case "ai":
-		// AI-friendly format
+		// AI-friendly format with contextual information for test generation
+		// Includes: command result, test context, suggested next steps, and journey structure
 		if stepResult, ok := result.(*StepResult); ok {
 			return bc.FormatAI(stepResult), nil
 		}
@@ -223,26 +230,76 @@ func (bc *BaseCommand) FormatHuman(result *StepResult) string {
 	return sb.String()
 }
 
-// FormatAI formats a step result for AI consumption
+// FormatAI formats a step result for AI consumption with enhanced context
+// Returns a structured format that includes:
+// - Command execution result
+// - Test context (checkpoint, journey, position)
+// - Suggested next steps based on the command type
+// - Current test structure information
 func (bc *BaseCommand) FormatAI(result *StepResult) string {
-	var sb strings.Builder
-
-	sb.WriteString(fmt.Sprintf("STEP_CREATED type=%s id=%s position=%d",
-		result.Type, result.ID, result.Position))
-
-	if result.Selector != "" {
-		sb.WriteString(fmt.Sprintf(" selector=%q", result.Selector))
+	// Create AI-optimized output structure
+	aiOutput := map[string]interface{}{
+		"command": result.Type,
+		"result": "success",
+		"message": fmt.Sprintf("Step created: %s", result.Description),
+		"step_details": map[string]interface{}{
+			"id":       result.ID,
+			"type":     result.Type,
+			"position": result.Position,
+			"selector": result.Selector,
+			"meta":     result.Meta,
+		},
+		"context": map[string]interface{}{
+			"checkpoint_id": bc.CheckpointID,
+			"position":      result.Position,
+		},
+		"next_steps": bc.suggestNextSteps(result.Type),
+		"test_structure": map[string]interface{}{
+			"current_position": result.Position,
+		},
 	}
+	
+	// Convert to JSON for structured output
+	data, _ := json.MarshalIndent(aiOutput, "", "  ")
+	return string(data)
+}
 
-	if result.Description != "" {
-		sb.WriteString(fmt.Sprintf(" description=%q", result.Description))
+// suggestNextSteps provides intelligent next step suggestions based on command type
+func (bc *BaseCommand) suggestNextSteps(stepType string) []string {
+	// AI-driven suggestions for test flow continuity
+	suggestions := map[string][]string{
+		"NAVIGATE": {
+			"wait element 'body'",
+			"assert exists '.main-content'",
+			"interact click 'first visible button'",
+		},
+		"CLICK": {
+			"wait element '.loading' --not-exists",
+			"assert exists '.success-message'",
+			"assert not-exists '.error-message'",
+		},
+		"WRITE": {
+			"interact key 'Tab'",
+			"interact click 'Submit'",
+			"assert equals 'input value' 'expected value'",
+		},
+		"ASSERT_EXISTS": {
+			"interact click 'element'",
+			"data store element-text 'element' 'variableName'",
+			"assert equals 'element' 'expected text'",
+		},
 	}
-
-	for k, v := range result.Meta {
-		sb.WriteString(fmt.Sprintf(" %s=%v", k, v))
+	
+	if steps, ok := suggestions[stepType]; ok {
+		return steps
 	}
-
-	return sb.String()
+	
+	// Default suggestions
+	return []string{
+		"wait time 1000",
+		"assert exists '.next-element'",
+		"interact click '.continue-button'",
+	}
 }
 
 // ValidateSelector validates a CSS selector
