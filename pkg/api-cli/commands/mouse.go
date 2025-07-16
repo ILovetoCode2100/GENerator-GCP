@@ -91,7 +91,8 @@ var mouseCommands = map[mouseAction]mouseCommandInfo{
 		usage:       "mouse move-by DX DY [POSITION]",
 		examples: []string{
 			`api-cli mouse move-by 100 50 1`,
-			`api-cli mouse move-by -50 -25  # Auto-increment position`,
+			`api-cli mouse move-by -- 50 -25  # Use -- before negative numbers`,
+			`api-cli mouse move-by -- -50 -25  # Both negative numbers`,
 		},
 		argsCount: []int{2},
 		parseStep: func(args []string) string {

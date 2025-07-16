@@ -82,12 +82,15 @@ func (bc *BaseCommand) ResolveCheckpointAndPosition(args []string, requiresArgs 
 	}
 
 	// Try to parse position from last argument
-	lastArg := args[len(args)-1]
-	position, isPosition := ParsePosition(lastArg)
-
-	if isPosition {
-		bc.Position = position
-		args = args[:len(args)-1] // Remove position from args
+	var isPosition bool
+	if len(args) > 0 {
+		lastArg := args[len(args)-1]
+		pos, isPos := ParsePosition(lastArg)
+		if isPos {
+			bc.Position = pos
+			isPosition = true
+			args = args[:len(args)-1] // Remove position from args
+		}
 	}
 
 	// Now check if we have enough arguments after removing position
@@ -104,7 +107,7 @@ func (bc *BaseCommand) ResolveCheckpointAndPosition(args []string, requiresArgs 
 	}
 
 	// Check if first argument looks like a checkpoint ID (legacy format)
-	if strings.HasPrefix(args[0], "cp_") || IsNumeric(args[0]) {
+	if len(args) > 0 && (strings.HasPrefix(args[0], "cp_") || IsNumeric(args[0])) {
 		bc.CheckpointID = args[0]
 		args = args[1:] // Remove checkpoint ID from args
 
