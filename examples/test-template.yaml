@@ -1,0 +1,80 @@
+# Virtuoso API CLI - AI Test Template
+# This template provides a minimal structure for AI systems to generate tests
+# Copy and modify this template based on your test requirements
+
+journey:
+  name: "Test Journey Name"
+  project_id: ${PROJECT_ID}
+  description: "Brief description of what this test validates"
+  
+  # Optional configuration
+  config:
+    retry_failed_steps: true
+    screenshot_on_error: true
+    continue_on_error: false
+    timeout_default: 5000
+  
+  # Variables can be defined here or passed at runtime
+  variables:
+    - name: "base_url"
+      value: "${BASE_URL:-https://example.com}"
+    - name: "test_user"
+      value: "${TEST_USER:-testuser@example.com}"
+  
+  # Checkpoints represent logical test sections
+  checkpoints:
+    - name: "Setup and Navigation"
+      position: 1
+      description: "Initial test setup and page navigation"
+      steps:
+        - command: navigate to
+          args: ["${base_url}"]
+          description: "Open application"
+        
+        - command: wait element
+          args: ["body"]
+          options:
+            timeout: 10000
+            description: "Ensure page loaded"
+    
+    - name: "Main Test Logic"
+      position: 2
+      description: "Core test actions"
+      steps:
+        # Example: Conditional logic
+        - command: conditional
+          condition:
+            command: assert exists
+            args: ["#cookie-banner"]
+            timeout: 2000
+          then:
+            - command: interact click
+              args: ["#accept-cookies"]
+          
+        # Example: Form interaction
+        - command: interact write
+          args: ["#input-field", "test value"]
+          options:
+            variable: "stored_value"
+            clear_before: true
+        
+        # Example: Assertion
+        - command: assert equals
+          args: ["#result", "expected value"]
+    
+    - name: "Cleanup and Verification"
+      position: 3
+      description: "Final verifications and cleanup"
+      steps:
+        - command: assert not-exists
+          args: [".error-message"]
+          description: "No errors present"
+
+# AI Instructions:
+# 1. Replace placeholder values (${PROJECT_ID}, URLs, selectors)
+# 2. Add checkpoints for each logical test section
+# 3. Use descriptive names for steps and checkpoints
+# 4. Include wait commands after navigation or actions
+# 5. Add assertions to verify expected states
+# 6. Use variables for reusable values
+# 7. Consider error scenarios and add appropriate handling

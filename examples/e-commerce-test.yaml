@@ -1,0 +1,220 @@
+# E-Commerce Purchase Flow Test
+# Comprehensive test for product search, cart, and checkout
+
+journey:
+  name: "E-Commerce Purchase - Full Flow"
+  project_id: 13961
+  description: "End-to-end test of purchasing a product"
+  
+  config:
+    retry_failed_steps: true
+    screenshot_on_error: true
+    max_retry_count: 3
+  
+  variables:
+    - name: "base_url"
+      value: "https://shop.example.com"
+    - name: "product_search"
+      value: "Wireless Mouse"
+    - name: "expected_price_range"
+      value: "20-50"
+  
+  checkpoints:
+    - name: "Homepage and Search"
+      steps:
+        - command: navigate to
+          args: ["${base_url}"]
+        
+        - command: wait element
+          args: [".search-bar"]
+          options:
+            timeout: 5000
+        
+        # Handle cookie consent if present
+        - command: conditional
+          condition:
+            command: assert exists
+            args: ["#cookie-consent"]
+            timeout: 2000
+          then:
+            - command: interact click
+              args: ["#accept-all-cookies"]
+            - command: wait element
+              args: ["#cookie-consent"]
+              options:
+                not_exists: true
+        
+        # Search for product
+        - command: interact click
+          args: [".search-bar input"]
+        
+        - command: interact write
+          args: [".search-bar input", "${product_search}"]
+        
+        - command: interact key
+          args: ["Enter"]
+        
+        - command: wait element
+          args: [".search-results"]
+          options:
+            timeout: 5000
+        
+        - command: assert gte
+          args: [".results-count", "1"]
+    
+    - name: "Product Selection and Cart"
+      steps:
+        # Store first product price
+        - command: data store element-text
+          args: [".product-card:first .price", "product_price"]
+        
+        # Click first product
+        - command: interact hover
+          args: [".product-card:first"]
+        
+        - command: interact click
+          args: [".product-card:first .view-product"]
+        
+        # Product page
+        - command: wait element
+          args: [".product-details"]
+        
+        - command: assert exists
+          args: ["#add-to-cart"]
+        
+        # Select options if available
+        - command: conditional
+          condition:
+            command: assert exists
+            args: [".product-options"]
+          then:
+            - command: interact click
+              args: [".size-option:first"]
+            - command: interact click
+              args: [".color-option:first"]
+        
+        # Add to cart
+        - command: interact click
+          args: ["#add-to-cart"]
+        
+        - command: wait element
+          args: [".cart-notification, .cart-updated"]
+          options:
+            either_or: true
+            timeout: 3000
+        
+        # Verify cart count
+        - command: assert equals
+          args: [".cart-count", "1"]
+    
+    - name: "Cart Review"
+      steps:
+        # Go to cart
+        - command: interact click
+          args: [".cart-icon"]
+        
+        - command: wait element
+          args: [".cart-page, .cart-summary"]
+          options:
+            either_or: true
+        
+        # Verify item in cart
+        - command: assert exists
+          args: [".cart-item"]
+        
+        - command: assert matches
+          args: [".cart-item .product-name", "${product_search}"]
+        
+        # Update quantity
+        - command: interact click
+          args: [".quantity-increase"]
+        
+        - command: wait time
+          args: ["1000"]
+        
+        - command: assert equals
+          args: [".quantity-input", "2"]
+    
+    - name: "Checkout Process"
+      steps:
+        # Proceed to checkout
+        - command: interact click
+          args: [".checkout-button"]
+        
+        - command: wait element
+          args: [".checkout-page"]
+        
+        # Guest checkout or login
+        - command: conditional
+          condition:
+            command: assert exists
+            args: [".guest-checkout"]
+          then:
+            - command: interact click
+              args: [".guest-checkout"]
+          else:
+            - command: interact write
+              args: ["#checkout-email", "guest@example.com"]
+        
+        # Shipping information
+        - command: wait element
+          args: ["#shipping-form"]
+        
+        - command: interact write
+          args: ["#first-name", "Test"]
+        
+        - command: interact write
+          args: ["#last-name", "User"]
+        
+        - command: interact write
+          args: ["#address-line1", "123 Test Street"]
+        
+        - command: interact write
+          args: ["#city", "Test City"]
+        
+        - command: select option
+          args: ["#state", "CA"]
+        
+        - command: interact write
+          args: ["#zip-code", "12345"]
+        
+        - command: interact write
+          args: ["#phone", "555-0123"]
+        
+        # Continue to payment
+        - command: interact click
+          args: ["#continue-to-payment"]
+        
+        - command: wait element
+          args: ["#payment-form"]
+        
+        # Test payment (usually sandbox)
+        - command: interact click
+          args: ["#test-payment-method"]
+        
+        # Review order
+        - command: interact click
+          args: ["#review-order"]
+        
+        - command: wait element
+          args: [".order-summary"]
+        
+        # Verify total
+        - command: assert exists
+          args: [".order-total"]
+        
+        # Place order
+        - command: interact click
+          args: ["#place-order"]
+        
+        - command: wait element
+          args: [".order-confirmation"]
+          options:
+            timeout: 15000
+        
+        # Store order number
+        - command: data store element-text
+          args: [".order-number", "order_id"]
+        
+        - command: assert exists
+          args: [".order-success-message"]
