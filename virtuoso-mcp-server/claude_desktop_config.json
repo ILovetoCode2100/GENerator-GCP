@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "virtuoso-cli": {
+      "command": "node",
+      "args": [
+        "/Users/marklovelady/_dev/_projects/virtuoso-GENerator/virtuoso-mcp-server/dist/index.js"
+      ],
+      "env": {
+        "VIRTUOSO_CLI_PATH": "/Users/marklovelady/_dev/_projects/virtuoso-GENerator/bin/api-cli",
+        "VIRTUOSO_CONFIG_PATH": "/Users/marklovelady/.api-cli/virtuoso-config.yaml",
+        "VIRTUOSO_DEBUG": "false"
+      },
+      "capabilities": {
+        "tools": true,
+        "resources": true
+      }
+    }
+  }
+}

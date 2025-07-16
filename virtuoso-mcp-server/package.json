@@ -1,0 +1,48 @@
+{
+  "name": "virtuoso-mcp-server",
+  "version": "1.0.0",
+  "description": "Model Context Protocol server for Virtuoso API CLI",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "test": "NODE_OPTIONS='--experimental-vm-modules' jest",
+    "test:watch": "NODE_OPTIONS='--experimental-vm-modules' jest --watch",
+    "test:coverage": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage",
+    "test:ci": "NODE_OPTIONS='--experimental-vm-modules' jest --ci --coverage --maxWorkers=2",
+    "test:mcp": "npx @modelcontextprotocol/inspector",
+    "clean": "rm -rf dist coverage",
+    "prepare": "npm run build",
+    "lint": "tsc --noEmit",
+    "pretest": "npm run lint",
+    "test:server": "tsx scripts/test-server.ts",
+    "validate": "tsx scripts/validate-tools.ts",
+    "build:prod": "./scripts/build.sh"
+  },
+  "keywords": [
+    "mcp",
+    "virtuoso",
+    "testing",
+    "automation",
+    "claude"
+  ],
+  "author": "Virtuoso MCP",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.5.0",
+    "zod": "^3.22.4",
+    "dotenv": "^16.4.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "typescript": "^5.3.3",
+    "tsx": "^4.7.0",
+    "jest": "^29.7.0",
+    "@jest/globals": "^29.7.0",
+    "@types/jest": "^29.5.11",
+    "ts-jest": "^29.1.1",
+    "ts-node": "^10.9.2"
+  }
+}
