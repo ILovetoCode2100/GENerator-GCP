@@ -1,6 +1,0 @@
-Starting comprehensive API CLI test suite...
-Log file: test-all-commands-20250716-010139.log
-
-[0;34m=== PROJECT CREATION AND SETUP ===[0m
-[1;33mTesting: Creating new project[0m
-[0;32m✓ Created project: Test Project 20250716-010139 (ID: 9188)[0m
