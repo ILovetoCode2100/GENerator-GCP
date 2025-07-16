@@ -651,12 +651,105 @@ api-cli analyze-journey JOURNEY_ID --suggest-improvements --output ai
 5. **Batch Templates**: Use YAML for complex test structures
 6. **Command Validation**: Verify commands before execution
 
+### Configuration for Test Building
+
+The CLI uses Viper for flexible configuration management, supporting AI-driven test creation through dedicated test and AI configuration sections. Configuration can be loaded from `~/.api-cli/virtuoso-config.yaml` or `./virtuoso-config.yaml`.
+
+#### Test Configuration Fields
+```yaml
+# Test-specific settings for AI test generation
+test:
+  # Directory containing YAML test templates for batch processing
+  # AI systems place test definitions here for execution
+  batch_dir: ./test-batches
+  
+  # Default output format for test commands
+  # Set to "ai" for context-aware responses with suggestions
+  output_format: ai
+  
+  # Directory containing example test templates
+  # AI references these to learn test patterns
+  template_dir: ./examples
+  
+  # Automatically validate templates before execution
+  # Helps catch errors early in AI test generation
+  auto_validate: true
+  
+  # Maximum steps per checkpoint (default: 20)
+  # Ensures well-structured, maintainable tests
+  max_steps_per_checkpoint: 20
+```
+
+#### AI Integration Fields
+```yaml
+# AI-specific settings for enhanced test building
+ai:
+  # Include intelligent next-step suggestions in output
+  enable_suggestions: true
+  
+  # Context depth for AI responses (1-5)
+  # Higher values provide more test structure info
+  context_depth: 3
+  
+  # Auto-generate descriptive step descriptions
+  # Creates self-documenting tests
+  auto_generate_descriptions: true
+  
+  # Enable pattern inference from test examples
+  # AI learns from your test patterns
+  template_inference: true
+```
+
+#### Using Configuration in Test Building
+```bash
+# AI systems can query current configuration
+api-cli get-config --output json
+
+# Override config for specific commands
+api-cli assert exists "Login" --config ./ai-test-config.yaml
+
+# Environment variables override config file
+export VIRTUOSO_TEST_OUTPUT_FORMAT=ai
+export VIRTUOSO_AI_ENABLE_SUGGESTIONS=true
+
+# Batch processing uses configured directories
+api-cli process-batch  # Uses test.batch_dir
+api-cli load-template login.yaml  # Looks in test.template_dir
+```
+
+#### Configuration Effects on AI Output
+When `test.output_format` is set to "ai" or `ai.enable_suggestions` is true:
+```json
+{
+  "command": "interact click",
+  "result": "success",
+  "context": {
+    "checkpoint_id": "1680930",
+    "position": 1,
+    "max_steps": 20  // From max_steps_per_checkpoint
+  },
+  "next_steps": [  // From enable_suggestions
+    "wait element '#dashboard'",
+    "assert exists '.user-profile'"
+  ],
+  "description": "Click login button to access user dashboard"  // From auto_generate_descriptions
+}
+```
+
+#### Best Practices for AI Configuration
+1. **Batch Directory**: Organize test templates by feature/module
+2. **Output Format**: Use "ai" for development, "json" for CI/CD
+3. **Context Depth**: Balance between detail and response size
+4. **Auto Validation**: Keep enabled to catch template errors early
+5. **Max Steps**: Lower values (10-20) for maintainable checkpoints
+
 ### Changelog Integration
 Recent updates affecting AI usage:
 - v2.0: Added `--output ai` format with contextual information
 - v2.0: Library commands for reusable test components
 - v2.0: Session context for automatic position management
 - v2.0: Enhanced error messages for better AI parsing
+- v2.0: Enhanced Viper configuration for AI test building
 
 ## 📖 API Spec Quick Reference
 

@@ -24,3 +24,39 @@ output:
 http:
   timeout: 30  # seconds
   retries: 3
+  
+# Test configuration for AI-driven test building
+test:
+  # Directory containing YAML test templates for batch processing
+  # AI systems can place multiple test definitions here
+  batch_dir: ./test-batches
+  
+  # Default output format for test commands (overrides output.default_format)
+  # Set to "ai" for context-aware responses with suggestions
+  output_format: ai
+  
+  # Directory containing example test templates
+  # AI can reference these to learn test patterns
+  template_dir: ./examples
+  
+  # Automatically validate templates before execution
+  # Catches errors early in AI test generation
+  auto_validate: true
+  
+  # Maximum steps per checkpoint (helps create well-structured tests)
+  max_steps_per_checkpoint: 20
+
+# AI integration settings
+ai:
+  # Include next-step suggestions in command output
+  enable_suggestions: true
+  
+  # How many levels of test context to include (1-5)
+  # Higher = more context but larger responses
+  context_depth: 3
+  
+  # Automatically generate step descriptions
+  auto_generate_descriptions: true
+  
+  # Enable template pattern inference from examples
+  template_inference: true

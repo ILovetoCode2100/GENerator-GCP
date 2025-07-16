@@ -50,7 +50,7 @@ Examples:
   api-cli get-execution-analysis exec_12345 --ai-insights --output json`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, err := config.LoadConfig()
+			cfg, err := config.LoadConfig("")
 			if err != nil {
 				return fmt.Errorf("failed to load configuration: %w", err)
 			}
