@@ -57,7 +57,7 @@ Examples:
   api-cli create-environment --name "Production-Copy" --copy-from env_456`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, err := config.LoadConfig()
+			cfg, err := config.LoadConfig("")
 			if err != nil {
 				return fmt.Errorf("failed to load configuration: %w", err)
 			}

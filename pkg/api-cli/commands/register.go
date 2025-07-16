@@ -150,6 +150,13 @@ func RegisterCommands(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(newGetExecutionAnalysisCmd())
 	rootCmd.AddCommand(newManageTestDataCmd())
 	rootCmd.AddCommand(newCreateEnvironmentCmd())
+	
+	// ========================================
+	// TEST TEMPLATE COMMANDS (AI Integration)
+	// ========================================
+	rootCmd.AddCommand(LoadTestTemplateCmd)
+	rootCmd.AddCommand(GenerateCommandsCmd)
+	rootCmd.AddCommand(GetTestTemplatesCmd)
 }
 
 // registerLegacyCommands registers all legacy commands with deprecation warnings

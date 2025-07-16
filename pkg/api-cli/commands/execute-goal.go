@@ -52,7 +52,7 @@ Examples:
   api-cli execute-goal 1234 --wait --timeout 600`,
 		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, err := config.LoadConfig()
+			cfg, err := config.LoadConfig("")
 			if err != nil {
 				return fmt.Errorf("failed to load configuration: %w", err)
 			}

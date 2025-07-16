@@ -1,8 +1,0 @@
-api:
-  auth_token: f7a55516-5cc4-4529-b2ae-8e106a7d164e
-  base_url: https://api-app2.virtuoso.qa/api
-organization:
-  id: "2242"
-headers:
-  X-Virtuoso-Client-ID: "api-cli-generator"
-  X-Virtuoso-Client-Name: "api-cli-generator"
