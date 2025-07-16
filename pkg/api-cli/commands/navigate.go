@@ -313,9 +313,7 @@ func executeScrollElementAction(c *client.Client, checkpointID int, selector str
 		return 0, err
 	}
 
-	// The client doesn't have a specific scroll-to-element method
-	// We'll need to add this to the client or use a workaround
-	return 0, fmt.Errorf("scroll-to-element not yet implemented in client")
+	return c.CreateStepScrollElement(checkpointID, selector, position)
 }
 
 // executeScrollPositionAction executes a scroll-to-position action using the client

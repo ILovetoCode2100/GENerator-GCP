@@ -3799,3 +3799,83 @@ func (c *Client) AttachLibraryCheckpoint(journeyID, libraryCheckpointID, positio
 
 	return &response.Item, nil
 }
+
+// MoveLibraryCheckpointStep moves a test step within a library checkpoint to a new position
+func (c *Client) MoveLibraryCheckpointStep(libraryCheckpointID, testStepID, position int) error {
+	body := map[string]interface{}{
+		"position": position,
+	}
+
+	resp, err := c.httpClient.R().
+		SetBody(body).
+		Post(fmt.Sprintf("/library/checkpoints/%d/steps/%d/move", libraryCheckpointID, testStepID))
+
+	if err != nil {
+		return fmt.Errorf("move library checkpoint step request failed: %w", err)
+	}
+
+	if resp.StatusCode() == 204 {
+		// Success - No Content response
+		return nil
+	}
+
+	return fmt.Errorf("move library checkpoint step failed with status %d: %s",
+		resp.StatusCode(), resp.String())
+}
+
+// RemoveLibraryCheckpointStep removes a test step from a library checkpoint
+func (c *Client) RemoveLibraryCheckpointStep(libraryCheckpointID, testStepID int) error {
+	resp, err := c.httpClient.R().
+		Delete(fmt.Sprintf("/library/checkpoints/%d/steps/%d", libraryCheckpointID, testStepID))
+
+	if err != nil {
+		return fmt.Errorf("remove library checkpoint step request failed: %w", err)
+	}
+
+	if resp.StatusCode() == 204 {
+		// Success - No Content response
+		return nil
+	}
+
+	return fmt.Errorf("remove library checkpoint step failed with status %d: %s",
+		resp.StatusCode(), resp.String())
+}
+
+// UpdateLibraryCheckpoint updates a library checkpoint's title
+func (c *Client) UpdateLibraryCheckpoint(libraryCheckpointID int, name string) (*LibraryCheckpoint, error) {
+	body := map[string]interface{}{
+		"name": name,
+	}
+
+	var response struct {
+		Success bool              `json:"success"`
+		Item    LibraryCheckpoint `json:"item"`
+		Error   struct {
+			Code    string `json:"code,omitempty"`
+			Message string `json:"message,omitempty"`
+		} `json:"error,omitempty"`
+	}
+
+	resp, err := c.httpClient.R().
+		SetBody(body).
+		SetResult(&response).
+		Put(fmt.Sprintf("/library/checkpoints/%d", libraryCheckpointID))
+
+	if err != nil {
+		return nil, fmt.Errorf("update library checkpoint request failed: %w", err)
+	}
+
+	if resp.IsError() {
+		if response.Error.Message != "" {
+			return nil, fmt.Errorf("update library checkpoint failed: %s", response.Error.Message)
+		}
+		return nil, fmt.Errorf("update library checkpoint failed with status %d: %s",
+			resp.StatusCode(), resp.String())
+	}
+
+	if !response.Success {
+		return nil, fmt.Errorf("update library checkpoint failed: API returned success=false")
+	}
+
+	return &response.Item, nil
+}

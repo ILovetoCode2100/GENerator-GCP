@@ -17,13 +17,19 @@ func LibraryCmd() *cobra.Command {
 This command allows you to:
 - Add checkpoints to the library for reuse
 - Get details of library checkpoints
-- Attach library checkpoints to journeys`,
+- Attach library checkpoints to journeys
+- Move test steps within library checkpoints
+- Remove test steps from library checkpoints
+- Update library checkpoint titles`,
 	}
 
 	// Add subcommands
 	cmd.AddCommand(addSubCmd())
 	cmd.AddCommand(getSubCmd())
 	cmd.AddCommand(attachSubCmd())
+	cmd.AddCommand(moveStepSubCmd())
+	cmd.AddCommand(removeStepSubCmd())
+	cmd.AddCommand(updateSubCmd())
 
 	return cmd
 }
@@ -87,6 +93,70 @@ Examples:
 		Args: cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runLibraryAttachCommand(cmd, args)
+		},
+	}
+
+	return cmd
+}
+
+// moveStepSubCmd creates the move-step subcommand
+func moveStepSubCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "move-step <library-checkpoint-id> <test-step-id> <position>",
+		Short: "Move a test step within a library checkpoint",
+		Long: `Move a test step to a new position within a library checkpoint.
+
+The position is 1-based, where 1 is the first position.
+
+Examples:
+  # Move step to position 2
+  api-cli library move-step 7023 19660498 2
+  api-cli library move-step lib_7023 step_19660498 1`,
+		Args: cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runLibraryMoveStepCommand(cmd, args)
+		},
+	}
+
+	return cmd
+}
+
+// removeStepSubCmd creates the remove-step subcommand
+func removeStepSubCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "remove-step <library-checkpoint-id> <test-step-id>",
+		Short: "Remove a test step from a library checkpoint",
+		Long: `Remove a test step from a library checkpoint.
+
+This permanently removes the step from the library checkpoint.
+
+Examples:
+  # Remove step from library checkpoint
+  api-cli library remove-step 7023 19660498
+  api-cli library remove-step lib_7023 step_19660498`,
+		Args: cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runLibraryRemoveStepCommand(cmd, args)
+		},
+	}
+
+	return cmd
+}
+
+// updateSubCmd creates the update subcommand
+func updateSubCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "update <library-checkpoint-id> <new-title>",
+		Short: "Update a library checkpoint's title",
+		Long: `Update the title (name) of a library checkpoint.
+
+Examples:
+  # Update library checkpoint title
+  api-cli library update 7023 "New Checkpoint Title"
+  api-cli library update lib_7023 "Updated Test Flow"`,
+		Args: cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runLibraryUpdateCommand(cmd, args)
 		},
 	}
 
@@ -217,6 +287,147 @@ func runLibraryAttachCommand(cmd *cobra.Command, args []string) error {
 		"position":            position,
 		"title":               checkpoint.Title,
 		"message":             fmt.Sprintf("✅ Attached library checkpoint %d to journey %d at position %d", libraryCheckpointID, journeyID, position),
+	}
+
+	output, err := base.FormatOutput(result, base.OutputFormat)
+	if err != nil {
+		return fmt.Errorf("failed to format output: %w", err)
+	}
+
+	fmt.Println(output)
+	return nil
+}
+
+// runLibraryMoveStepCommand executes the library move-step command
+func runLibraryMoveStepCommand(cmd *cobra.Command, args []string) error {
+	base := NewBaseCommand()
+	if err := base.Init(cmd); err != nil {
+		return err
+	}
+
+	// Parse library checkpoint ID
+	libraryCheckpointIDStr := stripPrefix(args[0], "lib_")
+	libraryCheckpointID, err := strconv.Atoi(libraryCheckpointIDStr)
+	if err != nil {
+		return fmt.Errorf("invalid library checkpoint ID: %w", err)
+	}
+
+	// Parse test step ID
+	testStepIDStr := stripPrefix(args[1], "step_")
+	testStepID, err := strconv.Atoi(testStepIDStr)
+	if err != nil {
+		return fmt.Errorf("invalid test step ID: %w", err)
+	}
+
+	// Parse position
+	position, err := strconv.Atoi(args[2])
+	if err != nil {
+		return fmt.Errorf("invalid position: %w", err)
+	}
+
+	if position < 1 {
+		return fmt.Errorf("position must be 1 or greater")
+	}
+
+	// Move the step
+	err = base.Client.MoveLibraryCheckpointStep(libraryCheckpointID, testStepID, position)
+	if err != nil {
+		return fmt.Errorf("failed to move library checkpoint step: %w", err)
+	}
+
+	// Format result
+	result := map[string]interface{}{
+		"libraryCheckpointId": libraryCheckpointID,
+		"testStepId":          testStepID,
+		"position":            position,
+		"message":             fmt.Sprintf("✅ Moved step %d to position %d in library checkpoint %d", testStepID, position, libraryCheckpointID),
+	}
+
+	output, err := base.FormatOutput(result, base.OutputFormat)
+	if err != nil {
+		return fmt.Errorf("failed to format output: %w", err)
+	}
+
+	fmt.Println(output)
+	return nil
+}
+
+// runLibraryRemoveStepCommand executes the library remove-step command
+func runLibraryRemoveStepCommand(cmd *cobra.Command, args []string) error {
+	base := NewBaseCommand()
+	if err := base.Init(cmd); err != nil {
+		return err
+	}
+
+	// Parse library checkpoint ID
+	libraryCheckpointIDStr := stripPrefix(args[0], "lib_")
+	libraryCheckpointID, err := strconv.Atoi(libraryCheckpointIDStr)
+	if err != nil {
+		return fmt.Errorf("invalid library checkpoint ID: %w", err)
+	}
+
+	// Parse test step ID
+	testStepIDStr := stripPrefix(args[1], "step_")
+	testStepID, err := strconv.Atoi(testStepIDStr)
+	if err != nil {
+		return fmt.Errorf("invalid test step ID: %w", err)
+	}
+
+	// Remove the step
+	err = base.Client.RemoveLibraryCheckpointStep(libraryCheckpointID, testStepID)
+	if err != nil {
+		return fmt.Errorf("failed to remove library checkpoint step: %w", err)
+	}
+
+	// Format result
+	result := map[string]interface{}{
+		"libraryCheckpointId": libraryCheckpointID,
+		"testStepId":          testStepID,
+		"message":             fmt.Sprintf("✅ Removed step %d from library checkpoint %d", testStepID, libraryCheckpointID),
+	}
+
+	output, err := base.FormatOutput(result, base.OutputFormat)
+	if err != nil {
+		return fmt.Errorf("failed to format output: %w", err)
+	}
+
+	fmt.Println(output)
+	return nil
+}
+
+// runLibraryUpdateCommand executes the library update command
+func runLibraryUpdateCommand(cmd *cobra.Command, args []string) error {
+	base := NewBaseCommand()
+	if err := base.Init(cmd); err != nil {
+		return err
+	}
+
+	// Parse library checkpoint ID
+	libraryCheckpointIDStr := stripPrefix(args[0], "lib_")
+	libraryCheckpointID, err := strconv.Atoi(libraryCheckpointIDStr)
+	if err != nil {
+		return fmt.Errorf("invalid library checkpoint ID: %w", err)
+	}
+
+	// Get new title
+	newTitle := args[1]
+	if newTitle == "" {
+		return fmt.Errorf("title cannot be empty")
+	}
+
+	// Update the library checkpoint
+	updatedCheckpoint, err := base.Client.UpdateLibraryCheckpoint(libraryCheckpointID, newTitle)
+	if err != nil {
+		return fmt.Errorf("failed to update library checkpoint: %w", err)
+	}
+
+	// Format result
+	result := map[string]interface{}{
+		"id":          updatedCheckpoint.ID,
+		"name":        updatedCheckpoint.Name,
+		"description": updatedCheckpoint.Description,
+		"updatedAt":   updatedCheckpoint.UpdatedAt,
+		"message":     fmt.Sprintf("✅ Updated library checkpoint %d with new title: %s", libraryCheckpointID, newTitle),
 	}
 
 	output, err := base.FormatOutput(result, base.OutputFormat)
