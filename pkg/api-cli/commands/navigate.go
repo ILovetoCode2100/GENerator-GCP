@@ -302,9 +302,8 @@ func executeScrollTopAction(c *client.Client, checkpointID int, position int, op
 
 // executeScrollBottomAction executes a scroll-to-bottom action using the client
 func executeScrollBottomAction(c *client.Client, checkpointID int, position int, options map[string]interface{}) (int, error) {
-	// The client doesn't have a specific scroll-to-bottom method, so we'll use scroll position
-	// with a very large Y value
-	return c.CreateStepScrollToPosition(checkpointID, 0, 999999, position)
+	// Use the dedicated scroll-to-bottom method
+	return c.CreateStepScrollBottom(checkpointID, position)
 }
 
 // executeScrollElementAction executes a scroll-to-element action using the client

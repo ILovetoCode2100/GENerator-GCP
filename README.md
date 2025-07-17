@@ -1,8 +1,10 @@
 # Virtuoso API CLI
 
-**Version:** 2.0  
-**Status:** Production Ready (98% test success rate)  
+**Version:** 2.0
+**Status:** Production Ready (98% test success rate)
 **Purpose:** CLI tool for Virtuoso API test automation with AI-friendly design
+
+> **Note:** The MCP (Model Context Protocol) server has been moved to a separate repository at `/Users/marklovelady/_dev/_projects/virtuoso-mcp-server` for better modularity and maintenance.
 
 ## 🚀 Quick Start
 
@@ -28,9 +30,11 @@ organization:
 The CLI provides 60 commands organized into 12 groups:
 
 ### Assert (12 commands)
+
 ```bash
 assert exists|not-exists|equals|not-equals|checked|selected|variable|gt|gte|lt|lte|matches
 ```
+
 - **exists/not-exists**: Check element presence
 - **equals/not-equals**: Compare element text/value
 - **checked**: Verify checkbox state
@@ -40,84 +44,108 @@ assert exists|not-exists|equals|not-equals|checked|selected|variable|gt|gte|lt|l
 - **matches**: Regex pattern matching (use single quotes)
 
 ### Interact (6 commands)
+
 ```bash
 interact click|double-click|right-click|hover|write|key
 ```
+
 - **click**: Standard click with optional position/element-type
 - **write**: Type text with optional variable storage
 - **key**: Send keyboard shortcuts (e.g., "ctrl+a")
 
 ### Navigate (5 commands)
+
 ```bash
 navigate to|scroll-to|scroll-top|scroll-bottom|scroll-element
 ```
+
 - **to**: Navigate URL with optional --new-tab
 - **scroll-\***: Smooth scrolling operations
 
 ### Data (5 commands)
+
 ```bash
 data store element-text|store literal|cookie create|cookie delete|cookie clear-all
 ```
+
 - **store**: Save element text or literal values to variables
 - **cookie**: Manage browser cookies
 
 ### Dialog (4 commands)
+
 ```bash
 dialog dismiss alert|dismiss confirm|dismiss prompt|dismiss prompt-with-text
 ```
+
 - Flags: --accept, --reject for confirm/prompt dialogs
 
 ### Wait (2 commands)
+
 ```bash
 wait element|time
 ```
+
 - **element**: Wait for selector with --timeout
 - **time**: Sleep for milliseconds
 
 ### Window (5 commands)
+
 ```bash
 window resize|switch tab|switch iframe|switch parent-frame
 ```
+
 - **resize**: Format WIDTHxHEIGHT (e.g., 1024x768)
 - **switch tab**: next/prev navigation
 
 ### Mouse (6 commands)
+
 ```bash
 mouse move-to|move-by|move|down|up|enter
 ```
+
 - Coordinate-based and element-based operations
 
 ### Select (3 commands)
+
 ```bash
 select index|last|option
 ```
+
 - Dropdown selection by index or position
 
 ### File (1 command)
+
 ```bash
 file upload URL SELECTOR
 ```
 
 ### Misc (3 commands)
+
 ```bash
 misc comment|execute|key
 ```
+
 - **comment**: Add test comments
 - **execute**: Run JavaScript
 
 ### Library (6 commands)
+
 ```bash
 library add|get|attach|move-step|remove-step|update
 ```
+
 - Manage reusable test components
 
 ## 🤖 AI Integration Guide
 
 ### Overview
+
 This CLI is designed as an AI-friendly interface for generating Virtuoso test automation. AI systems can parse command patterns, generate test structures, and chain operations programmatically.
 
 ### Output Formats
+
 All commands support AI-optimized output:
+
 ```bash
 --output human  # Default readable format
 --output json   # Structured data for parsing
@@ -126,7 +154,9 @@ All commands support AI-optimized output:
 ```
 
 ### AI Output Structure
+
 The `--output ai` format provides contextual information for test building:
+
 ```json
 {
   "command": "assert exists",
@@ -152,6 +182,7 @@ The `--output ai` format provides contextual information for test building:
 ### Building Test Journeys
 
 #### Complete E2E Test Example
+
 ```bash
 # 1. Create project and journey structure
 api-cli create-project "E-Commerce Tests"
@@ -171,6 +202,7 @@ api-cli create-checkpoint $JOURNEY_ID "Order Confirmation" 5
 #### Detailed YAML Test Templates
 
 ##### Basic Login Test
+
 ```yaml
 # examples/test-template.yaml
 journey:
@@ -184,13 +216,13 @@ journey:
         - command: navigate to
           args: ["https://example.com/login"]
           description: "Open login page"
-        
+
         - command: wait element
           args: ["#login-form"]
-          options: 
+          options:
             timeout: 5000
             description: "Ensure page loaded"
-        
+
         - command: assert exists
           args: ["#username"]
           description: "Verify username field present"
@@ -201,22 +233,22 @@ journey:
         - command: interact click
           args: ["#username"]
           description: "Focus username field"
-        
+
         - command: interact write
           args: ["#username", "testuser@example.com"]
           options:
             variable: "login_email"
             clear_before: true
-        
+
         - command: interact key
           args: ["Tab"]
           description: "Move to password field"
-        
+
         - command: interact write
           args: ["#password", "${TEST_PASSWORD}"]
           options:
             masked: true
-            
+
     - name: "Submit and Verify"
       position: 3
       steps:
@@ -225,19 +257,20 @@ journey:
           options:
             position: "CENTER"
             element_type: "BUTTON"
-        
+
         - command: wait element
           args: [".dashboard", ".error-message"]
           options:
             timeout: 10000
             either_or: true
-        
+
         - command: assert not-exists
           args: [".error-message"]
           description: "No login errors"
 ```
 
 ##### Advanced E-Commerce Flow
+
 ```yaml
 journey:
   name: "E-Commerce Purchase - Full Flow"
@@ -262,7 +295,7 @@ journey:
           then:
             - command: interact click
               args: ["#accept-cookies"]
-        
+
         # Search for product
         - command: interact click
           args: ["#search-input"]
@@ -270,13 +303,13 @@ journey:
           args: ["#search-input", "${product_name}"]
         - command: interact key
           args: ["Enter"]
-        
+
         # Wait for results
         - command: wait element
           args: [".search-results"]
           options:
             timeout: 5000
-        
+
         # Verify search worked
         - command: assert gte
           args: [".results-count", "1"]
@@ -287,11 +320,11 @@ journey:
         # Store product details
         - command: data store element-text
           args: [".product-card:first-child .price", "actual_price"]
-        
+
         # Click first product
         - command: interact click
           args: [".product-card:first-child"]
-        
+
         # Verify product page
         - command: wait element
           args: [".product-details"]
@@ -308,19 +341,19 @@ journey:
           then:
             - command: select index
               args: ["#size-selector", "1"]
-        
+
         # Add to cart
         - command: interact click
           args: ["#add-to-cart"]
           options:
             wait_after: 1000
-        
+
         # Handle modal or notification
         - command: wait element
           args: [".cart-notification, .cart-sidebar"]
           options:
             either_or: true
-        
+
         # Verify item added
         - command: assert equals
           args: [".cart-count", "1"]
@@ -330,13 +363,13 @@ journey:
         # Go to cart
         - command: interact click
           args: [".cart-icon, .view-cart"]
-        
+
         # Verify cart contents
         - command: wait element
           args: [".cart-page"]
         - command: assert exists
           args: [".cart-item"]
-        
+
         # Apply coupon if available
         - command: conditional
           condition:
@@ -349,7 +382,7 @@ journey:
               args: ["#apply-coupon"]
             - command: wait element
               args: [".discount-applied"]
-        
+
         # Proceed to checkout
         - command: interact click
           args: ["#checkout-button"]
@@ -372,21 +405,21 @@ journey:
               args: ["#address", "123 Test Street"]
             - command: select option
               args: ["#country", "United States"]
-        
+
         # Payment (test mode)
         - command: interact click
           args: ["#payment-test-mode"]
-        
+
         # Place order
         - command: interact click
           args: ["#place-order"]
-        
+
         # Verify success
         - command: wait element
           args: [".order-success"]
           options:
             timeout: 15000
-        
+
         # Store order number
         - command: data store element-text
           args: [".order-number", "order_id"]
@@ -395,6 +428,7 @@ journey:
 #### Command Variations and Nuances
 
 ##### Assert Command Variations
+
 ```bash
 # Text matching variations
 api-cli assert equals "#title" "Exact Text"
@@ -414,6 +448,7 @@ api-cli assert selected "#country" 2  # Dropdown by position
 ```
 
 ##### Interact Command Nuances
+
 ```bash
 # Click variations
 api-cli interact click "Submit"  # Matches by text
@@ -433,6 +468,7 @@ api-cli interact key "Escape"         # Close modals
 ```
 
 ##### Navigation Edge Cases
+
 ```bash
 # Handle popups and new tabs
 api-cli navigate to "https://example.com" --new-tab
@@ -446,6 +482,7 @@ api-cli navigate scroll-bottom --wait-after 1000
 ```
 
 ##### Data Operations
+
 ```bash
 # Cookie management
 api-cli data cookie create "session" "abc123" --domain ".example.com"
@@ -459,6 +496,7 @@ api-cli data calculate "price - discount" "final_price"  # Future feature
 ```
 
 ##### Wait Strategies
+
 ```bash
 # Element waits
 api-cli wait element "#loader" --not-exists --timeout 10000
@@ -471,6 +509,7 @@ api-cli wait animation-complete ".modal"
 ```
 
 #### Library Checkpoint Patterns
+
 ```bash
 # Create reusable components
 api-cli library add $CHECKPOINT_ID  # Convert to library
@@ -487,6 +526,7 @@ api-cli library remove-step $LIBRARY_ID $OLD_STEP_ID
 ```
 
 #### Session Management for Complex Flows
+
 ```bash
 # Set up session for test sequence
 export VIRTUOSO_SESSION_ID=$CHECKPOINT_ID
@@ -503,6 +543,7 @@ api-cli get-session-info --output json
 ```
 
 #### Error Handling Patterns
+
 ```yaml
 journey:
   name: "Robust Test with Error Handling"
@@ -528,6 +569,7 @@ journey:
 ### Command Chaining Patterns
 
 #### Sequential Test Steps
+
 ```bash
 # Use session context for auto-incrementing positions
 export VIRTUOSO_SESSION_ID=CHECKPOINT_ID
@@ -539,6 +581,7 @@ api-cli wait element "#form"    # Position 3
 ```
 
 #### Conditional Flows
+
 ```bash
 # Parse AI output for dynamic test generation
 RESULT=$(api-cli assert exists "#promo-banner" --output json)
@@ -551,6 +594,7 @@ api-cli interact click "#main-action"
 ```
 
 #### Variable Extraction and Reuse
+
 ```bash
 # Store dynamic values
 api-cli data store element-text "#order-id" "orderId" --output json
@@ -564,6 +608,7 @@ api-cli assert equals "#order-status" "Processing"
 ### AI Schema Parsing
 
 #### Command Structure Schema
+
 ```json
 {
   "command_groups": {
@@ -591,22 +636,27 @@ api-cli assert equals "#order-status" "Processing"
 ```
 
 #### Test Structure Schema
+
 ```json
 {
   "journey": {
     "id": "string",
     "name": "string",
-    "checkpoints": [{
-      "id": "string",
-      "name": "string",
-      "position": "number",
-      "steps": [{
+    "checkpoints": [
+      {
         "id": "string",
-        "type": "string",
-        "meta": "object",
-        "position": "number"
-      }]
-    }]
+        "name": "string",
+        "position": "number",
+        "steps": [
+          {
+            "id": "string",
+            "type": "string",
+            "meta": "object",
+            "position": "number"
+          }
+        ]
+      }
+    ]
   }
 }
 ```
@@ -614,6 +664,7 @@ api-cli assert equals "#order-status" "Processing"
 ### Advanced AI Integration
 
 #### Dynamic Test Generation
+
 ```bash
 # Generate test from natural language
 echo "Test the login flow with invalid credentials" | \
@@ -624,6 +675,7 @@ ai-cli run-journey login-negative-test.yaml
 ```
 
 #### Pattern Recognition
+
 ```bash
 # Analyze page and suggest test steps
 api-cli analyze-page "https://example.com/form" --output ai | \
@@ -634,6 +686,7 @@ api-cli analyze-page "https://example.com/form" --output ai | \
 ```
 
 #### Test Maintenance
+
 ```bash
 # Update selectors based on page changes
 api-cli update-selectors JOURNEY_ID --auto-detect --output ai
@@ -656,51 +709,54 @@ api-cli analyze-journey JOURNEY_ID --suggest-improvements --output ai
 The CLI uses Viper for flexible configuration management, supporting AI-driven test creation through dedicated test and AI configuration sections. Configuration can be loaded from `~/.api-cli/virtuoso-config.yaml` or `./virtuoso-config.yaml`.
 
 #### Test Configuration Fields
+
 ```yaml
 # Test-specific settings for AI test generation
 test:
   # Directory containing YAML test templates for batch processing
   # AI systems place test definitions here for execution
   batch_dir: ./test-batches
-  
+
   # Default output format for test commands
   # Set to "ai" for context-aware responses with suggestions
   output_format: ai
-  
+
   # Directory containing example test templates
   # AI references these to learn test patterns
   template_dir: ./examples
-  
+
   # Automatically validate templates before execution
   # Helps catch errors early in AI test generation
   auto_validate: true
-  
+
   # Maximum steps per checkpoint (default: 20)
   # Ensures well-structured, maintainable tests
   max_steps_per_checkpoint: 20
 ```
 
 #### AI Integration Fields
+
 ```yaml
 # AI-specific settings for enhanced test building
 ai:
   # Include intelligent next-step suggestions in output
   enable_suggestions: true
-  
+
   # Context depth for AI responses (1-5)
   # Higher values provide more test structure info
   context_depth: 3
-  
+
   # Auto-generate descriptive step descriptions
   # Creates self-documenting tests
   auto_generate_descriptions: true
-  
+
   # Enable pattern inference from test examples
   # AI learns from your test patterns
   template_inference: true
 ```
 
 #### Using Configuration in Test Building
+
 ```bash
 # AI systems can query current configuration
 api-cli get-config --output json
@@ -718,7 +774,9 @@ api-cli load-template login.yaml  # Looks in test.template_dir
 ```
 
 #### Configuration Effects on AI Output
+
 When `test.output_format` is set to "ai" or `ai.enable_suggestions` is true:
+
 ```json
 {
   "command": "interact click",
@@ -726,17 +784,19 @@ When `test.output_format` is set to "ai" or `ai.enable_suggestions` is true:
   "context": {
     "checkpoint_id": "1680930",
     "position": 1,
-    "max_steps": 20  // From max_steps_per_checkpoint
+    "max_steps": 20 // From max_steps_per_checkpoint
   },
-  "next_steps": [  // From enable_suggestions
+  "next_steps": [
+    // From enable_suggestions
     "wait element '#dashboard'",
     "assert exists '.user-profile'"
   ],
-  "description": "Click login button to access user dashboard"  // From auto_generate_descriptions
+  "description": "Click login button to access user dashboard" // From auto_generate_descriptions
 }
 ```
 
 #### Best Practices for AI Configuration
+
 1. **Batch Directory**: Organize test templates by feature/module
 2. **Output Format**: Use "ai" for development, "json" for CI/CD
 3. **Context Depth**: Balance between detail and response size
@@ -744,7 +804,9 @@ When `test.output_format` is set to "ai" or `ai.enable_suggestions` is true:
 5. **Max Steps**: Lower values (10-20) for maintainable checkpoints
 
 ### Changelog Integration
+
 Recent updates affecting AI usage:
+
 - v2.0: Added `--output ai` format with contextual information
 - v2.0: Library commands for reusable test components
 - v2.0: Session context for automatic position management
@@ -754,13 +816,17 @@ Recent updates affecting AI usage:
 ## 📖 API Spec Quick Reference
 
 ### Command Structure
+
 The CLI follows a consistent pattern for all commands:
+
 ```
 api-cli [GROUP] [SUBCOMMAND] [ARGS...] [OPTIONS]
 ```
 
 ### Step Types (Virtuoso API)
+
 All commands map to specific Virtuoso step types:
+
 - **NAVIGATE** - URL navigation
 - **CLICK**, **DOUBLE_CLICK**, **RIGHT_CLICK** - Mouse interactions
 - **WRITE**, **KEY** - Keyboard input
@@ -773,7 +839,9 @@ All commands map to specific Virtuoso step types:
 - **SELECT_OPTION**, **SELECT_INDEX** - Dropdown selection
 
 ### Meta Field Structures
+
 Commands use specific meta field patterns:
+
 ```json
 // Click with position
 { "position": "TOP_LEFT", "elementType": "BUTTON" }
@@ -789,7 +857,9 @@ Commands use specific meta field patterns:
 ```
 
 ### Test Template Commands
+
 New AI-focused commands for template management:
+
 ```bash
 # Load and validate a test template
 api-cli load-template examples/login-test.yaml
@@ -802,7 +872,9 @@ api-cli get-templates ./examples --output json
 ```
 
 ### Response Formats
+
 All commands support consistent response formats:
+
 ```json
 {
   "id": "step_12345",
@@ -817,19 +889,21 @@ All commands support consistent response formats:
 ## 🏗️ Architecture
 
 ### Consolidated Structure (40+ files total)
+
 ```
 pkg/api-cli/
 ├── client/client.go        # 40+ API methods
 ├── commands/               # 12 command groups
-│   ├── assert.go          
-│   ├── interact.go        
-│   ├── navigate.go        
+│   ├── assert.go
+│   ├── interact.go
+│   ├── navigate.go
 │   └── ...
 ├── base.go                # Shared infrastructure
 └── config/config.go       # Configuration management
 ```
 
 ### Key Design Principles
+
 - **Type Safety**: All commands validated at compile time
 - **Shared Infrastructure**: 60% code reduction via BaseCommand
 - **AI-Friendly**: Structured output, clear command patterns
@@ -838,12 +912,14 @@ pkg/api-cli/
 ## 🛠️ Development
 
 ### Adding Commands
+
 1. Add method to `client/client.go`
 2. Update command group file
 3. Follow existing patterns
 4. Test with all output formats
 
 ### Testing
+
 ```bash
 # Run full test suite
 ./test-consolidated-commands-final.sh
@@ -855,6 +931,7 @@ pkg/api-cli/
 ## 📊 Changelog
 
 ### v2.0 (2025-01-16)
+
 - Consolidated 54 commands into 12 groups
 - Added library checkpoint commands
 - Fixed config loading and recursion bugs
@@ -862,6 +939,7 @@ pkg/api-cli/
 - Reduced codebase by 60%
 
 ### v1.0 (2025-01-14)
+
 - Initial release with 54 individual commands
 - Basic API integration
 - Multiple output formats
