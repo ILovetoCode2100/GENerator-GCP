@@ -18,6 +18,9 @@ const (
 	windowSwitchTabPrev     windowOperation = "switch-tab-prev"
 	windowSwitchTabByIndex  windowOperation = "switch-tab-index"
 	windowSwitchParentFrame windowOperation = "switch-parent-frame"
+	windowSwitchFrameIndex  windowOperation = "switch-frame-index"
+	windowSwitchFrameName   windowOperation = "switch-frame-name"
+	windowSwitchMainContent windowOperation = "switch-main-content"
 	windowResize            windowOperation = "resize"
 	windowMaximize          windowOperation = "maximize"
 	windowClose             windowOperation = "close"
@@ -139,6 +142,45 @@ var windowCommands = map[windowOperation]windowCommandInfo{
 			return "close window"
 		},
 	},
+	windowSwitchFrameIndex: {
+		stepType:    "SWITCH",
+		description: "Switch to frame by index (0-based)",
+		usage:       "window switch frame-index INDEX [POSITION]",
+		examples: []string{
+			`api-cli window switch frame-index 0 1  # Switch to first frame`,
+			`api-cli window switch frame-index 2    # Switch to third frame`,
+		},
+		argsCount: []int{1},
+		parseStep: func(args []string) string {
+			return fmt.Sprintf("switch to frame index %s", args[0])
+		},
+	},
+	windowSwitchFrameName: {
+		stepType:    "SWITCH",
+		description: "Switch to frame by name attribute",
+		usage:       "window switch frame-name NAME [POSITION]",
+		examples: []string{
+			`api-cli window switch frame-name "content" 1`,
+			`api-cli window switch frame-name "paymentFrame"`,
+		},
+		argsCount: []int{1},
+		parseStep: func(args []string) string {
+			return fmt.Sprintf("switch to frame named \"%s\"", args[0])
+		},
+	},
+	windowSwitchMainContent: {
+		stepType:    "SWITCH",
+		description: "Switch to main content (exit all frames)",
+		usage:       "window switch main-content [POSITION]",
+		examples: []string{
+			`api-cli window switch main-content 1`,
+			`api-cli window switch main-content`,
+		},
+		argsCount: []int{0},
+		parseStep: func(args []string) string {
+			return "switch to main content"
+		},
+	},
 }
 
 // newWindowCmd creates the consolidated window command with subcommands
@@ -183,13 +225,20 @@ This command consolidates all window-related operations:
 	}
 	tabCmd.AddCommand(newWindowSwitchSubCmd("next", windowSwitchTabNext, windowCommands[windowSwitchTabNext]))
 	tabCmd.AddCommand(newWindowSwitchSubCmd("prev", windowSwitchTabPrev, windowCommands[windowSwitchTabPrev]))
+	tabCmd.AddCommand(newWindowSwitchTabIndexCmd()) // Add tab index as a subcommand of tab
 	switchCmd.AddCommand(tabCmd)
-
-	// Add direct switch subcommand at window level for tab by index
-	cmd.AddCommand(newWindowSwitchTabIndexCmd())
 
 	// Add parent frame switch
 	switchCmd.AddCommand(newWindowSwitchSubCmd("parent-frame", windowSwitchParentFrame, windowCommands[windowSwitchParentFrame]))
+
+	// Add frame index switch
+	switchCmd.AddCommand(newWindowSwitchSubCmd("frame-index", windowSwitchFrameIndex, windowCommands[windowSwitchFrameIndex]))
+
+	// Add frame name switch
+	switchCmd.AddCommand(newWindowSwitchSubCmd("frame-name", windowSwitchFrameName, windowCommands[windowSwitchFrameName]))
+
+	// Add main content switch
+	switchCmd.AddCommand(newWindowSwitchSubCmd("main-content", windowSwitchMainContent, windowCommands[windowSwitchMainContent]))
 
 	cmd.AddCommand(switchCmd)
 
@@ -260,7 +309,7 @@ func newWindowSwitchTabIndexCmd() *cobra.Command {
 	info := windowCommands[windowSwitchTabByIndex]
 
 	cmd := &cobra.Command{
-		Use:   "switch INDEX [POSITION]",
+		Use:   "INDEX [POSITION]",
 		Short: info.description,
 		Long: fmt.Sprintf(`%s
 
@@ -456,14 +505,18 @@ func validateWindowArgs(op windowOperation, args []string) error {
 		if _, err := strconv.Atoi(parts[1]); err != nil {
 			return fmt.Errorf("height must be a number")
 		}
-	case windowSwitchTabByIndex:
+	case windowSwitchTabByIndex, windowSwitchFrameIndex:
 		if len(args) < 1 || args[0] == "" {
 			return fmt.Errorf("index cannot be empty")
 		}
 		if _, err := strconv.Atoi(args[0]); err != nil {
 			return fmt.Errorf("index must be a number")
 		}
-	case windowSwitchTabNext, windowSwitchTabPrev, windowSwitchParentFrame, windowMaximize, windowClose:
+	case windowSwitchFrameName:
+		if len(args) < 1 || args[0] == "" {
+			return fmt.Errorf("frame name cannot be empty")
+		}
+	case windowSwitchTabNext, windowSwitchTabPrev, windowSwitchParentFrame, windowSwitchMainContent, windowMaximize, windowClose:
 		// No arguments needed
 	}
 	return nil
@@ -483,6 +536,13 @@ func callWindowAPI(apiClient *client.Client, op windowOperation, ctx *StepContex
 	case windowSwitchTabByIndex:
 		index, _ := strconv.Atoi(args[0])
 		return apiClient.CreateStepSwitchTabByIndex(ctx.CheckpointID, index, ctx.Position)
+	case windowSwitchFrameIndex:
+		index, _ := strconv.Atoi(args[0])
+		return apiClient.CreateStepSwitchFrameByIndex(ctx.CheckpointID, index, ctx.Position)
+	case windowSwitchFrameName:
+		return apiClient.CreateStepSwitchFrameByName(ctx.CheckpointID, args[0], ctx.Position)
+	case windowSwitchMainContent:
+		return apiClient.CreateStepSwitchToMainContent(ctx.CheckpointID, ctx.Position)
 	case windowResize:
 		// Parse width and height
 		parts := strings.Split(args[0], "x")
@@ -529,6 +589,15 @@ func buildWindowExtraData(op windowOperation, args []string) map[string]interfac
 		extra["window_type"] = "MAXIMIZE"
 	case windowClose:
 		extra["window_type"] = "CLOSE"
+	case windowSwitchFrameIndex:
+		index, _ := strconv.Atoi(args[0])
+		extra["index"] = index
+		extra["frame_type"] = "FRAME_BY_INDEX"
+	case windowSwitchFrameName:
+		extra["name"] = args[0]
+		extra["frame_type"] = "FRAME_BY_NAME"
+	case windowSwitchMainContent:
+		extra["frame_type"] = "MAIN_CONTENT"
 	}
 
 	return extra

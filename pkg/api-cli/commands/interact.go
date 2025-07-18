@@ -385,7 +385,21 @@ func executeWriteAction(c *client.Client, checkpointID int, selector string, tex
 // executeKeyAction executes a key press action using the client
 func executeKeyAction(c *client.Client, checkpointID int, key string, position int, options map[string]interface{}) (int, error) {
 	target, _ := options["target"].(string)
+	modifiers, _ := options["modifiers"].([]string)
 
+	// Handle modifier keys
+	if len(modifiers) > 0 {
+		if target != "" {
+			if err := ValidateSelector(target); err != nil {
+				return 0, err
+			}
+			return c.CreateStepKeyTargetedWithModifiers(checkpointID, target, key, modifiers, position)
+		} else {
+			return c.CreateStepKeyGlobalWithModifiers(checkpointID, key, modifiers, position)
+		}
+	}
+
+	// Original implementation for simple keys
 	if target != "" {
 		if err := ValidateSelector(target); err != nil {
 			return 0, err

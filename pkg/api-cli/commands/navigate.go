@@ -29,12 +29,16 @@ This command consolidates URL navigation and scrolling actions.`,
 	cmd.AddCommand(scrollElementSubCmd())
 	cmd.AddCommand(scrollPositionSubCmd())
 	cmd.AddCommand(scrollBySubCmd())
+	cmd.AddCommand(scrollUpSubCmd())
+	cmd.AddCommand(scrollDownSubCmd())
 
 	return cmd
 }
 
 // navigateBackSubCmd creates the navigate-back subcommand
 func navigateBackSubCmd() *cobra.Command {
+	var steps int
+
 	cmd := &cobra.Command{
 		Use:   "back [checkpoint-id] [position]",
 		Short: "Navigate browser back",
@@ -43,21 +47,28 @@ func navigateBackSubCmd() *cobra.Command {
 Examples:
   # Using session context
   api-cli navigate back
+  api-cli navigate back --steps 2  # Go back 2 pages
 
   # Using explicit checkpoint
   api-cli navigate back cp_12345 1`,
 		Aliases: []string{"goback"},
 		Args:    cobra.MaximumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runNavigation(cmd, args, "navigate-back", nil)
+			return runNavigation(cmd, args, "navigate-back", map[string]interface{}{
+				"steps": steps,
+			})
 		},
 	}
+
+	cmd.Flags().IntVar(&steps, "steps", 1, "Number of steps to go back")
 
 	return cmd
 }
 
 // navigateForwardSubCmd creates the navigate-forward subcommand
 func navigateForwardSubCmd() *cobra.Command {
+	var steps int
+
 	cmd := &cobra.Command{
 		Use:   "forward [checkpoint-id] [position]",
 		Short: "Navigate browser forward",
@@ -66,15 +77,20 @@ func navigateForwardSubCmd() *cobra.Command {
 Examples:
   # Using session context
   api-cli navigate forward
+  api-cli navigate forward --steps 2  # Go forward 2 pages
 
   # Using explicit checkpoint
   api-cli navigate forward cp_12345 1`,
 		Aliases: []string{"goforward"},
 		Args:    cobra.MaximumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runNavigation(cmd, args, "navigate-forward", nil)
+			return runNavigation(cmd, args, "navigate-forward", map[string]interface{}{
+				"steps": steps,
+			})
 		},
 	}
+
+	cmd.Flags().IntVar(&steps, "steps", 1, "Number of steps to go forward")
 
 	return cmd
 }
@@ -347,6 +363,66 @@ Examples:
 	return cmd
 }
 
+// scrollUpSubCmd creates the scroll-up subcommand
+func scrollUpSubCmd() *cobra.Command {
+	var smooth bool
+
+	cmd := &cobra.Command{
+		Use:   "scroll-up [checkpoint-id] [position]",
+		Short: "Scroll up by one viewport height",
+		Long: `Scroll the page up by one viewport height.
+
+Examples:
+  # Using session context
+  api-cli navigate scroll-up
+  api-cli navigate scroll-up --smooth
+
+  # Using explicit checkpoint
+  api-cli navigate scroll-up cp_12345 1`,
+		Aliases: []string{"up"},
+		Args:    cobra.MaximumNArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runNavigation(cmd, args, "scroll-up", map[string]interface{}{
+				"smooth": smooth,
+			})
+		},
+	}
+
+	cmd.Flags().BoolVar(&smooth, "smooth", false, "Use smooth scrolling")
+
+	return cmd
+}
+
+// scrollDownSubCmd creates the scroll-down subcommand
+func scrollDownSubCmd() *cobra.Command {
+	var smooth bool
+
+	cmd := &cobra.Command{
+		Use:   "scroll-down [checkpoint-id] [position]",
+		Short: "Scroll down by one viewport height",
+		Long: `Scroll the page down by one viewport height.
+
+Examples:
+  # Using session context
+  api-cli navigate scroll-down
+  api-cli navigate scroll-down --smooth
+
+  # Using explicit checkpoint
+  api-cli navigate scroll-down cp_12345 1`,
+		Aliases: []string{"down"},
+		Args:    cobra.MaximumNArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runNavigation(cmd, args, "scroll-down", map[string]interface{}{
+				"smooth": smooth,
+			})
+		},
+	}
+
+	cmd.Flags().BoolVar(&smooth, "smooth", false, "Use smooth scrolling")
+
+	return cmd
+}
+
 // runNavigation executes a navigation command
 func runNavigation(cmd *cobra.Command, args []string, action string, options map[string]interface{}) error {
 	base := NewBaseCommand()
@@ -380,9 +456,9 @@ func runNavigation(cmd *cobra.Command, args []string, action string, options map
 	case "navigate-to":
 		stepID, err = executeNavigateToAction(base.Client, checkpointID, args[0], base.Position, options)
 	case "navigate-back":
-		stepID, err = executeNavigateBackAction(base.Client, checkpointID, base.Position)
+		stepID, err = executeNavigateBackAction(base.Client, checkpointID, base.Position, options)
 	case "navigate-forward":
-		stepID, err = executeNavigateForwardAction(base.Client, checkpointID, base.Position)
+		stepID, err = executeNavigateForwardAction(base.Client, checkpointID, base.Position, options)
 	case "navigate-refresh":
 		stepID, err = executeNavigateRefreshAction(base.Client, checkpointID, base.Position)
 	case "scroll-top":
@@ -395,6 +471,10 @@ func runNavigation(cmd *cobra.Command, args []string, action string, options map
 		stepID, err = executeScrollPositionAction(base.Client, checkpointID, base.Position, options)
 	case "scroll-by":
 		stepID, err = executeScrollByAction(base.Client, checkpointID, base.Position, options)
+	case "scroll-up":
+		stepID, err = executeScrollUpAction(base.Client, checkpointID, base.Position, options)
+	case "scroll-down":
+		stepID, err = executeScrollDownAction(base.Client, checkpointID, base.Position, options)
 	default:
 		return fmt.Errorf("unknown action: %s", action)
 	}
@@ -431,13 +511,29 @@ func executeNavigateToAction(c *client.Client, checkpointID int, url string, pos
 }
 
 // executeNavigateBackAction executes a navigate back action using the client
-func executeNavigateBackAction(c *client.Client, checkpointID int, position int) (int, error) {
-	return c.CreateStepNavigateBack(checkpointID, position)
+func executeNavigateBackAction(c *client.Client, checkpointID int, position int, options map[string]interface{}) (int, error) {
+	steps, _ := options["steps"].(int)
+	if steps <= 0 {
+		steps = 1
+	}
+
+	if steps == 1 {
+		return c.CreateStepNavigateBack(checkpointID, position)
+	}
+	return c.CreateStepNavigateBackN(checkpointID, steps, position)
 }
 
 // executeNavigateForwardAction executes a navigate forward action using the client
-func executeNavigateForwardAction(c *client.Client, checkpointID int, position int) (int, error) {
-	return c.CreateStepNavigateForward(checkpointID, position)
+func executeNavigateForwardAction(c *client.Client, checkpointID int, position int, options map[string]interface{}) (int, error) {
+	steps, _ := options["steps"].(int)
+	if steps <= 0 {
+		steps = 1
+	}
+
+	if steps == 1 {
+		return c.CreateStepNavigateForward(checkpointID, position)
+	}
+	return c.CreateStepNavigateForwardN(checkpointID, steps, position)
 }
 
 // executeNavigateRefreshAction executes a navigate refresh action using the client
@@ -479,4 +575,16 @@ func executeScrollByAction(c *client.Client, checkpointID int, position int, opt
 	y, _ := options["y"].(int)
 
 	return c.CreateStepScrollByOffset(checkpointID, x, y, position)
+}
+
+// executeScrollUpAction executes a scroll-up action using the client
+func executeScrollUpAction(c *client.Client, checkpointID int, position int, options map[string]interface{}) (int, error) {
+	// Scroll up by one viewport height (negative Y value)
+	return c.CreateStepScrollByOffset(checkpointID, 0, -1000, position) // Using -1000 as approx viewport height
+}
+
+// executeScrollDownAction executes a scroll-down action using the client
+func executeScrollDownAction(c *client.Client, checkpointID int, position int, options map[string]interface{}) (int, error) {
+	// Scroll down by one viewport height (positive Y value)
+	return c.CreateStepScrollByOffset(checkpointID, 0, 1000, position) // Using 1000 as approx viewport height
 }

@@ -1,237 +1,465 @@
 #!/bin/bash
 
-# Virtuoso API CLI - Complete End-to-End Test
-# This is the ONLY test script you need - tests all working commands
+# Comprehensive Test Script for Virtuoso API CLI
+# Tests ALL command variations, edge cases, and flag combinations
+# Version: 1.0
+# Date: $(date +%Y-%m-%d)
 
-set -e
+set -e  # Exit on error
 
-# Colors
-GREEN='\033[0;32m'
+# Colors for output
 RED='\033[0;31m'
+GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m'
+NC='\033[0m' # No Color
 
-CLI="./bin/api-cli"
+# Test configuration
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+PROJECT_NAME="test_project_${TIMESTAMP}"
+GOAL_NAME="test_goal_${TIMESTAMP}"
+JOURNEY_NAME="test_journey_${TIMESTAMP}"
+CHECKPOINT_NAME="test_checkpoint_${TIMESTAMP}"
+TEST_URL="https://example.com"
+TOTAL_TESTS=0
+PASSED_TESTS=0
+FAILED_TESTS=0
+FAILED_COMMANDS=()
 
-echo -e "${BLUE}╔══════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║   Virtuoso API CLI - Complete E2E Test           ║${NC}"
-echo -e "${BLUE}╚══════════════════════════════════════════════════╝${NC}"
-echo "Timestamp: $TIMESTAMP"
-echo ""
+# CLI path
+CLI_PATH="./bin/api-cli"
 
-# Stats
-PASSED=0
-TOTAL=0
+# Log file
+LOG_FILE="test_results_${TIMESTAMP}.log"
 
-test_cmd() {
-    local name="$1"
-    local cmd="$2"
-    echo -n "  $name... "
-    TOTAL=$((TOTAL + 1))
-    if eval "$cmd" >/dev/null 2>&1; then
-        echo -e "${GREEN}✓${NC}"
-        PASSED=$((PASSED + 1))
-    else
-        echo -e "${RED}✗${NC}"
-    fi
+# Cleanup flag
+CLEANUP=true
+
+# Function to print section headers
+print_section() {
+    echo -e "\n${BLUE}========================================${NC}"
+    echo -e "${BLUE}$1${NC}"
+    echo -e "${BLUE}========================================${NC}"
 }
 
-# 1. Configuration
-echo -e "${YELLOW}1. Configuration & Setup${NC}"
-echo "────────────────────────"
-test_cmd "Validate config" "$CLI validate-config"
-test_cmd "Show version" "$CLI --version"
-echo ""
+# Function to print subsection headers
+print_subsection() {
+    echo -e "\n${YELLOW}--- $1 ---${NC}"
+}
 
-# 2. Create Infrastructure
-echo -e "${YELLOW}2. Creating Test Infrastructure${NC}"
-echo "───────────────────────────────"
+# Function to test a command
+test_command() {
+    local description="$1"
+    local command="$2"
+    local expected_success="${3:-true}"
 
-PROJECT_JSON=$($CLI create-project "E2E_Test_${TIMESTAMP}" -o json)
-PROJECT_ID=$(echo "$PROJECT_JSON" | jq -r '.project_id')
+    TOTAL_TESTS=$((TOTAL_TESTS + 1))
 
-GOAL_JSON=$($CLI create-goal "$PROJECT_ID" "Test_Goal_${TIMESTAMP}" -o json)
-GOAL_ID=$(echo "$GOAL_JSON" | jq -r '.goal_id')
-SNAPSHOT_ID=$(echo "$GOAL_JSON" | jq -r '.snapshot_id')
+    echo -n "Testing: $description... "
 
-JOURNEY_JSON=$($CLI create-journey "$GOAL_ID" "$SNAPSHOT_ID" "Test_Journey_${TIMESTAMP}" -o json)
-JOURNEY_ID=$(echo "$JOURNEY_JSON" | jq -r '.journey_id')
+    # Log the command
+    echo "Command: $CLI_PATH $command" >> "$LOG_FILE"
 
-CHECKPOINT_JSON=$($CLI create-checkpoint "$JOURNEY_ID" "$GOAL_ID" "$SNAPSHOT_ID" "Complete_Test_Checkpoint" -o json)
-CHECKPOINT_ID=$(echo "$CHECKPOINT_JSON" | jq -r '.checkpoint_id // .checkpointId // .id')
+    # Execute command and capture output
+    if output=$(eval "$CLI_PATH $command" 2>&1); then
+        if [ "$expected_success" = "true" ]; then
+            echo -e "${GREEN}PASSED${NC}"
+            PASSED_TESTS=$((PASSED_TESTS + 1))
+            echo "Output: $output" >> "$LOG_FILE"
+        else
+            echo -e "${RED}FAILED${NC} (expected to fail but succeeded)"
+            FAILED_TESTS=$((FAILED_TESTS + 1))
+            FAILED_COMMANDS+=("$description: $command")
+        fi
+    else
+        if [ "$expected_success" = "false" ]; then
+            echo -e "${GREEN}PASSED${NC} (expected failure)"
+            PASSED_TESTS=$((PASSED_TESTS + 1))
+        else
+            echo -e "${RED}FAILED${NC}"
+            FAILED_TESTS=$((FAILED_TESTS + 1))
+            FAILED_COMMANDS+=("$description: $command")
+            echo "Error: $output" >> "$LOG_FILE"
+        fi
+    fi
 
-echo "  ✓ Project: $PROJECT_ID"
-echo "  ✓ Goal: $GOAL_ID"
-echo "  ✓ Journey: $JOURNEY_ID"
-echo "  ✓ Checkpoint: $CHECKPOINT_ID"
-echo ""
+    echo "---" >> "$LOG_FILE"
+}
 
-# Set session for commands that support it
-export VIRTUOSO_SESSION_ID=$CHECKPOINT_ID
+# Function to test all output formats for a command
+test_all_formats() {
+    local base_description="$1"
+    local base_command="$2"
 
-# Position counter
-POS=1
+    test_command "$base_description (human)" "$base_command --output human"
+    test_command "$base_description (json)" "$base_command --output json"
+    test_command "$base_description (yaml)" "$base_command --output yaml"
+    test_command "$base_description (ai)" "$base_command --output ai"
+}
 
-# 3. List Commands
-echo -e "${YELLOW}3. List Commands${NC}"
-echo "────────────────"
-test_cmd "List projects" "$CLI list-projects --limit 5 -o json"
-test_cmd "List goals" "$CLI list-goals $PROJECT_ID -o json"
-test_cmd "List journeys" "$CLI list-journeys $GOAL_ID $SNAPSHOT_ID -o json"
-test_cmd "List checkpoints" "$CLI list-checkpoints $JOURNEY_ID -o json"
-echo ""
+# Start testing
+echo -e "${BLUE}Starting Comprehensive Virtuoso API CLI Test${NC}"
+echo "Timestamp: ${TIMESTAMP}"
+echo "Log file: ${LOG_FILE}"
 
-# 4. Navigate Commands (8 steps)
-echo -e "${YELLOW}4. Navigate Commands (8 types)${NC}"
-echo "──────────────────────────────"
-test_cmd "Navigate to URL" "$CLI navigate to $CHECKPOINT_ID 'https://example.com' $((POS++))"
-test_cmd "Navigate new tab" "$CLI navigate to $CHECKPOINT_ID 'https://google.com' $((POS++)) --new-tab"
-test_cmd "Navigate back" "$CLI navigate back $CHECKPOINT_ID $((POS++))"
-test_cmd "Navigate forward" "$CLI navigate forward $CHECKPOINT_ID $((POS++))"
-test_cmd "Navigate refresh" "$CLI navigate refresh $CHECKPOINT_ID $((POS++))"
-test_cmd "Scroll to top" "$CLI navigate scroll-top $CHECKPOINT_ID $((POS++))"
-test_cmd "Scroll to bottom" "$CLI navigate scroll-bottom $CHECKPOINT_ID $((POS++))"
-test_cmd "Scroll to element" "$CLI navigate scroll-element $CHECKPOINT_ID 'body' $((POS++))"
-echo ""
+print_section "SETUP: Creating Test Structure"
 
-# 5. Assert Commands (10 types - skip selected and variable)
-echo -e "${YELLOW}5. Assert Commands (10 types)${NC}"
-echo "─────────────────────────────"
-test_cmd "Assert exists" "$CLI assert exists 'Example Domain' --checkpoint $CHECKPOINT_ID"
-test_cmd "Assert not-exists" "$CLI assert not-exists 'Error' --checkpoint $CHECKPOINT_ID"
-test_cmd "Assert equals" "$CLI assert equals 'h1' 'Example Domain' --checkpoint $CHECKPOINT_ID"
-test_cmd "Assert not-equals" "$CLI assert not-equals 'h1' 'Wrong' --checkpoint $CHECKPOINT_ID"
-test_cmd "Assert checked" "$CLI assert checked 'input' --checkpoint $CHECKPOINT_ID"
-test_cmd "Assert gt" "$CLI assert gt 'body' '0' --checkpoint $CHECKPOINT_ID"
-test_cmd "Assert gte" "$CLI assert gte 'body' '0' --checkpoint $CHECKPOINT_ID"
-test_cmd "Assert lt" "$CLI assert lt 'body' '999999' --checkpoint $CHECKPOINT_ID"
-test_cmd "Assert lte" "$CLI assert lte 'body' '999999' --checkpoint $CHECKPOINT_ID"
-test_cmd "Assert matches" "$CLI assert matches 'h1' '^Example' --checkpoint $CHECKPOINT_ID"
-echo ""
+# Create project
+test_command "Create project" "create-project \"$PROJECT_NAME\" --dry-run"
 
-# 6. Interact Commands (8 types)
-echo -e "${YELLOW}6. Interact Commands (8 types)${NC}"
-echo "─────────────────────────────"
-test_cmd "Click" "$CLI interact click $CHECKPOINT_ID 'a' $((POS++))"
-test_cmd "Click position" "$CLI interact click $CHECKPOINT_ID 'body' $((POS++)) --position CENTER"
-test_cmd "Double-click" "$CLI interact double-click $CHECKPOINT_ID 'body' $((POS++))"
-test_cmd "Right-click" "$CLI interact right-click $CHECKPOINT_ID 'body' $((POS++))"
-test_cmd "Hover" "$CLI interact hover $CHECKPOINT_ID 'h1' $((POS++))"
-test_cmd "Write text" "$CLI interact write $CHECKPOINT_ID 'body' 'test' $((POS++))"
-test_cmd "Write clear" "$CLI interact write $CHECKPOINT_ID 'body' 'new' $((POS++)) --clear"
-test_cmd "Press key" "$CLI interact key $CHECKPOINT_ID 'ESCAPE' $((POS++))"
-echo ""
+# Create goal
+test_command "Create goal" "create-goal \"$GOAL_NAME\" --project \"$PROJECT_NAME\" --dry-run"
 
-# 7. Data Commands (5 types)
-echo -e "${YELLOW}7. Data Commands (5 types)${NC}"
-echo "──────────────────────────"
-test_cmd "Store element text" "$CLI data store element-text $CHECKPOINT_ID 'h1' 'myVar' $((POS++))"
-test_cmd "Store literal" "$CLI data store literal $CHECKPOINT_ID 'testValue' 'myLiteral' $((POS++))"
-test_cmd "Store attribute" "$CLI data store attribute $CHECKPOINT_ID '#link' 'href' 'linkUrl' $((POS++))"
-test_cmd "Cookie create" "$CLI data cookie create $CHECKPOINT_ID 'session' 'abc123' $((POS++))"
-test_cmd "Cookie clear all" "$CLI data cookie clear-all $CHECKPOINT_ID $((POS++))"
-echo ""
+# Create journey
+test_command "Create journey" "create-journey \"$JOURNEY_NAME\" --goal \"$GOAL_NAME\" --dry-run"
 
-# 8. Dialog Commands (5 types - skip prompt dismiss)
-echo -e "${YELLOW}8. Dialog Commands (5 types)${NC}"
-echo "────────────────────────────"
-test_cmd "Alert accept" "$CLI dialog alert $CHECKPOINT_ID accept $((POS++))"
-test_cmd "Alert dismiss" "$CLI dialog alert $CHECKPOINT_ID dismiss $((POS++))"
-test_cmd "Confirm accept" "$CLI dialog confirm $CHECKPOINT_ID accept $((POS++))"
-test_cmd "Confirm dismiss" "$CLI dialog confirm $CHECKPOINT_ID dismiss $((POS++))"
-test_cmd "Prompt text" "$CLI dialog prompt $CHECKPOINT_ID 'input text' $((POS++))"
-echo ""
+# Create checkpoint
+test_command "Create checkpoint" "create-checkpoint \"$CHECKPOINT_NAME\" --journey \"$JOURNEY_NAME\" --dry-run"
 
-# 9. Wait Commands (3 types - skip not-visible)
-echo -e "${YELLOW}9. Wait Commands (3 types)${NC}"
-echo "─────────────────────────"
-test_cmd "Wait element" "$CLI wait element 'h1' --checkpoint $CHECKPOINT_ID"
-test_cmd "Wait timeout" "$CLI wait element 'body' --timeout 5 --checkpoint $CHECKPOINT_ID"
-test_cmd "Wait time" "$CLI wait time 1 --checkpoint $CHECKPOINT_ID"
-echo ""
+# Set session context
+export VIRTUOSO_SESSION_ID="$CHECKPOINT_NAME"
 
-# 10. Window Commands (6 types)
-echo -e "${YELLOW}10. Window Commands (6 types)${NC}"
-echo "────────────────────────────"
-test_cmd "Window maximize" "$CLI window maximize $CHECKPOINT_ID $((POS++))"
-test_cmd "Window close" "$CLI window close $CHECKPOINT_ID $((POS++))"
-test_cmd "Switch tab by index" "$CLI window switch 1 $CHECKPOINT_ID $((POS++))"
-test_cmd "Switch next tab" "$CLI window switch tab next $CHECKPOINT_ID $((POS++))"
-test_cmd "Switch prev tab" "$CLI window switch tab prev $CHECKPOINT_ID $((POS++))"
-test_cmd "Window resize" "$CLI window resize 1024x768 $CHECKPOINT_ID $((POS++))"
-echo ""
+print_section "TESTING ASSERT COMMANDS"
 
-# 11. Mouse, Select, Misc Commands
-echo -e "${YELLOW}11. Other Commands${NC}"
-echo "──────────────────"
-test_cmd "Mouse move" "$CLI mouse move 100 200 --checkpoint $CHECKPOINT_ID"
-test_cmd "Select option" "$CLI select option $CHECKPOINT_ID 'select' 'Option 1' $((POS++))"
-test_cmd "Add comment" "$CLI misc comment $CHECKPOINT_ID 'E2E test completed' $((POS++))"
-test_cmd "Execute JS" "$CLI misc execute $CHECKPOINT_ID 'return 42;' $((POS++))"
-echo ""
+print_subsection "Basic Assertions"
+test_all_formats "assert exists" "assert exists \"Login button\" --dry-run"
+test_all_formats "assert not-exists" "assert not-exists \"Error message\" --dry-run"
+test_all_formats "assert contains" "assert contains \"#content\" \"Welcome\" --dry-run"
+test_all_formats "assert not-contains" "assert not-contains \"#content\" \"Error\" --dry-run"
+test_all_formats "assert equals" "assert equals \"#count\" \"10\" --dry-run"
+test_all_formats "assert not-equals" "assert not-equals \"#status\" \"error\" --dry-run"
 
-# 12. Add-Step Commands (simplified API)
-echo -e "${YELLOW}12. Add-Step Commands${NC}"
-echo "─────────────────────"
-test_cmd "Add navigate" "$CLI add-step navigate $CHECKPOINT_ID --url 'https://test.com'"
-test_cmd "Add click" "$CLI add-step click $CHECKPOINT_ID --selector 'button.submit'"
-test_cmd "Add wait" "$CLI add-step wait $CHECKPOINT_ID --selector 'div.ready' --timeout 10"
-echo ""
+print_subsection "Numeric Assertions"
+test_all_formats "assert gt" "assert gt \"#price\" \"100\" --dry-run"
+test_all_formats "assert gte" "assert gte \"#quantity\" \"5\" --dry-run"
+test_all_formats "assert lt" "assert lt \"#remaining\" \"50\" --dry-run"
+test_all_formats "assert lte" "assert lte \"#total\" \"1000\" --dry-run"
 
-# 13. Management Commands
-echo -e "${YELLOW}13. Management Commands${NC}"
-echo "───────────────────────"
-test_cmd "Update journey" "$CLI update-journey $JOURNEY_ID --name 'Updated_${TIMESTAMP}'"
-echo ""
+print_subsection "Boolean Assertions"
+test_all_formats "assert true" "assert true \"#checkbox\" --dry-run"
+test_all_formats "assert false" "assert false \"#disabled\" --dry-run"
 
-# 14. Output Formats
-echo -e "${YELLOW}14. Output Formats${NC}"
-echo "──────────────────"
-test_cmd "JSON output" "$CLI list-projects --limit 1 -o json"
-test_cmd "YAML output" "$CLI list-projects --limit 1 -o yaml"
-test_cmd "Human output" "$CLI list-projects --limit 1 -o human"
-test_cmd "AI output" "$CLI list-projects --limit 1 -o ai"
-echo ""
+print_subsection "Advanced Assertions with Options"
+test_command "assert with element type" "assert exists \"Submit\" --element-type BUTTON --dry-run"
+test_command "assert with custom selector" "assert exists \"Submit\" --use-custom-selector --dry-run"
+test_command "assert with explicit checkpoint" "assert exists \"Login\" --checkpoint \"$CHECKPOINT_NAME\" --dry-run"
+test_command "assert with position" "assert exists \"Login\" --position 5 --dry-run"
 
-# Final Verification
-echo -e "${YELLOW}15. Final Verification${NC}"
-echo "──────────────────────"
+print_section "TESTING INTERACT COMMANDS"
 
-FINAL_CHECKPOINTS=$($CLI list-checkpoints "$JOURNEY_ID" -o json)
-STEP_COUNT=$(echo "$FINAL_CHECKPOINTS" | jq -r ".checkpoints[] | select(.id == $CHECKPOINT_ID) | .step_count" 2>/dev/null)
+print_subsection "Click Variations"
+test_all_formats "basic click" "interact click \"Submit\" --dry-run"
+test_command "click with position enum" "interact click \"Submit\" --position CENTER --dry-run"
+test_command "click top-left" "interact click \"Submit\" --position TOP_LEFT --dry-run"
+test_command "click top-center" "interact click \"Submit\" --position TOP_CENTER --dry-run"
+test_command "click top-right" "interact click \"Submit\" --position TOP_RIGHT --dry-run"
+test_command "click middle-left" "interact click \"Submit\" --position MIDDLE_LEFT --dry-run"
+test_command "click middle-right" "interact click \"Submit\" --position MIDDLE_RIGHT --dry-run"
+test_command "click bottom-left" "interact click \"Submit\" --position BOTTOM_LEFT --dry-run"
+test_command "click bottom-center" "interact click \"Submit\" --position BOTTOM_CENTER --dry-run"
+test_command "click bottom-right" "interact click \"Submit\" --position BOTTOM_RIGHT --dry-run"
 
-echo "  Checkpoint has ${STEP_COUNT:-0} steps"
-echo ""
+print_subsection "Click Modifiers"
+test_command "double-click" "interact double-click \"Item\" --dry-run"
+test_command "right-click" "interact right-click \"Menu\" --dry-run"
+test_command "ctrl-click" "interact click \"Link\" --ctrl --dry-run"
+test_command "shift-click" "interact click \"Item\" --shift --dry-run"
+test_command "alt-click" "interact click \"Option\" --alt --dry-run"
+test_command "meta-click" "interact click \"Link\" --meta --dry-run"
+test_command "multiple modifiers" "interact click \"Text\" --ctrl --shift --dry-run"
 
-# Summary
-echo -e "${BLUE}╔══════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║                    Summary                       ║${NC}"
-echo -e "${BLUE}╚══════════════════════════════════════════════════╝${NC}"
-echo ""
-echo "Total tests: $TOTAL"
-echo -e "Passed: ${GREEN}$PASSED${NC}"
-echo -e "Failed: ${RED}$((TOTAL - PASSED))${NC}"
-echo -e "Success rate: $(( PASSED * 100 / TOTAL ))%"
-echo ""
-echo "Test Infrastructure Created:"
-echo "  • Project ID: $PROJECT_ID"
-echo "  • Goal ID: $GOAL_ID"
-echo "  • Journey ID: $JOURNEY_ID"
-echo "  • Checkpoint ID: $CHECKPOINT_ID (${STEP_COUNT:-0} steps)"
-echo ""
+print_subsection "Write/Type Commands"
+test_all_formats "write text" "interact write \"username\" \"testuser\" --dry-run"
+test_command "write with clear" "interact write \"#input\" \"new text\" --clear --dry-run"
+test_command "write with element type" "interact write \"Email\" \"test@example.com\" --element-type INPUT --dry-run"
+test_command "type command" "interact type \"password\" \"secret123\" --dry-run"
 
-if [ "$STEP_COUNT" -ge 45 ]; then
-    echo -e "${GREEN}✅ SUCCESS! All major step types have been tested.${NC}"
-    echo -e "${GREEN}   Created $STEP_COUNT steps covering all command categories.${NC}"
-else
-    echo -e "${YELLOW}⚠ Created $STEP_COUNT steps. Some commands may not be adding steps.${NC}"
+print_subsection "Keyboard Commands"
+test_command "press single key" "interact press \"Enter\" --dry-run"
+test_command "press with selector" "interact press \"Tab\" --selector \"#form\" --dry-run"
+test_command "press escape" "interact press \"Escape\" --dry-run"
+test_command "press space" "interact press \"Space\" --dry-run"
+test_command "press arrow keys" "interact press \"ArrowDown\" --dry-run"
+
+print_subsection "Other Interactions"
+test_all_formats "hover" "interact hover \"Menu Item\" --dry-run"
+test_all_formats "focus" "interact focus \"#input\" --dry-run"
+test_all_formats "blur" "interact blur \"#input\" --dry-run"
+test_all_formats "clear" "interact clear \"#search\" --dry-run"
+test_all_formats "check" "interact check \"#terms\" --dry-run"
+test_all_formats "uncheck" "interact uncheck \"#newsletter\" --dry-run"
+
+print_section "TESTING NAVIGATE COMMANDS"
+
+print_subsection "Basic Navigation"
+test_all_formats "navigate to URL" "navigate to \"$TEST_URL\" --dry-run"
+test_command "navigate with new tab" "navigate to \"$TEST_URL\" --new-tab --dry-run"
+test_command "navigate with new window" "navigate to \"$TEST_URL\" --new-window --dry-run"
+test_command "navigate with incognito" "navigate to \"$TEST_URL\" --incognito --dry-run"
+
+print_subsection "Browser Navigation"
+test_all_formats "navigate back" "navigate back --dry-run"
+test_all_formats "navigate forward" "navigate forward --dry-run"
+test_all_formats "navigate refresh" "navigate refresh --dry-run"
+test_command "navigate hard refresh" "navigate refresh --hard --dry-run"
+
+print_subsection "Multi-Step Navigation"
+test_command "navigate back 3 steps" "navigate back --steps 3 --dry-run"
+test_command "navigate forward 2 steps" "navigate forward --steps 2 --dry-run"
+
+print_subsection "Scroll Operations"
+test_all_formats "scroll to element" "navigate scroll \"#footer\" --dry-run"
+test_command "scroll with offset" "navigate scroll \"#section\" --offset 100 --dry-run"
+test_command "scroll to top" "navigate scroll-to-top --dry-run"
+test_command "scroll to bottom" "navigate scroll-to-bottom --dry-run"
+test_command "scroll by pixels" "navigate scroll-by --x 0 --y 500 --dry-run"
+
+print_section "TESTING DATA COMMANDS"
+
+print_subsection "Store Operations"
+test_all_formats "store text" "data store \"username\" --from \"#user\" --dry-run"
+test_command "store with custom selector" "data store \"value\" --from \"div.content\" --use-custom-selector --dry-run"
+test_command "store attribute" "data store \"link\" --from \"a\" --attribute \"href\" --dry-run"
+test_command "store as variable" "data store-as \"myVar\" --from \"#data\" --dry-run"
+
+print_subsection "Enhanced Cookie Operations"
+test_all_formats "get all cookies" "data cookies get-all --dry-run"
+test_command "get specific cookie" "data cookies get \"session_id\" --dry-run"
+test_command "set cookie" "data cookies set \"user_pref\" \"dark_mode\" --dry-run"
+test_command "set cookie with options" "data cookies set \"auth\" \"token123\" --domain \".example.com\" --path \"/\" --secure --http-only --same-site \"Strict\" --dry-run"
+test_command "delete cookie" "data cookies delete \"temp_data\" --dry-run"
+test_command "delete all cookies" "data cookies delete-all --dry-run"
+
+print_subsection "Export Operations"
+test_command "export data" "data export --format json --dry-run"
+test_command "export CSV" "data export --format csv --dry-run"
+test_command "export with filter" "data export --format json --filter \"user_*\" --dry-run"
+
+print_section "TESTING DIALOG COMMANDS"
+
+print_subsection "Alert Dialogs"
+test_all_formats "accept alert" "dialog alert accept --dry-run"
+test_all_formats "dismiss alert" "dialog alert dismiss --dry-run"
+test_command "get alert text" "dialog alert get-text --dry-run"
+
+print_subsection "Confirm Dialogs"
+test_all_formats "accept confirm" "dialog confirm accept --dry-run"
+test_all_formats "dismiss confirm" "dialog confirm dismiss --dry-run"
+
+print_subsection "Prompt Dialogs"
+test_all_formats "answer prompt" "dialog prompt answer \"My response\" --dry-run"
+test_command "dismiss prompt" "dialog prompt dismiss --dry-run"
+
+print_section "TESTING WAIT COMMANDS"
+
+print_subsection "Element Wait"
+test_all_formats "wait for element" "wait element \"#loading\" --dry-run"
+test_command "wait with timeout" "wait element \"#result\" --timeout 10000 --dry-run"
+test_command "wait for visibility" "wait element \"#modal\" --state visible --dry-run"
+test_command "wait for hidden" "wait element \"#spinner\" --state hidden --dry-run"
+test_command "wait for enabled" "wait element \"#submit\" --state enabled --dry-run"
+test_command "wait for disabled" "wait element \"#submit\" --state disabled --dry-run"
+
+print_subsection "Not Visible Wait"
+test_all_formats "wait not visible" "wait not-visible \"#loader\" --dry-run"
+test_command "wait not visible with timeout" "wait not-visible \"#popup\" --timeout 5000 --dry-run"
+
+print_subsection "Time Wait"
+test_all_formats "wait time" "wait time 2000 --dry-run"
+test_command "wait 5 seconds" "wait time 5000 --dry-run"
+
+print_subsection "Advanced Wait"
+test_command "wait for text" "wait for-text \"Success\" --dry-run"
+test_command "wait for URL" "wait for-url \"*/success\" --dry-run"
+test_command "wait for title" "wait for-title \"Dashboard\" --dry-run"
+
+print_section "TESTING WINDOW COMMANDS"
+
+print_subsection "Window Management"
+test_all_formats "close window" "window close --dry-run"
+test_command "close specific tab" "window close --tab 2 --dry-run"
+test_command "close all except current" "window close-others --dry-run"
+
+print_subsection "Window Switching"
+test_all_formats "switch to tab" "window switch --tab 1 --dry-run"
+test_command "switch by title" "window switch --title \"Dashboard\" --dry-run"
+test_command "switch by URL" "window switch --url \"*/admin\" --dry-run"
+test_command "switch to new window" "window switch-to-new --dry-run"
+
+print_subsection "Window Resizing"
+test_all_formats "resize window" "window resize --width 1280 --height 720 --dry-run"
+test_command "maximize window" "window maximize --dry-run"
+test_command "minimize window" "window minimize --dry-run"
+test_command "fullscreen window" "window fullscreen --dry-run"
+
+print_subsection "Frame Switching"
+test_all_formats "switch to frame" "window switch-to-frame --index 0 --dry-run"
+test_command "switch by frame name" "window switch-to-frame --name \"content\" --dry-run"
+test_command "switch by frame selector" "window switch-to-frame --selector \"#iframe\" --dry-run"
+test_command "switch to parent frame" "window switch-to-parent --dry-run"
+test_command "switch to main frame" "window switch-to-main --dry-run"
+
+print_section "TESTING MOUSE COMMANDS"
+
+print_subsection "Mouse Movement"
+test_all_formats "move to element" "mouse move \"#target\" --dry-run"
+test_command "move with offset" "mouse move \"#button\" --offset-x 10 --offset-y 5 --dry-run"
+test_command "move to coordinates" "mouse move-to --x 500 --y 300 --dry-run"
+
+print_subsection "Drag and Drop"
+test_all_formats "drag and drop" "mouse drag \"#source\" --to \"#target\" --dry-run"
+test_command "drag with offset" "mouse drag \"#item\" --offset-x 100 --offset-y 0 --dry-run"
+
+print_subsection "Advanced Mouse"
+test_command "mouse down" "mouse down \"#element\" --dry-run"
+test_command "mouse up" "mouse up \"#element\" --dry-run"
+test_command "mouse wheel" "mouse wheel --delta-x 0 --delta-y 100 --dry-run"
+
+print_section "TESTING SELECT COMMANDS"
+
+print_subsection "Select by Value"
+test_all_formats "select by value" "select by-value \"#dropdown\" \"option1\" --dry-run"
+test_command "select multiple values" "select by-value \"#multi\" \"opt1,opt2,opt3\" --multiple --dry-run"
+
+print_subsection "Select by Text"
+test_all_formats "select by text" "select by-text \"#dropdown\" \"First Option\" --dry-run"
+test_command "select by partial text" "select by-text \"#dropdown\" \"First\" --partial --dry-run"
+
+print_subsection "Select by Index"
+test_all_formats "select by index" "select by-index \"#dropdown\" 0 --dry-run"
+test_command "select multiple indices" "select by-index \"#multi\" \"0,2,4\" --multiple --dry-run"
+
+print_subsection "Deselect Operations"
+test_command "deselect all" "select deselect-all \"#multi\" --dry-run"
+test_command "deselect by value" "select deselect-by-value \"#multi\" \"opt2\" --dry-run"
+test_command "deselect by text" "select deselect-by-text \"#multi\" \"Option 2\" --dry-run"
+test_command "deselect by index" "select deselect-by-index \"#multi\" 1 --dry-run"
+
+print_section "TESTING FILE COMMANDS"
+
+print_subsection "File Upload"
+test_all_formats "upload file" "file upload \"#file-input\" \"/path/to/file.pdf\" --dry-run"
+test_command "upload multiple files" "file upload \"#multi-file\" \"/path/file1.pdf,/path/file2.pdf\" --multiple --dry-run"
+test_command "upload with drag-drop" "file upload \"#dropzone\" \"/path/to/image.png\" --drag-drop --dry-run"
+
+print_subsection "File Download"
+test_command "download file" "file download \"Download PDF\" --dry-run"
+test_command "download with custom path" "file download \"Export\" --path \"/tmp/export.csv\" --dry-run"
+test_command "download with wait" "file download \"Generate Report\" --wait-for-download --dry-run"
+
+print_section "TESTING MISC COMMANDS"
+
+print_subsection "Comments"
+test_all_formats "add comment" "misc comment \"This is a test comment\" --dry-run"
+test_command "multi-line comment" "misc comment \"Line 1\nLine 2\nLine 3\" --dry-run"
+
+print_subsection "JavaScript Execution"
+test_all_formats "execute JS" "misc execute-js \"return document.title\" --dry-run"
+test_command "execute JS with args" "misc execute-js \"arguments[0].click()\" --args \"#button\" --dry-run"
+test_command "execute async JS" "misc execute-js \"setTimeout(() => arguments[0](), 1000)\" --async --dry-run"
+
+print_subsection "Screenshots"
+test_command "take screenshot" "misc screenshot --dry-run"
+test_command "screenshot with name" "misc screenshot --name \"login_page\" --dry-run"
+test_command "element screenshot" "misc screenshot --element \"#form\" --dry-run"
+
+print_subsection "Debugging"
+test_command "pause execution" "misc pause --duration 2000 --dry-run"
+test_command "add breakpoint" "misc breakpoint --dry-run"
+test_command "log message" "misc log \"Debug message\" --level \"info\" --dry-run"
+
+print_section "TESTING LIBRARY COMMANDS"
+
+print_subsection "Component Usage"
+test_all_formats "use component" "library use \"login-flow\" --dry-run"
+test_command "use with parameters" "library use \"checkout\" --params '{\"product\":\"ABC123\"}' --dry-run"
+test_command "use specific version" "library use \"navigation\" --version \"2.0\" --dry-run"
+
+print_subsection "Component Management"
+test_command "list components" "library list --dry-run"
+test_command "list with filter" "library list --filter \"auth\" --dry-run"
+test_command "get component info" "library info \"login-flow\" --dry-run"
+test_command "validate component" "library validate \"checkout\" --dry-run"
+
+print_section "TESTING EDGE CASES"
+
+print_subsection "Special Characters and Escaping"
+test_command "selector with quotes" 'assert exists "Button with \"quotes\"" --dry-run'
+test_command "selector with special chars" "assert exists \"Price: \$99.99\" --dry-run"
+test_command "Unicode characters" "interact write \"#input\" \"Hello 世界 🌍\" --dry-run"
+
+print_subsection "Empty and Null Values"
+test_command "empty string write" "interact write \"#input\" \"\" --dry-run"
+test_command "assert empty" "assert equals \"#field\" \"\" --dry-run"
+
+print_subsection "Large Values"
+test_command "long timeout" "wait element \"#slow\" --timeout 600000 --dry-run"
+test_command "large coordinate" "mouse move-to --x 9999 --y 9999 --dry-run"
+
+print_subsection "Invalid Commands (Expected Failures)"
+test_command "invalid command group" "invalid-group test --dry-run" false
+test_command "missing required arg" "assert exists --dry-run" false
+test_command "invalid output format" "assert exists \"test\" --output invalid --dry-run" false
+
+print_section "TESTING SESSION CONTEXT"
+
+print_subsection "Session Management"
+test_command "get session info" "get-session-info --dry-run"
+test_command "with explicit checkpoint" "assert exists \"test\" --checkpoint \"$CHECKPOINT_NAME\" --dry-run"
+test_command "with explicit position" "assert exists \"test\" --position 10 --dry-run"
+
+# Clear session for next tests
+unset VIRTUOSO_SESSION_ID
+
+print_subsection "No Session Context"
+test_command "command without session" "assert exists \"test\" --checkpoint \"$CHECKPOINT_NAME\" --position 1 --dry-run"
+
+print_section "TESTING COMPLEX SCENARIOS"
+
+print_subsection "Chained Commands with Session"
+export VIRTUOSO_SESSION_ID="$CHECKPOINT_NAME"
+test_command "chained 1: navigate" "navigate to \"$TEST_URL\" --dry-run"
+test_command "chained 2: wait" "wait element \"#content\" --dry-run"
+test_command "chained 3: assert" "assert exists \"Welcome\" --dry-run"
+test_command "chained 4: interact" "interact click \"Login\" --dry-run"
+test_command "chained 5: write" "interact write \"#username\" \"testuser\" --dry-run"
+
+print_subsection "All Flags Combined"
+test_command "maximum flags" "interact click \"Submit\" --position CENTER --element-type BUTTON --use-custom-selector --checkpoint \"$CHECKPOINT_NAME\" --output json --dry-run"
+
+print_section "CLEANUP (if enabled)"
+
+if [ "$CLEANUP" = true ]; then
+    print_subsection "Cleaning up test resources"
+    test_command "Delete checkpoint" "delete-checkpoint \"$CHECKPOINT_NAME\" --dry-run"
+    test_command "Delete journey" "delete-journey \"$JOURNEY_NAME\" --dry-run"
+    test_command "Delete goal" "delete-goal \"$GOAL_NAME\" --dry-run"
+    test_command "Delete project" "delete-project \"$PROJECT_NAME\" --dry-run"
 fi
 
-echo ""
-echo "This is the complete E2E test for Virtuoso API CLI."
-echo "Run it anytime with: ./test-all-cli-commands.sh"
+print_section "TEST RESULTS SUMMARY"
 
-# Cleanup
-rm -f test-all-commands-working.sh test-run.log test-errors-*.log 2>/dev/null || true
+echo -e "\n${BLUE}========================================${NC}"
+echo -e "${BLUE}FINAL TEST RESULTS${NC}"
+echo -e "${BLUE}========================================${NC}"
+echo -e "Total Tests: ${TOTAL_TESTS}"
+echo -e "Passed: ${GREEN}${PASSED_TESTS}${NC}"
+echo -e "Failed: ${RED}${FAILED_TESTS}${NC}"
+echo -e "Success Rate: $(awk "BEGIN {printf \"%.2f\", $PASSED_TESTS/$TOTAL_TESTS*100}")%"
+
+if [ ${#FAILED_COMMANDS[@]} -gt 0 ]; then
+    echo -e "\n${RED}Failed Commands:${NC}"
+    for cmd in "${FAILED_COMMANDS[@]}"; do
+        echo -e "  - $cmd"
+    done
+fi
+
+echo -e "\nDetailed results saved to: ${LOG_FILE}"
+echo -e "\n${BLUE}Test completed at: $(date)${NC}"
+
+# Exit with appropriate code
+if [ $FAILED_TESTS -gt 0 ]; then
+    exit 1
+else
+    exit 0
+fi

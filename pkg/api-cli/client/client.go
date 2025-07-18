@@ -4031,3 +4031,103 @@ func (c *Client) CreateStepStoreAttribute(checkpointID int, selector string, att
 
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
+
+// CreateStepKeyGlobalWithModifiers creates a global key press step with modifiers
+func (c *Client) CreateStepKeyGlobalWithModifiers(checkpointID int, key string, modifiers []string, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "KEY",
+		"value":  key,
+		"meta": map[string]interface{}{
+			"modifiers": modifiers,
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepKeyTargetedWithModifiers creates a targeted key press step with modifiers
+func (c *Client) CreateStepKeyTargetedWithModifiers(checkpointID int, selector, key string, modifiers []string, position int) (int, error) {
+	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
+
+	parsedStep := map[string]interface{}{
+		"action": "KEY",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": clueJSON,
+				},
+			},
+		},
+		"value": key,
+		"meta": map[string]interface{}{
+			"modifiers": modifiers,
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepSwitchFrameByIndex switches to frame by index (0-based)
+func (c *Client) CreateStepSwitchFrameByIndex(checkpointID int, index int, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "SWITCH",
+		"meta": map[string]interface{}{
+			"type":  "FRAME_INDEX",
+			"index": index,
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepSwitchFrameByName switches to frame by name attribute
+func (c *Client) CreateStepSwitchFrameByName(checkpointID int, name string, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "SWITCH",
+		"meta": map[string]interface{}{
+			"type": "FRAME_NAME",
+			"name": name,
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepSwitchToMainContent switches to main/default content (exit all frames)
+func (c *Client) CreateStepSwitchToMainContent(checkpointID int, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "SWITCH",
+		"meta": map[string]interface{}{
+			"type": "DEFAULT_CONTENT",
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepNavigateBackN goes back N steps in browser history
+func (c *Client) CreateStepNavigateBackN(checkpointID int, steps int, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "NAVIGATE",
+		"meta": map[string]interface{}{
+			"kind":  "BACK",
+			"steps": steps,
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepNavigateForwardN goes forward N steps in browser history
+func (c *Client) CreateStepNavigateForwardN(checkpointID int, steps int, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "NAVIGATE",
+		"meta": map[string]interface{}{
+			"kind":  "FORWARD",
+			"steps": steps,
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
