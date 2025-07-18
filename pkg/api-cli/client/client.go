@@ -2410,6 +2410,36 @@ func (c *Client) CreateStepCookieCreate(checkpointID int, name, value string, po
 	return c.addStep(checkpointID, position, parsedStep)
 }
 
+// CreateStepCookieCreateWithOptions creates a cookie with specified options (Version B)
+func (c *Client) CreateStepCookieCreateWithOptions(checkpointID int, name, value string, options map[string]interface{}, position int) (int, error) {
+	meta := map[string]interface{}{
+		"type": "ADD",
+		"name": name,
+	}
+
+	// Add optional fields if provided
+	if domain, ok := options["domain"].(string); ok && domain != "" {
+		meta["domain"] = domain
+	}
+	if path, ok := options["path"].(string); ok && path != "" {
+		meta["path"] = path
+	}
+	if secure, ok := options["secure"].(bool); ok && secure {
+		meta["secure"] = true
+	}
+	if httpOnly, ok := options["httpOnly"].(bool); ok && httpOnly {
+		meta["httpOnly"] = true
+	}
+
+	parsedStep := map[string]interface{}{
+		"action": "ENVIRONMENT",
+		"value":  value,
+		"meta":   meta,
+	}
+
+	return c.addStep(checkpointID, position, parsedStep)
+}
+
 // CreateStepCookieWipeAll clears all cookies (Version B)
 func (c *Client) CreateStepCookieWipeAll(checkpointID int, position int) (int, error) {
 	parsedStep := map[string]interface{}{
@@ -2465,6 +2495,35 @@ func (c *Client) CreateStepDismissPromptWithText(checkpointID int, text string, 
 		"meta": map[string]interface{}{
 			"type":   "PROMPT",
 			"action": "OK",
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepWaitForElementNotVisible creates a step to wait for element to disappear (Version B)
+func (c *Client) CreateStepWaitForElementNotVisible(checkpointID int, selector string, timeoutMs int, position int) (int, error) {
+	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
+
+	// Use default timeout if none specified
+	timeout := timeoutMs
+	if timeout <= 0 {
+		timeout = 20000 // 20 seconds default
+	}
+
+	parsedStep := map[string]interface{}{
+		"action": "WAIT",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": clueJSON,
+				},
+			},
+		},
+		"value": fmt.Sprintf("%d", timeout),
+		"meta": map[string]interface{}{
+			"waitForInvisible": true,
 		},
 	}
 
@@ -3878,4 +3937,97 @@ func (c *Client) UpdateLibraryCheckpoint(libraryCheckpointID int, name string) (
 	}
 
 	return &response.Item, nil
+}
+
+// CreateStepNavigateBack creates a browser back navigation step
+func (c *Client) CreateStepNavigateBack(checkpointID int, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"type":     "NAVIGATE_BACK",
+		"position": position,
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepNavigateForward creates a browser forward navigation step
+func (c *Client) CreateStepNavigateForward(checkpointID int, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"type":     "NAVIGATE_FORWARD",
+		"position": position,
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepNavigateRefresh creates a page refresh navigation step
+func (c *Client) CreateStepNavigateRefresh(checkpointID int, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"type":     "NAVIGATE_REFRESH",
+		"position": position,
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepWindowMaximize creates a window maximize step
+func (c *Client) CreateStepWindowMaximize(checkpointID int, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "WINDOW",
+		"value":  "",
+		"meta": map[string]interface{}{
+			"type": "MAXIMIZE",
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepWindowClose creates a window close step
+func (c *Client) CreateStepWindowClose(checkpointID int, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "WINDOW",
+		"value":  "",
+		"meta": map[string]interface{}{
+			"type": "CLOSE",
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepSwitchTabByIndex creates a switch tab by index step
+func (c *Client) CreateStepSwitchTabByIndex(checkpointID int, index int, position int) (int, error) {
+	parsedStep := map[string]interface{}{
+		"action": "SWITCH",
+		"value":  fmt.Sprintf("%d", index),
+		"meta": map[string]interface{}{
+			"type": "TAB_BY_INDEX",
+		},
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+}
+
+// CreateStepStoreAttribute creates a step to store element attribute value
+func (c *Client) CreateStepStoreAttribute(checkpointID int, selector string, attribute string, variable string, position int) (int, error) {
+	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
+
+	parsedStep := map[string]interface{}{
+		"action": "STORE",
+		"target": map[string]interface{}{
+			"selectors": []map[string]interface{}{
+				{
+					"type":  "GUESS",
+					"value": clueJSON,
+				},
+			},
+		},
+		"value": "",
+		"meta": map[string]interface{}{
+			"attribute": attribute,
+		},
+		"variable": variable,
+	}
+
+	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }

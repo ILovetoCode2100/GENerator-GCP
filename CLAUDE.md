@@ -26,7 +26,7 @@ virtuoso-GENerator/
 
 ### Consolidated Command Structure
 
-The CLI has been refactored from 54 individual commands into 11 logical command groups:
+The CLI has been refactored from 54 individual commands into 12 logical command groups:
 
 1. **`assert`** - Validation commands (12 types)
 
@@ -39,45 +39,49 @@ The CLI has been refactored from 54 individual commands into 11 logical command 
    - click, double-click, right-click
    - hover, write, key
 
-3. **`navigate`** - Navigation commands (8 types)
+3. **`navigate`** - Navigation commands (5 types)
 
-   - to (URL navigation), back, forward, refresh
-   - scroll (UP/DOWN/element)
+   - to (URL navigation), scroll-to
+   - scroll-top, scroll-bottom, scroll-element
 
 4. **`data`** - Data management (5 types)
 
-   - store (text/attribute)
-   - cookies (save/load/clear)
+   - store-text, store-value
+   - cookie-create, cookie-delete, cookie-clear
 
-5. **`dialog`** - Dialog handling (6 types)
+5. **`dialog`** - Dialog handling (4 types)
 
-   - alert (accept/dismiss)
-   - confirm (accept/dismiss)
-   - prompt (text/dismiss)
+   - dismiss-alert, dismiss-confirm
+   - dismiss-prompt, dismiss-prompt (with text)
 
-6. **`wait`** - Wait operations (4 types)
+6. **`wait`** - Wait operations (2 types)
 
-   - element (with timeout options)
-   - time
+   - element, time
 
-7. **`window`** - Window management (5 types)
+7. **`window`** - Window management (3 types)
 
-   - resize, maximize, switch, close
+   - resize, switch-tab (next/prev)
+   - switch-frame (iframe/parent)
 
-8. **`mouse`** - Mouse operations (2 types)
+8. **`mouse`** - Mouse operations (6 types)
 
-   - move, drag
+   - move-to, move-by, move
+   - down, up, enter
 
-9. **`select`** - Dropdown operations (1 type)
+9. **`select`** - Dropdown operations (3 types)
 
-   - option
+   - option, index, last
 
-10. **`file`** - File operations (1 type)
+10. **`file`** - File operations (2 types)
 
-    - upload
+    - upload, upload-url
 
 11. **`misc`** - Miscellaneous (2 types)
+
     - comment, execute (JavaScript)
+
+12. **`library`** - Library operations (3 types)
+    - add, get, attach
 
 ### Command Syntax Patterns
 
@@ -118,18 +122,25 @@ This test:
 
 ### Test Results Summary
 
-Current test coverage creates these step types:
+Current test coverage (from test-all-cli-commands.sh):
 
-- 8 Navigate steps (URL, back, forward, refresh, scroll variations)
-- 10 Assert steps (exists, equals, comparisons, regex matching)
-- 8 Interact steps (clicks, hover, write, keyboard)
-- 4 Data steps (store, cookies)
-- 5 Dialog steps (alerts, confirms, prompts)
-- 3 Wait steps (element, time)
-- 3 Window steps (maximize, switch, close)
-- 1 Mouse step (move)
-- 1 Select step
-- 2 Misc steps (comment, execute JS)
+**Successfully tested commands: 59**
+**Step types created: 29**
+
+Breakdown by command group:
+
+- Assert: 12 commands → 12 step types
+- Interact: 6 commands → 6 step types
+- Navigate: 5 commands → 5 step types
+- Data: 5 commands → 5 step types
+- Dialog: 4 commands → 4 step types
+- Wait: 2 commands → 2 step types
+- Window: 3 commands → 3 step types
+- Mouse: 6 commands → 1 step type (only move-to creates steps)
+- Select: 3 commands → 1 step type
+- File: 2 commands → 0 steps (requires existing files)
+- Misc: 2 commands → 2 step types
+- Library: 3 commands → 0 steps (checkpoint management)
 
 ### Unit Tests
 
@@ -280,3 +291,54 @@ The Model Context Protocol (MCP) server has been moved to:
 - Test infrastructure can be created programmatically
 - All commands follow consistent patterns within their groups
 - Refer to `test-all-cli-commands.sh` for working examples
+
+## Missing Functionality
+
+Analysis of the original implementation reveals several step types and variations that exist in the API client but are not fully exposed through the current consolidated command structure:
+
+### Navigation Commands Not Implemented
+
+- `navigate back` - Browser back button navigation
+- `navigate forward` - Browser forward button navigation
+- `navigate refresh` - Page refresh
+- Simple directional scrolling (UP/DOWN without element)
+
+### Window Management Not Implemented
+
+- `window maximize` - Maximize browser window
+- `window close` - Close current window/tab
+- `window switch` (by index) - Switch to specific tab by number
+
+### Data Storage Variations Not Implemented
+
+- Store element attribute value - e.g., `data store attribute "element" "href" "varName"`
+- Cookie operations with domain parameter
+
+### Wait Variations Not Implemented
+
+- Wait for element to be not visible/hidden
+- Wait with custom timeout variations
+
+### Advanced Interaction Options
+
+- Click with specific position enum (TOP_LEFT, CENTER, etc.) - client supports but not fully exposed
+- Click with element type specification - client supports but not fully exposed
+
+### Scroll Variations Not Implemented
+
+- Scroll by relative offset (X,Y) - `CreateStepScrollByOffset` exists in client
+- Simple directional scroll commands
+
+### Library/Component Features
+
+- Move steps between checkpoints
+- Remove steps from checkpoints
+- Update checkpoint properties
+
+### Other Missing Step Types
+
+- Browser navigation history manipulation
+- Advanced frame/iframe operations
+- Multi-key combinations and complex keyboard shortcuts
+
+Note: The API client (`pkg/api-cli/client/client.go`) contains approximately 120 CreateStep methods, but only a subset are exposed through the consolidated command interface. The original implementation supported 73 individual test commands which were consolidated into the current structure, potentially losing some specific variations.

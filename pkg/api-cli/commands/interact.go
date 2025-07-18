@@ -301,6 +301,21 @@ func runInteraction(cmd *cobra.Command, args []string, action string, options ma
 	return nil
 }
 
+// isValidClickPosition validates if the given position is a valid click position enum
+func isValidClickPosition(position string) bool {
+	validPositions := []string{
+		"TOP_LEFT", "TOP_CENTER", "TOP_RIGHT",
+		"CENTER_LEFT", "CENTER", "CENTER_RIGHT",
+		"BOTTOM_LEFT", "BOTTOM_CENTER", "BOTTOM_RIGHT",
+	}
+	for _, valid := range validPositions {
+		if position == valid {
+			return true
+		}
+	}
+	return false
+}
+
 // executeClickAction executes a click action using the client
 func executeClickAction(c *client.Client, checkpointID int, selector string, position int, options map[string]interface{}) (int, error) {
 	if err := ValidateSelector(selector); err != nil {
@@ -310,6 +325,11 @@ func executeClickAction(c *client.Client, checkpointID int, selector string, pos
 	variable, _ := options["variable"].(string)
 	positionType, _ := options["position"].(string)
 	elementType, _ := options["elementType"].(string)
+
+	// Validate position enum if provided
+	if positionType != "" && positionType != "CENTER" && !isValidClickPosition(positionType) {
+		return 0, fmt.Errorf("invalid position: %s. Valid positions: TOP_LEFT, TOP_CENTER, TOP_RIGHT, CENTER_LEFT, CENTER, CENTER_RIGHT, BOTTOM_LEFT, BOTTOM_CENTER, BOTTOM_RIGHT", positionType)
+	}
 
 	if variable != "" {
 		return c.CreateStepClickWithVariable(checkpointID, variable, position)

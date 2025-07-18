@@ -91,9 +91,9 @@ test_cmd "Navigate new tab" "$CLI navigate to $CHECKPOINT_ID 'https://google.com
 test_cmd "Navigate back" "$CLI navigate back $CHECKPOINT_ID $((POS++))"
 test_cmd "Navigate forward" "$CLI navigate forward $CHECKPOINT_ID $((POS++))"
 test_cmd "Navigate refresh" "$CLI navigate refresh $CHECKPOINT_ID $((POS++))"
-test_cmd "Scroll down" "$CLI navigate scroll $CHECKPOINT_ID DOWN $((POS++))"
-test_cmd "Scroll up" "$CLI navigate scroll $CHECKPOINT_ID UP $((POS++))"
-test_cmd "Scroll to element" "$CLI navigate scroll $CHECKPOINT_ID 'body' $((POS++))"
+test_cmd "Scroll to top" "$CLI navigate scroll-top $CHECKPOINT_ID $((POS++))"
+test_cmd "Scroll to bottom" "$CLI navigate scroll-bottom $CHECKPOINT_ID $((POS++))"
+test_cmd "Scroll to element" "$CLI navigate scroll-element $CHECKPOINT_ID 'body' $((POS++))"
 echo ""
 
 # 5. Assert Commands (10 types - skip selected and variable)
@@ -124,13 +124,14 @@ test_cmd "Write clear" "$CLI interact write $CHECKPOINT_ID 'body' 'new' $((POS++
 test_cmd "Press key" "$CLI interact key $CHECKPOINT_ID 'ESCAPE' $((POS++))"
 echo ""
 
-# 7. Data Commands (4 types - skip attribute)
-echo -e "${YELLOW}7. Data Commands (4 types)${NC}"
+# 7. Data Commands (5 types)
+echo -e "${YELLOW}7. Data Commands (5 types)${NC}"
 echo "──────────────────────────"
-test_cmd "Store text" "$CLI data store $CHECKPOINT_ID 'myVar' 'h1' $((POS++))"
-test_cmd "Cookie save" "$CLI data cookies $CHECKPOINT_ID save 'session' $((POS++))"
-test_cmd "Cookie load" "$CLI data cookies $CHECKPOINT_ID load 'session' $((POS++))"
-test_cmd "Cookie clear" "$CLI data cookies $CHECKPOINT_ID clear $((POS++))"
+test_cmd "Store element text" "$CLI data store element-text $CHECKPOINT_ID 'h1' 'myVar' $((POS++))"
+test_cmd "Store literal" "$CLI data store literal $CHECKPOINT_ID 'testValue' 'myLiteral' $((POS++))"
+test_cmd "Store attribute" "$CLI data store attribute $CHECKPOINT_ID '#link' 'href' 'linkUrl' $((POS++))"
+test_cmd "Cookie create" "$CLI data cookie create $CHECKPOINT_ID 'session' 'abc123' $((POS++))"
+test_cmd "Cookie clear all" "$CLI data cookie clear-all $CHECKPOINT_ID $((POS++))"
 echo ""
 
 # 8. Dialog Commands (5 types - skip prompt dismiss)
@@ -151,12 +152,15 @@ test_cmd "Wait timeout" "$CLI wait element 'body' --timeout 5 --checkpoint $CHEC
 test_cmd "Wait time" "$CLI wait time 1 --checkpoint $CHECKPOINT_ID"
 echo ""
 
-# 10. Window Commands (3 types - skip resize)
-echo -e "${YELLOW}10. Window Commands (3 types)${NC}"
+# 10. Window Commands (6 types)
+echo -e "${YELLOW}10. Window Commands (6 types)${NC}"
 echo "────────────────────────────"
-test_cmd "Maximize" "$CLI window maximize $CHECKPOINT_ID $((POS++))"
-test_cmd "Switch tab" "$CLI window switch $CHECKPOINT_ID 0 $((POS++))"
-test_cmd "Close window" "$CLI window close $CHECKPOINT_ID $((POS++))"
+test_cmd "Window maximize" "$CLI window maximize $CHECKPOINT_ID $((POS++))"
+test_cmd "Window close" "$CLI window close $CHECKPOINT_ID $((POS++))"
+test_cmd "Switch tab by index" "$CLI window switch 1 $CHECKPOINT_ID $((POS++))"
+test_cmd "Switch next tab" "$CLI window switch tab next $CHECKPOINT_ID $((POS++))"
+test_cmd "Switch prev tab" "$CLI window switch tab prev $CHECKPOINT_ID $((POS++))"
+test_cmd "Window resize" "$CLI window resize 1024x768 $CHECKPOINT_ID $((POS++))"
 echo ""
 
 # 11. Mouse, Select, Misc Commands

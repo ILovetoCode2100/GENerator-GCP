@@ -16,8 +16,11 @@ const (
 	windowSwitchIframe      windowOperation = "switch-iframe"
 	windowSwitchTabNext     windowOperation = "switch-tab-next"
 	windowSwitchTabPrev     windowOperation = "switch-tab-prev"
+	windowSwitchTabByIndex  windowOperation = "switch-tab-index"
 	windowSwitchParentFrame windowOperation = "switch-parent-frame"
 	windowResize            windowOperation = "resize"
+	windowMaximize          windowOperation = "maximize"
+	windowClose             windowOperation = "close"
 )
 
 // windowCommandInfo contains metadata about each window operation
@@ -84,6 +87,19 @@ var windowCommands = map[windowOperation]windowCommandInfo{
 			return "switch to parent frame"
 		},
 	},
+	windowSwitchTabByIndex: {
+		stepType:    "SWITCH",
+		description: "Switch to browser tab by index (0-based)",
+		usage:       "window switch tab INDEX [POSITION]",
+		examples: []string{
+			`api-cli window switch tab 0 1  # Switch to first tab`,
+			`api-cli window switch tab 2    # Switch to third tab, auto-increment position`,
+		},
+		argsCount: []int{1},
+		parseStep: func(args []string) string {
+			return fmt.Sprintf("switch to tab index %s", args[0])
+		},
+	},
 	windowResize: {
 		stepType:    "RESIZE",
 		description: "Resize browser window",
@@ -95,6 +111,32 @@ var windowCommands = map[windowOperation]windowCommandInfo{
 		argsCount: []int{1},
 		parseStep: func(args []string) string {
 			return fmt.Sprintf("resize window to %s", args[0])
+		},
+	},
+	windowMaximize: {
+		stepType:    "WINDOW",
+		description: "Maximize browser window",
+		usage:       "window maximize [POSITION]",
+		examples: []string{
+			`api-cli window maximize 1`,
+			`api-cli window maximize  # Auto-increment position`,
+		},
+		argsCount: []int{0},
+		parseStep: func(args []string) string {
+			return "maximize window"
+		},
+	},
+	windowClose: {
+		stepType:    "WINDOW",
+		description: "Close current window/tab",
+		usage:       "window close [POSITION]",
+		examples: []string{
+			`api-cli window close 1`,
+			`api-cli window close  # Auto-increment position`,
+		},
+		argsCount: []int{0},
+		parseStep: func(args []string) string {
+			return "close window"
 		},
 	},
 }
@@ -137,11 +179,14 @@ This command consolidates all window-related operations:
 	tabCmd := &cobra.Command{
 		Use:   "tab",
 		Short: "Switch between browser tabs",
-		Long:  "Navigate to next or previous browser tab",
+		Long:  "Navigate to next or previous browser tab, or switch to specific tab by index",
 	}
 	tabCmd.AddCommand(newWindowSwitchSubCmd("next", windowSwitchTabNext, windowCommands[windowSwitchTabNext]))
 	tabCmd.AddCommand(newWindowSwitchSubCmd("prev", windowSwitchTabPrev, windowCommands[windowSwitchTabPrev]))
 	switchCmd.AddCommand(tabCmd)
+
+	// Add direct switch subcommand at window level for tab by index
+	cmd.AddCommand(newWindowSwitchTabIndexCmd())
 
 	// Add parent frame switch
 	switchCmd.AddCommand(newWindowSwitchSubCmd("parent-frame", windowSwitchParentFrame, windowCommands[windowSwitchParentFrame]))
@@ -150,6 +195,12 @@ This command consolidates all window-related operations:
 
 	// Add resize subcommand
 	cmd.AddCommand(newWindowResizeCmd())
+
+	// Add maximize subcommand
+	cmd.AddCommand(newWindowMaximizeCmd())
+
+	// Add close subcommand
+	cmd.AddCommand(newWindowCloseCmd())
 
 	return cmd
 }
@@ -203,6 +254,43 @@ Examples:
 	return cmd
 }
 
+// newWindowSwitchTabIndexCmd creates the window switch tab by index subcommand
+func newWindowSwitchTabIndexCmd() *cobra.Command {
+	var checkpointFlag int
+	info := windowCommands[windowSwitchTabByIndex]
+
+	cmd := &cobra.Command{
+		Use:   "switch INDEX [POSITION]",
+		Short: info.description,
+		Long: fmt.Sprintf(`%s
+
+The index is 0-based (0 for first tab, 1 for second, etc.).
+
+Uses the current checkpoint from session context by default. Override with --checkpoint flag.
+Position is auto-incremented if not specified and auto-increment is enabled.
+
+Examples:
+%s`, info.description, strings.Join(info.examples, "\n")),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) < 1 || len(args) > 2 {
+				return fmt.Errorf("accepts 1 or 2 args, received %d", len(args))
+			}
+			// Validate index is a number
+			if _, err := strconv.Atoi(args[0]); err != nil {
+				return fmt.Errorf("index must be a number")
+			}
+			return nil
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runWindowCommand(windowSwitchTabByIndex, info, args, checkpointFlag)
+		},
+	}
+
+	addCheckpointFlag(cmd, &checkpointFlag)
+
+	return cmd
+}
+
 // newWindowResizeCmd creates the window resize subcommand
 func newWindowResizeCmd() *cobra.Command {
 	var checkpointFlag int
@@ -228,6 +316,68 @@ Examples:
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runWindowCommand(windowResize, info, args, checkpointFlag)
+		},
+	}
+
+	addCheckpointFlag(cmd, &checkpointFlag)
+
+	return cmd
+}
+
+// newWindowMaximizeCmd creates the window maximize subcommand
+func newWindowMaximizeCmd() *cobra.Command {
+	var checkpointFlag int
+	info := windowCommands[windowMaximize]
+
+	cmd := &cobra.Command{
+		Use:   "maximize [POSITION]",
+		Short: info.description,
+		Long: fmt.Sprintf(`%s
+
+Uses the current checkpoint from session context by default. Override with --checkpoint flag.
+Position is auto-incremented if not specified and auto-increment is enabled.
+
+Examples:
+%s`, info.description, strings.Join(info.examples, "\n")),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) > 1 {
+				return fmt.Errorf("accepts 0 or 1 args, received %d", len(args))
+			}
+			return nil
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runWindowCommand(windowMaximize, info, args, checkpointFlag)
+		},
+	}
+
+	addCheckpointFlag(cmd, &checkpointFlag)
+
+	return cmd
+}
+
+// newWindowCloseCmd creates the window close subcommand
+func newWindowCloseCmd() *cobra.Command {
+	var checkpointFlag int
+	info := windowCommands[windowClose]
+
+	cmd := &cobra.Command{
+		Use:   "close [POSITION]",
+		Short: info.description,
+		Long: fmt.Sprintf(`%s
+
+Uses the current checkpoint from session context by default. Override with --checkpoint flag.
+Position is auto-incremented if not specified and auto-increment is enabled.
+
+Examples:
+%s`, info.description, strings.Join(info.examples, "\n")),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) > 1 {
+				return fmt.Errorf("accepts 0 or 1 args, received %d", len(args))
+			}
+			return nil
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runWindowCommand(windowClose, info, args, checkpointFlag)
 		},
 	}
 
@@ -306,7 +456,14 @@ func validateWindowArgs(op windowOperation, args []string) error {
 		if _, err := strconv.Atoi(parts[1]); err != nil {
 			return fmt.Errorf("height must be a number")
 		}
-	case windowSwitchTabNext, windowSwitchTabPrev, windowSwitchParentFrame:
+	case windowSwitchTabByIndex:
+		if len(args) < 1 || args[0] == "" {
+			return fmt.Errorf("index cannot be empty")
+		}
+		if _, err := strconv.Atoi(args[0]); err != nil {
+			return fmt.Errorf("index must be a number")
+		}
+	case windowSwitchTabNext, windowSwitchTabPrev, windowSwitchParentFrame, windowMaximize, windowClose:
 		// No arguments needed
 	}
 	return nil
@@ -323,12 +480,19 @@ func callWindowAPI(apiClient *client.Client, op windowOperation, ctx *StepContex
 		return apiClient.CreateStepSwitchPrevTab(ctx.CheckpointID, ctx.Position)
 	case windowSwitchParentFrame:
 		return apiClient.CreateStepSwitchParentFrame(ctx.CheckpointID, ctx.Position)
+	case windowSwitchTabByIndex:
+		index, _ := strconv.Atoi(args[0])
+		return apiClient.CreateStepSwitchTabByIndex(ctx.CheckpointID, index, ctx.Position)
 	case windowResize:
 		// Parse width and height
 		parts := strings.Split(args[0], "x")
 		width, _ := strconv.Atoi(parts[0])
 		height, _ := strconv.Atoi(parts[1])
 		return apiClient.CreateStepWindowResize(ctx.CheckpointID, width, height, ctx.Position)
+	case windowMaximize:
+		return apiClient.CreateStepWindowMaximize(ctx.CheckpointID, ctx.Position)
+	case windowClose:
+		return apiClient.CreateStepWindowClose(ctx.CheckpointID, ctx.Position)
 	default:
 		return 0, fmt.Errorf("unsupported window operation: %s", op)
 	}
@@ -350,6 +514,10 @@ func buildWindowExtraData(op windowOperation, args []string) map[string]interfac
 		extra["tab_type"] = "PREVIOUS_TAB"
 	case windowSwitchParentFrame:
 		extra["frame_type"] = "PARENT_FRAME"
+	case windowSwitchTabByIndex:
+		index, _ := strconv.Atoi(args[0])
+		extra["index"] = index
+		extra["tab_type"] = "TAB_BY_INDEX"
 	case windowResize:
 		parts := strings.Split(args[0], "x")
 		width, _ := strconv.Atoi(parts[0])
@@ -357,6 +525,10 @@ func buildWindowExtraData(op windowOperation, args []string) map[string]interfac
 		extra["size"] = args[0]
 		extra["width"] = width
 		extra["height"] = height
+	case windowMaximize:
+		extra["window_type"] = "MAXIMIZE"
+	case windowClose:
+		extra["window_type"] = "CLOSE"
 	}
 
 	return extra

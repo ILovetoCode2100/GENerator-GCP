@@ -13,8 +13,9 @@ import (
 type waitType string
 
 const (
-	waitElement waitType = "element"
-	waitTime    waitType = "time"
+	waitElement           waitType = "element"
+	waitElementNotVisible waitType = "element-not-visible"
+	waitTime              waitType = "time"
 )
 
 // waitCommandInfo contains metadata about each wait type
@@ -46,6 +47,25 @@ var waitCommands = map[waitType]waitCommandInfo{
 				return fmt.Sprintf("wait until %s appears (timeout: %dms)", args[0], timeout)
 			}
 			return fmt.Sprintf("wait until %s appears", args[0])
+		},
+		hasTimeout: true,
+	},
+	waitElementNotVisible: {
+		stepType:    "WAIT_ELEMENT_NOT_VISIBLE",
+		description: "Wait for an element to disappear",
+		usage:       "wait element-not-visible SELECTOR [POSITION]",
+		examples: []string{
+			`api-cli wait element-not-visible "Loading spinner" 1`,
+			`api-cli wait element-not-visible "#loader"  # Auto-increment position`,
+			`api-cli wait element-not-visible "Modal overlay" --timeout 5000`,
+			`api-cli wait element-not-visible ".progress-bar" 2 --timeout 10000`,
+		},
+		argsCount: []int{1},
+		parseStep: func(args []string, timeout int) string {
+			if timeout > 0 {
+				return fmt.Sprintf("wait until %s disappears (timeout: %dms)", args[0], timeout)
+			}
+			return fmt.Sprintf("wait until %s disappears", args[0])
 		},
 		hasTimeout: true,
 	},
@@ -82,6 +102,7 @@ This command consolidates all wait operations for controlling test execution tim
 
 Available wait types:
   - element: Wait for an element to appear (with optional timeout)
+  - element-not-visible: Wait for an element to disappear (with optional timeout)
   - time: Wait for a specified time in milliseconds`,
 		Example: `  # Wait for element to appear
   api-cli wait element "Login button" 1
@@ -206,7 +227,7 @@ func runWaitCommand(wType waitType, info waitCommandInfo, args []string, checkpo
 // validateWaitArgs validates arguments for a specific wait type
 func validateWaitArgs(wType waitType, args []string, timeout int) error {
 	switch wType {
-	case waitElement:
+	case waitElement, waitElementNotVisible:
 		if len(args) < 1 || args[0] == "" {
 			return fmt.Errorf("selector cannot be empty")
 		}
@@ -245,6 +266,8 @@ func callWaitAPI(apiClient *client.Client, wType waitType, ctx *StepContext, arg
 			// Use default timeout version (or the standard wait element)
 			return apiClient.CreateWaitElementStep(ctx.CheckpointID, args[0], ctx.Position)
 		}
+	case waitElementNotVisible:
+		return apiClient.CreateStepWaitForElementNotVisible(ctx.CheckpointID, args[0], timeout, ctx.Position)
 	case waitTime:
 		// Convert milliseconds to seconds for the API (if it expects seconds)
 		ms, _ := strconv.Atoi(args[0])
@@ -264,7 +287,7 @@ func buildWaitExtraData(wType waitType, args []string, timeout int) map[string]i
 	extra := make(map[string]interface{})
 
 	switch wType {
-	case waitElement:
+	case waitElement, waitElementNotVisible:
 		extra["selector"] = args[0]
 		if timeout > 0 {
 			extra["timeout_ms"] = timeout

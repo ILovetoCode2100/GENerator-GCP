@@ -14,6 +14,7 @@ type dataType string
 const (
 	dataStoreElementText dataType = "store-element-text"
 	dataStoreLiteral     dataType = "store-literal"
+	dataStoreAttribute   dataType = "store-attribute"
 	dataCookieCreate     dataType = "cookie-create"
 	dataCookieDelete     dataType = "cookie-delete"
 	dataCookieClearAll   dataType = "cookie-clear-all"
@@ -55,6 +56,19 @@ var dataCommands = map[dataType]dataCommandInfo{
 		argsCount: []int{2},
 		parseStep: func(args []string, flags map[string]interface{}) string {
 			return fmt.Sprintf("store \"%s\" in $%s", args[0], args[1])
+		},
+	},
+	dataStoreAttribute: {
+		stepType:    "STORE",
+		description: "Store element attribute value in a variable",
+		usage:       "data store attribute SELECTOR ATTRIBUTE_NAME VARIABLE_NAME [POSITION]",
+		examples: []string{
+			`api-cli data store attribute "#link" "href" "link_url" 1`,
+			`api-cli data store attribute "input[name='email']" "value" "email_value"  # Auto-increment position`,
+		},
+		argsCount: []int{3},
+		parseStep: func(args []string, flags map[string]interface{}) string {
+			return fmt.Sprintf("store attribute \"%s\" from \"%s\" in $%s", args[1], args[0], args[2])
 		},
 	},
 	dataCookieCreate: {
@@ -155,6 +169,7 @@ Available operations:
 	// Add store subcommands
 	storeCmd.AddCommand(newDataStoreSubCmd("element-text", dataStoreElementText, dataCommands[dataStoreElementText]))
 	storeCmd.AddCommand(newDataStoreSubCmd("literal", dataStoreLiteral, dataCommands[dataStoreLiteral]))
+	storeCmd.AddCommand(newDataStoreSubCmd("attribute", dataStoreAttribute, dataCommands[dataStoreAttribute]))
 
 	// Add cookie subcommand
 	cookieCmd := &cobra.Command{
@@ -394,6 +409,19 @@ func validateDataArgs(dType dataType, args []string) error {
 		if !isValidVariableName(args[1]) {
 			return fmt.Errorf("invalid variable name: %s (must contain only letters, numbers, and underscores)", args[1])
 		}
+	case dataStoreAttribute:
+		if len(args) < 1 || args[0] == "" {
+			return fmt.Errorf("selector cannot be empty")
+		}
+		if len(args) < 2 || args[1] == "" {
+			return fmt.Errorf("attribute name cannot be empty")
+		}
+		if len(args) < 3 || args[2] == "" {
+			return fmt.Errorf("variable name cannot be empty")
+		}
+		if !isValidVariableName(args[2]) {
+			return fmt.Errorf("invalid variable name: %s (must contain only letters, numbers, and underscores)", args[2])
+		}
 	case dataCookieCreate:
 		if len(args) < 1 || args[0] == "" {
 			return fmt.Errorf("cookie name cannot be empty")
@@ -434,9 +462,18 @@ func callDataAPI(apiClient *client.Client, dType dataType, ctx *StepContext, arg
 		return apiClient.CreateStepStoreElementText(ctx.CheckpointID, args[0], args[1], ctx.Position)
 	case dataStoreLiteral:
 		return apiClient.CreateStepStoreLiteralValue(ctx.CheckpointID, args[0], args[1], ctx.Position)
+	case dataStoreAttribute:
+		return apiClient.CreateStepStoreAttribute(ctx.CheckpointID, args[0], args[1], args[2], ctx.Position)
 	case dataCookieCreate:
-		// For now, we'll use the basic cookie create method
-		// In the future, we could extend the API client to support domain, path, secure, and httpOnly flags
+		if flags != nil && (flags["domain"] != nil || flags["path"] != nil || flags["secure"] != nil || flags["http-only"] != nil) {
+			options := map[string]interface{}{
+				"domain":   flags["domain"],
+				"path":     flags["path"],
+				"secure":   flags["secure"],
+				"httpOnly": flags["http-only"],
+			}
+			return apiClient.CreateStepCookieCreateWithOptions(ctx.CheckpointID, args[0], args[1], options, ctx.Position)
+		}
 		return apiClient.CreateStepCookieCreate(ctx.CheckpointID, args[0], args[1], ctx.Position)
 	case dataCookieDelete:
 		return apiClient.CreateStepDeleteCookie(ctx.CheckpointID, args[0], ctx.Position)
@@ -458,6 +495,10 @@ func buildDataExtraData(dType dataType, args []string, flags map[string]interfac
 	case dataStoreLiteral:
 		extra["value"] = args[0]
 		extra["variable_name"] = args[1]
+	case dataStoreAttribute:
+		extra["selector"] = args[0]
+		extra["attribute"] = args[1]
+		extra["variable_name"] = args[2]
 	case dataCookieCreate:
 		extra["cookie_name"] = args[0]
 		extra["cookie_value"] = args[1]
