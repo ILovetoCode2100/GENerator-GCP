@@ -30,7 +30,7 @@ func RegisterCommands(rootCmd *cobra.Command) {
 	// These commands replace 54 individual legacy commands with a more organized structure
 
 	// 1. ASSERT - All assertion operations (12 legacy commands → 1 group)
-	rootCmd.AddCommand(newAssertCmd()) // equals, not-equals, exists, not-exists, gt, gte, lt, lte, matches, checked, selected, variable
+	rootCmd.AddCommand(newAssertV2Cmd()) // equals, not-equals, exists, not-exists, gt, gte, lt, lte, matches, checked, selected, variable
 
 	// 2. INTERACT - User interaction actions (6 legacy commands → 1 group)
 	rootCmd.AddCommand(InteractCmd()) // click, double-click, right-click, hover, write, key
@@ -39,22 +39,22 @@ func RegisterCommands(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(NavigateCmd()) // url (navigate), scroll-to, scroll-top, scroll-bottom, scroll-element
 
 	// 4. DATA - Data storage and cookies (5 legacy commands → 1 group)
-	rootCmd.AddCommand(newDataCmd()) // store-text, store-value, cookie-create, cookie-delete, cookie-clear
+	rootCmd.AddCommand(newDataV2Cmd()) // store-text, store-value, cookie-create, cookie-delete, cookie-clear
 
 	// 5. DIALOG - Dialog handling (4 legacy commands → 1 group)
-	rootCmd.AddCommand(newDialogCmd()) // dismiss-alert, dismiss-confirm, dismiss-prompt, dismiss-prompt-with-text
+	rootCmd.AddCommand(newDialogV2Cmd()) // dismiss-alert, dismiss-confirm, dismiss-prompt, dismiss-prompt-with-text
 
 	// 6. WAIT - Wait operations (4 legacy commands → 1 group)
-	rootCmd.AddCommand(newWaitCmd()) // element, time (replaces wait-element, wait-for-element-default/timeout, wait-time)
+	rootCmd.AddCommand(newWaitV2Cmd()) // element, element-not-visible, time (replaces wait-element, wait-for-element-default/timeout, wait-time)
 
 	// 7. WINDOW - Window and frame management (5 legacy commands → 1 group)
-	rootCmd.AddCommand(newWindowCmd()) // resize, switch-tab (next/prev), switch-frame (iframe/parent)
+	rootCmd.AddCommand(newWindowV2Cmd()) // resize, switch-tab (next/prev), switch-frame (iframe/parent)
 
 	// 8. MOUSE - Advanced mouse operations (6 legacy commands → 1 group)
-	rootCmd.AddCommand(newMouseCmd()) // move-to, move-by, move, down, up, enter
+	rootCmd.AddCommand(newMouseV2Cmd()) // move-to, move-by, move, down, up, enter
 
 	// 9. SELECT - Dropdown selection (3 legacy commands → 1 group)
-	rootCmd.AddCommand(newSelectCmd()) // option, index, last
+	rootCmd.AddCommand(newSelectV2Cmd()) // option, index, last
 
 	// 10. FILE - File operations (2 legacy commands → 1 group)
 	rootCmd.AddCommand(FileCmd()) // upload, upload-url
@@ -150,7 +150,7 @@ func RegisterCommands(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(newGetExecutionAnalysisCmd())
 	rootCmd.AddCommand(newManageTestDataCmd())
 	rootCmd.AddCommand(newCreateEnvironmentCmd())
-	
+
 	// ========================================
 	// TEST TEMPLATE COMMANDS (AI Integration)
 	// ========================================
