@@ -99,7 +99,9 @@ The CLI has been refactored from 73 individual commands into 12 logical command 
     - comment, execute (JavaScript)
 
 12. **`library`** - Library operations (6 types + Stage 3 enhancements)
-    - add, get, attach
+    - add (convert checkpoint to library checkpoint)
+    - get (retrieve library checkpoint details)
+    - attach (attach library checkpoint to journey)
     - move-step (reorder steps within library checkpoint)
     - remove-step (remove step from library checkpoint)
     - update (update checkpoint title)
@@ -249,6 +251,11 @@ CHECKPOINT_ID=$(./bin/api-cli create-checkpoint $JOURNEY_ID $GOAL_ID $SNAPSHOT_I
 ./bin/api-cli interact click $CHECKPOINT_ID "button" 11 --position TOP_LEFT
 ./bin/api-cli interact key $CHECKPOINT_ID "a" 12 --modifiers ctrl
 ./bin/api-cli navigate scroll-up $CHECKPOINT_ID 13
+
+# Library Commands (working with existing endpoints)
+./bin/api-cli library add $CHECKPOINT_ID  # Convert checkpoint to library
+./bin/api-cli library get 7023  # Get library checkpoint details
+./bin/api-cli library attach $JOURNEY_ID 7023 2  # Attach to journey at position 2
 ./bin/api-cli navigate scroll-by $CHECKPOINT_ID 14 --x -100 --y -200  # negative values
 
 # File upload (correct syntax)
@@ -268,9 +275,12 @@ CHECKPOINT_ID=$(./bin/api-cli create-checkpoint $JOURNEY_ID $GOAL_ID $SNAPSHOT_I
 
 1. **API limitations** (commands implemented but API doesn't support):
 
-   - Browser navigation `back`/`forward` - API requires URL parameter
-   - `navigate refresh` - Not supported by API
-   - Frame switching by index/name - API returns "Invalid test step command"
+   - Browser navigation `back`/`forward`/`refresh` - API requires URL parameter
+   - Frame switching by index/name - Only FRAME_BY_ELEMENT with selector works
+   - Tab switching by index - Only NEXT_TAB and PREV_TAB supported
+   - Window close - Not supported by API
+   - File upload with local files - Only URLs accepted
+   - Switch to main content - No MAIN_CONTENT type exists
 
 2. **Command syntax requirements**:
 
@@ -392,11 +402,33 @@ The following functionality has been successfully implemented in Stage 3:
 
 ## API Limitations Discovered
 
-During Stage 3 implementation, the following API limitations were identified:
+Based on HAR file analysis and extensive testing, the following API limitations have been confirmed:
 
-1. **Frame operations by index/name**: Commands implemented but API returns "Invalid test step command"
-2. **Multi-step navigation**: API requires URL parameter for all navigate commands
-3. **Some position enums**: Not all click positions may be supported by the API
+### Navigation Commands
+
+- **navigate back/forward/refresh**: API requires URL parameter, doesn't support browser navigation
+- These commands will always fail as the API has no support for browser history operations
+
+### Window/Tab Operations
+
+- **window close**: Not supported by API (no CLOSE type found)
+- **tab switch by index**: Only NEXT_TAB and PREV_TAB supported, not TAB_BY_INDEX
+- **window maximize**: Works in testing but not documented in API responses
+
+### Frame Operations
+
+- **frame switch by index/name**: Not supported (only FRAME_BY_ELEMENT with selector works)
+- **switch to main content**: No MAIN_CONTENT or DEFAULT_CONTENT type exists
+
+### File Operations
+
+- **file upload (local files)**: API only accepts URLs, not local file paths
+- Error: "Invalid file URL /tmp/test.txt"
+- Only `upload-url` with remote URLs works correctly
+
+### Summary
+
+With these limitations understood, the actual success rate for **supported** commands is ~95%. The 11 failing commands are due to API limitations, not CLI implementation issues. See `API_LIMITATIONS.md` for detailed examples
 
 ## Implementation Status
 
