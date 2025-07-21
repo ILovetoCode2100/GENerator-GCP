@@ -1,0 +1,23 @@
+Command,Operation Type,Store Type,Usage Pattern,Arguments,Cookie Options,Step Type,Position Support,Working Status,Examples,Notes
+"data store element-text","Store","element-text","data store element-text SELECTOR VARIABLE_NAME [POSITION]","selector, variable_name","N/A","STORE","Yes","Working","api-cli data store element-text ""Username field"" ""current_user"" 1","Stores element text content in a variable"
+"data store literal","Store","literal","data store literal VALUE VARIABLE_NAME [POSITION]","value, variable_name","N/A","STORE","Yes","Working","api-cli data store literal ""test@example.com"" ""test_email"" 1","Stores literal value in a variable"
+"data store attribute","Store","attribute","data store attribute SELECTOR ATTRIBUTE_NAME VARIABLE_NAME [POSITION]","selector, attribute_name, variable_name","N/A","STORE","Yes","Working","api-cli data store attribute ""#link"" ""href"" ""link_url"" 1","Stores element attribute value in a variable (Stage 3 enhancement)"
+"data cookie create","Cookie","N/A","data cookie create NAME VALUE [POSITION]","name, value","--domain, --path, --secure, --http-only","ENVIRONMENT","Yes","Working","api-cli data cookie create ""session"" ""abc123"" --domain "".example.com"" --path ""/"" --secure --http-only","Creates cookie with optional domain/path/secure/httpOnly flags"
+"data cookie delete","Cookie","N/A","data cookie delete NAME [POSITION]","name","N/A","ENVIRONMENT","Yes","Working","api-cli data cookie delete ""session"" 1","Deletes specific cookie by name"
+"data cookie clear-all","Cookie","N/A","data cookie clear-all [POSITION]","none","N/A","ENVIRONMENT","Yes","Working","api-cli data cookie clear-all 1","Clears all browser cookies"
+
+# Summary Information
+# Total Data Commands: 6
+# Store Operations: 3 (element-text, literal, attribute)
+# Cookie Operations: 3 (create, delete, clear-all)
+# All commands support position auto-increment
+# All commands use session context by default or --checkpoint flag
+# Variable names must contain only letters, numbers, and underscores
+# Cookie create supports 4 options: domain, path, secure, http-only
+# Client methods used:
+# - CreateStepStoreElementText
+# - CreateStepStoreLiteralValue
+# - CreateStepStoreAttribute
+# - CreateStepCookieCreate / CreateStepCookieCreateWithOptions
+# - CreateStepDeleteCookie
+# - CreateStepCookieWipeAll

@@ -1,0 +1,31 @@
+Parameter Type,Parameter Name,Valid Values,Commands Using,Example Usage,Notes
+Position Enums,--position,"TOP_LEFT, TOP_CENTER, TOP_RIGHT, CENTER_LEFT, CENTER, CENTER_RIGHT, BOTTOM_LEFT, BOTTOM_CENTER, BOTTOM_RIGHT",interact click,--position TOP_LEFT,Stage 3 enhancement
+Keyboard Modifiers,--modifiers,"ctrl, shift, alt, meta","interact key",--modifiers ctrl,Comma-separated for multiple
+Scroll Alignment,--align,"start, center, end, nearest",navigate scroll-element,--align center,Element scroll positioning
+Output Formats,-o/--output,"human, json, yaml, ai",All commands,-o json,Global flag
+Cookie Flags,--secure,boolean flag,data cookie create,--secure,Sets secure cookie
+Cookie Flags,--http-only,boolean flag,data cookie create,--http-only,Sets httpOnly cookie
+Boolean Flags,--new-tab,boolean flag,navigate to,--new-tab,Opens URL in new tab
+Boolean Flags,--smooth,boolean flag,navigate scroll-*,--smooth,Smooth scrolling animation
+Boolean Flags,--clear,boolean flag,interact write,--clear,Clear field before writing
+Time Values,--timeout,milliseconds (integer),wait element/element-not-visible,--timeout 5000,Default varies by command
+Time Values,--duration,milliseconds (integer),interact hover,--duration 2000,Hover duration
+Time Values,wait time,milliseconds (integer),wait time,wait time 1000,Direct milliseconds
+Numeric Values,--steps,integer,navigate back/forward,--steps 3,Browser history steps
+Numeric Values,--delay,milliseconds (integer),interact write,--delay 100,Between keystrokes (unused)
+Numeric Values,--repeat,integer,interact key,--repeat 5,Repeat key press (unused)
+Coordinates,X/Y string,"X,Y format",navigate scroll-position/by,"""500,300""",Comma-separated string
+Coordinates,--x/--y,integers,navigate scroll-position/by,--x 500 --y 300,Alternative to string format
+Size Format,WIDTHxHEIGHT,"width x height",window resize,1024x768,Must use 'x' separator
+Index Values,Tab index,0-based integer,window switch tab INDEX,INDEX 0,0 for first tab
+Index Values,Select index,0-based integer,select index,select index 0,0 for first option
+Index Values,Frame index,0-based integer,window switch frame-index,frame-index 0,Not supported by API
+Special Keywords,dismiss,"literal string ""dismiss""","dialog prompt",dialog prompt dismiss,Alternative to text input
+Special Keywords,accept/dismiss,literal strings,dialog alert/confirm,alert accept,Dialog action keywords
+Element Types,--element-type,"input, button, link, image, text",interact click dry-run only,--element-type button,Not implemented in API
+Variable Names,--variable,alphanumeric + underscore,"interact click/write, data store",--variable userName,Stored in test context
+Domain Values,--domain,domain string,data cookie create,--domain .example.com,Cookie domain scope
+Path Values,--path,path string,data cookie create,--path /admin,Cookie path scope
+Prefix Stripping,ID prefixes,"cp_, lib_, journey_, step_",library commands,cp_12345 → 12345,Auto-stripped by CLI
+Auto Values,position,auto-increment,All step commands,omit position,Increments from last position
+Session Context,VIRTUOSO_SESSION_ID,checkpoint ID,Environment variable,export VIRTUOSO_SESSION_ID=12345,Provides default checkpoint
