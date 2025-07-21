@@ -18,12 +18,8 @@ const (
 	windowSwitchTabPrev     windowOperation = "switch-tab-prev"
 	windowSwitchTabByIndex  windowOperation = "switch-tab-index"
 	windowSwitchParentFrame windowOperation = "switch-parent-frame"
-	windowSwitchFrameIndex  windowOperation = "switch-frame-index"
-	windowSwitchFrameName   windowOperation = "switch-frame-name"
-	windowSwitchMainContent windowOperation = "switch-main-content"
 	windowResize            windowOperation = "resize"
 	windowMaximize          windowOperation = "maximize"
-	windowClose             windowOperation = "close"
 )
 
 // windowCommandInfo contains metadata about each window operation
@@ -129,58 +125,6 @@ var windowCommands = map[windowOperation]windowCommandInfo{
 			return "maximize window"
 		},
 	},
-	windowClose: {
-		stepType:    "WINDOW",
-		description: "Close current window/tab",
-		usage:       "window close [POSITION]",
-		examples: []string{
-			`api-cli window close 1`,
-			`api-cli window close  # Auto-increment position`,
-		},
-		argsCount: []int{0},
-		parseStep: func(args []string) string {
-			return "close window"
-		},
-	},
-	windowSwitchFrameIndex: {
-		stepType:    "SWITCH",
-		description: "Switch to frame by index (0-based)",
-		usage:       "window switch frame-index INDEX [POSITION]",
-		examples: []string{
-			`api-cli window switch frame-index 0 1  # Switch to first frame`,
-			`api-cli window switch frame-index 2    # Switch to third frame`,
-		},
-		argsCount: []int{1},
-		parseStep: func(args []string) string {
-			return fmt.Sprintf("switch to frame index %s", args[0])
-		},
-	},
-	windowSwitchFrameName: {
-		stepType:    "SWITCH",
-		description: "Switch to frame by name attribute",
-		usage:       "window switch frame-name NAME [POSITION]",
-		examples: []string{
-			`api-cli window switch frame-name "content" 1`,
-			`api-cli window switch frame-name "paymentFrame"`,
-		},
-		argsCount: []int{1},
-		parseStep: func(args []string) string {
-			return fmt.Sprintf("switch to frame named \"%s\"", args[0])
-		},
-	},
-	windowSwitchMainContent: {
-		stepType:    "SWITCH",
-		description: "Switch to main content (exit all frames)",
-		usage:       "window switch main-content [POSITION]",
-		examples: []string{
-			`api-cli window switch main-content 1`,
-			`api-cli window switch main-content`,
-		},
-		argsCount: []int{0},
-		parseStep: func(args []string) string {
-			return "switch to main content"
-		},
-	},
 }
 
 // newWindowCmd creates the consolidated window command with subcommands
@@ -231,15 +175,6 @@ This command consolidates all window-related operations:
 	// Add parent frame switch
 	switchCmd.AddCommand(newWindowSwitchSubCmd("parent-frame", windowSwitchParentFrame, windowCommands[windowSwitchParentFrame]))
 
-	// Add frame index switch
-	switchCmd.AddCommand(newWindowSwitchSubCmd("frame-index", windowSwitchFrameIndex, windowCommands[windowSwitchFrameIndex]))
-
-	// Add frame name switch
-	switchCmd.AddCommand(newWindowSwitchSubCmd("frame-name", windowSwitchFrameName, windowCommands[windowSwitchFrameName]))
-
-	// Add main content switch
-	switchCmd.AddCommand(newWindowSwitchSubCmd("main-content", windowSwitchMainContent, windowCommands[windowSwitchMainContent]))
-
 	cmd.AddCommand(switchCmd)
 
 	// Add resize subcommand
@@ -247,9 +182,6 @@ This command consolidates all window-related operations:
 
 	// Add maximize subcommand
 	cmd.AddCommand(newWindowMaximizeCmd())
-
-	// Add close subcommand
-	cmd.AddCommand(newWindowCloseCmd())
 
 	return cmd
 }
@@ -405,37 +337,6 @@ Examples:
 	return cmd
 }
 
-// newWindowCloseCmd creates the window close subcommand
-func newWindowCloseCmd() *cobra.Command {
-	var checkpointFlag int
-	info := windowCommands[windowClose]
-
-	cmd := &cobra.Command{
-		Use:   "close [POSITION]",
-		Short: info.description,
-		Long: fmt.Sprintf(`%s
-
-Uses the current checkpoint from session context by default. Override with --checkpoint flag.
-Position is auto-incremented if not specified and auto-increment is enabled.
-
-Examples:
-%s`, info.description, strings.Join(info.examples, "\n")),
-		Args: func(cmd *cobra.Command, args []string) error {
-			if len(args) > 1 {
-				return fmt.Errorf("accepts 0 or 1 args, received %d", len(args))
-			}
-			return nil
-		},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runWindowCommand(windowClose, info, args, checkpointFlag)
-		},
-	}
-
-	addCheckpointFlag(cmd, &checkpointFlag)
-
-	return cmd
-}
-
 // runWindowCommand executes the window command logic
 func runWindowCommand(op windowOperation, info windowCommandInfo, args []string, checkpointFlag int) error {
 	// Validate arguments based on operation type
@@ -506,18 +407,14 @@ func validateWindowArgs(op windowOperation, args []string) error {
 		if _, err := strconv.Atoi(parts[1]); err != nil {
 			return fmt.Errorf("height must be a number")
 		}
-	case windowSwitchTabByIndex, windowSwitchFrameIndex:
+	case windowSwitchTabByIndex:
 		if len(args) < 1 || args[0] == "" {
 			return fmt.Errorf("index cannot be empty")
 		}
 		if _, err := strconv.Atoi(args[0]); err != nil {
 			return fmt.Errorf("index must be a number")
 		}
-	case windowSwitchFrameName:
-		if len(args) < 1 || args[0] == "" {
-			return fmt.Errorf("frame name cannot be empty")
-		}
-	case windowSwitchTabNext, windowSwitchTabPrev, windowSwitchParentFrame, windowSwitchMainContent, windowMaximize, windowClose:
+	case windowSwitchTabNext, windowSwitchTabPrev, windowSwitchParentFrame, windowMaximize:
 		// No arguments needed
 	}
 	return nil
@@ -537,13 +434,6 @@ func callWindowAPI(apiClient *client.Client, op windowOperation, ctx *StepContex
 	case windowSwitchTabByIndex:
 		index, _ := strconv.Atoi(args[0])
 		return apiClient.CreateStepSwitchTabByIndex(ctx.CheckpointID, index, ctx.Position)
-	case windowSwitchFrameIndex:
-		index, _ := strconv.Atoi(args[0])
-		return apiClient.CreateStepSwitchFrameByIndex(ctx.CheckpointID, index, ctx.Position)
-	case windowSwitchFrameName:
-		return apiClient.CreateStepSwitchFrameByName(ctx.CheckpointID, args[0], ctx.Position)
-	case windowSwitchMainContent:
-		return apiClient.CreateStepSwitchToMainContent(ctx.CheckpointID, ctx.Position)
 	case windowResize:
 		// Parse width and height
 		parts := strings.Split(args[0], "x")
@@ -552,8 +442,6 @@ func callWindowAPI(apiClient *client.Client, op windowOperation, ctx *StepContex
 		return apiClient.CreateStepWindowResize(ctx.CheckpointID, width, height, ctx.Position)
 	case windowMaximize:
 		return apiClient.CreateStepWindowMaximize(ctx.CheckpointID, ctx.Position)
-	case windowClose:
-		return apiClient.CreateStepWindowClose(ctx.CheckpointID, ctx.Position)
 	default:
 		return 0, fmt.Errorf("unsupported window operation: %s", op)
 	}
@@ -588,17 +476,6 @@ func buildWindowExtraData(op windowOperation, args []string) map[string]interfac
 		extra["height"] = height
 	case windowMaximize:
 		extra["window_type"] = "MAXIMIZE"
-	case windowClose:
-		extra["window_type"] = "CLOSE"
-	case windowSwitchFrameIndex:
-		index, _ := strconv.Atoi(args[0])
-		extra["index"] = index
-		extra["frame_type"] = "FRAME_BY_INDEX"
-	case windowSwitchFrameName:
-		extra["name"] = args[0]
-		extra["frame_type"] = "FRAME_BY_NAME"
-	case windowSwitchMainContent:
-		extra["frame_type"] = "MAIN_CONTENT"
 	}
 
 	return extra

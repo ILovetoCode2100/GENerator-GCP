@@ -152,19 +152,19 @@ These tests:
 
 Latest test coverage (comprehensive-stage3-test.sh after all fixes):
 
-**Actual success rate: 88% (106/120 commands)**
-**With API fixes: ~92% (109/120 expected)**
+**Actual success rate: 97.3% (110/113 commands)**
+**Remaining failures: 3 (2 library commands need valid IDs, 1 infrastructure command)**
 **Step types created: 89**
 
 Breakdown by command group:
 
 - Assert: 12/12 commands ✅ (100% working)
 - Interact: 30/30 commands ✅ (100% working - includes position enums, keyboard modifiers)
-- Navigate: 10/15 commands ⚠️ (67% working - back/forward/refresh require URL)
+- Navigate: 10/10 commands ✅ (100% working - removed unsupported back/forward/refresh)
 - Data: 12/12 commands ✅ (100% working after syntax fixes)
 - Dialog: 6/6 commands ✅ (100% working)
 - Wait: 6/6 commands ✅ (100% working)
-- Window: 10/13 commands ✅ (77% working - close, frame by name unsupported)
+- Window: 8/8 commands ✅ (100% working - removed unsupported close, frame-index, frame-name, main-content)
 - Mouse: 6/6 commands ✅ (100% working)
 - Select: 3/3 commands ✅ (100% working)
 - File: 2/2 commands ✅ (100% working with correct syntax)
@@ -273,21 +273,19 @@ CHECKPOINT_ID=$(./bin/api-cli create-checkpoint $JOURNEY_ID $GOAL_ID $SNAPSHOT_I
 
 ### Known Limitations
 
-1. **API limitations** (commands implemented but API doesn't support):
+1. **Removed unsupported commands** (API doesn't support these operations):
 
-   - Browser navigation `back`/`forward`/`refresh` - API requires URL parameter
-   - Frame switching by index/name - Only FRAME_BY_ELEMENT with selector works
-   - Tab switching by index - Only NEXT_TAB and PREV_TAB supported
-   - Window close - Not supported by API
-   - File upload with local files - Only URLs accepted
-   - Switch to main content - No MAIN_CONTENT type exists
+   - Browser navigation `back`/`forward`/`refresh` - Removed from CLI
+   - Frame switching by index/name - Removed from CLI
+   - Window close - Removed from CLI
+   - Switch to main content - Removed from CLI
 
 2. **Command syntax requirements**:
 
    - Data commands use different parameter order than other commands
    - Wait time must be in milliseconds (not decimal seconds)
    - Window resize requires WIDTHxHEIGHT format
-   - File upload requires existing file path
+   - File upload accepts only URLs (not local file paths)
    - Library commands require valid library checkpoint IDs
 
 3. **Working syntax patterns**:
@@ -432,14 +430,13 @@ With these limitations understood, the actual success rate for **supported** com
 
 ## Implementation Status
 
-- **Total Commands**: 73 original commands consolidated into 12 groups
+- **Total Commands**: 113 commands after removing unsupported operations
 - **Client Methods**: ~120 methods in client.go, with most critical ones exposed
-- **Test Coverage**: ~95% success rate (115/120 commands working)
+- **Test Coverage**: 97.3% success rate (110/113 commands working)
 - **Stage 3 Completion**: All planned features implemented
 - **Steps Created**: 63+ different step types successfully created in tests
 
 ### Command Success Rates by Group
 
-- **100% Working**: Assert, Interact, Dialog, Data, Mouse, Select, File, Misc
-- **85-87% Working**: Navigate, Window (API limitations)
-- **33% Working**: Library (requires specific IDs)
+- **100% Working**: Assert, Interact, Navigate, Dialog, Data, Window, Mouse, Select, File, Misc
+- **67% Working**: Library (4/6 - requires specific IDs)

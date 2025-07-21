@@ -2,7 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 
 	"github.com/marklovelady/api-cli-generator/pkg/api-cli/client"
@@ -26,24 +25,26 @@ This command consolidates all file upload related actions.`,
 	return cmd
 }
 
-// uploadSubCmd creates the upload subcommand for local files
+// uploadSubCmd creates the upload subcommand for file URLs
 func uploadSubCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "upload [checkpoint-id] <selector> <file-path> [position]",
-		Short: "Upload a local file",
-		Long: `Upload a local file to a specified element.
+		Use:   "upload [checkpoint-id] <selector> <file-url> [position]",
+		Short: "Upload a file from URL",
+		Long: `Upload a file from a URL to a specified element.
 
-The file must exist on the local filesystem. The selector identifies
+The URL must be accessible and point to a valid file. The selector identifies
 the upload element (typically an input[type="file"] element).
+
+Note: Local file paths are not supported. Files must be accessible via HTTP/HTTPS URLs.
 
 Examples:
   # Using session context (modern)
-  api-cli file upload "#file-input" "/path/to/document.pdf"
-  api-cli file upload "Upload Resume" "resume.docx" 5
+  api-cli file upload "#file-input" "https://example.com/document.pdf"
+  api-cli file upload "Upload Resume" "https://example.com/resume.docx" 5
 
   # Using explicit checkpoint (legacy)
-  api-cli file upload cp_12345 "#file-input" "/path/to/document.pdf" 1
-  api-cli file upload 12345 "Upload File" "image.jpg" 2`,
+  api-cli file upload cp_12345 "#file-input" "https://example.com/document.pdf" 1
+  api-cli file upload 12345 "Upload File" "https://example.com/image.jpg" 2`,
 		Args: cobra.MinimumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runFileCommand(cmd, args, "upload", nil)
@@ -148,16 +149,16 @@ func runFileCommand(cmd *cobra.Command, args []string, action string, options ma
 	return nil
 }
 
-// executeUploadAction executes a local file upload
-func executeUploadAction(c *client.Client, checkpointID int, selector, filePath string, position int) (int, error) {
-	// Validate file existence
-	if err := validateFilePath(filePath); err != nil {
+// executeUploadAction executes a file upload from URL
+func executeUploadAction(c *client.Client, checkpointID int, selector, fileURL string, position int) (int, error) {
+	// Validate URL format
+	if err := ValidateURL(fileURL); err != nil {
 		return 0, err
 	}
 
 	// Use the appropriate client method based on the existing pattern
 	// The client has multiple upload methods, using CreateStepUpload which matches the pattern
-	return c.CreateStepUpload(checkpointID, selector, filePath, position)
+	return c.CreateStepUpload(checkpointID, selector, fileURL, position)
 }
 
 // executeUploadURLAction executes a URL file upload
@@ -169,27 +170,4 @@ func executeUploadURLAction(c *client.Client, checkpointID int, selector, url st
 
 	// Use the CreateStepUploadURL method from the client
 	return c.CreateStepUploadURL(checkpointID, url, selector, position)
-}
-
-// validateFilePath validates that a file exists
-func validateFilePath(filePath string) error {
-	if filePath == "" {
-		return fmt.Errorf("file path cannot be empty")
-	}
-
-	// Check if file exists
-	info, err := os.Stat(filePath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return fmt.Errorf("file does not exist: %s", filePath)
-		}
-		return fmt.Errorf("error accessing file: %w", err)
-	}
-
-	// Check if it's a regular file (not a directory)
-	if info.IsDir() {
-		return fmt.Errorf("path is a directory, not a file: %s", filePath)
-	}
-
-	return nil
 }

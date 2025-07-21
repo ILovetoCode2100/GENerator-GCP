@@ -21,14 +21,11 @@ interact,write,basic,api-cli interact write 12345 "input" "test text" 7,/testste
 interact,key,basic,api-cli interact key 12345 "Enter" 8,/teststeps,KEY,✅ Working,"checkpoint (int), key (string), position (int)","--target, --modifiers, --repeat",Yes,None,Keyboard input
 interact,key,with modifiers,api-cli interact key 12345 "a" 9 --modifiers ctrl,/teststeps,KEY,✅ Working,"checkpoint (int), key (string), position (int)","--modifiers (csv)",Yes,None,Keyboard shortcuts
 navigate,to,basic,api-cli navigate to 12345 "https://example.com" 1,/teststeps,NAVIGATE,✅ Working,"checkpoint (int), url (string), position (int)",--new-tab,Yes,None,Main navigation
-navigate,back,basic,api-cli navigate back 12345 2,/teststeps,NAVIGATE,❌ Failed,"checkpoint (int), position (int)",--steps (int),Yes,API requires URL,Not supported
-navigate,forward,basic,api-cli navigate forward 12345 3,/teststeps,NAVIGATE,❌ Failed,"checkpoint (int), position (int)",--steps (int),Yes,API requires URL,Not supported
-navigate,refresh,basic,api-cli navigate refresh 12345 4,/teststeps,NAVIGATE,❌ Failed,"checkpoint (int), position (int)",None,Yes,API requires URL,Not supported
 navigate,scroll-top,basic,api-cli navigate scroll-top 12345 5,/teststeps,SCROLL,✅ Working,"checkpoint (int), position (int)",--smooth,Yes,None,meta.type = TOP
 navigate,scroll-bottom,basic,api-cli navigate scroll-bottom 12345 6,/teststeps,SCROLL,✅ Working,"checkpoint (int), position (int)",--smooth,Yes,None,meta.type = BOTTOM
 navigate,scroll-element,basic,api-cli navigate scroll-element 12345 "footer" 7,/teststeps,SCROLL,✅ Working,"checkpoint (int), element (string), position (int)","--align, --smooth",Yes,None,Scrolls element into view
-navigate,scroll-position,basic,api-cli navigate scroll-position 12345 "500,300" 8,/teststeps,SCROLL,✅ Working,"checkpoint (int), coordinates (string), position (int)","--x, --y, --smooth",Yes,None,Absolute scroll
-navigate,scroll-by,basic,api-cli navigate scroll-by 12345 "0,500" 9,/teststeps,SCROLL,✅ Working,"checkpoint (int), offset (string), position (int)","--x, --y, --smooth",Yes,None,Relative scroll
+navigate,scroll-position,basic,"api-cli navigate scroll-position 12345 ""500,300"" 8",/teststeps,SCROLL,✅ Working,"checkpoint (int), coordinates (string), position (int)","--x, --y, --smooth",Yes,None,Absolute scroll
+navigate,scroll-by,basic,"api-cli navigate scroll-by 12345 ""0,500"" 9",/teststeps,SCROLL,✅ Working,"checkpoint (int), offset (string), position (int)","--x, --y, --smooth",Yes,None,Relative scroll
 navigate,scroll-up,basic,api-cli navigate scroll-up 12345 10,/teststeps,SCROLL,✅ Working,"checkpoint (int), position (int)",--smooth,Yes,None,Uses scroll-by y=-1000
 navigate,scroll-down,basic,api-cli navigate scroll-down 12345 11,/teststeps,SCROLL,✅ Working,"checkpoint (int), position (int)",--smooth,Yes,None,Uses scroll-by y=1000
 data,store,element-text,api-cli data store element-text "h1" "pageTitle" 1 --checkpoint 12345,/teststeps,STORE,✅ Working,"element (string), variable (string), position (int)",--checkpoint (int),Yes,None,Stores element text
@@ -48,15 +45,11 @@ wait,element-not-visible,basic,api-cli wait element-not-visible "div.loading" --
 wait,time,basic,api-cli wait time 1000 --checkpoint 12345,/teststeps,WAIT_TIME,✅ Working,milliseconds (int),--checkpoint (int),Yes,None,Fixed time wait
 window,resize,basic,api-cli window resize 1024x768 1 --checkpoint 12345,/teststeps,WINDOW,✅ Working,"size (string), position (int)",--checkpoint (int),Yes,None,meta.type = RESIZE
 window,maximize,basic,api-cli window maximize 2 --checkpoint 12345,/teststeps,WINDOW,✅ Working,position (int),--checkpoint (int),Yes,None,meta.type = MAXIMIZE
-window,close,basic,api-cli window close 3 --checkpoint 12345,/teststeps,WINDOW,❌ Failed,position (int),--checkpoint (int),Yes,API doesn't support,Not implemented
 window,switch,tab next,api-cli window switch tab next 4 --checkpoint 12345,/teststeps,SWITCH,✅ Working,position (int),--checkpoint (int),Yes,None,meta.type = NEXT_TAB
 window,switch,tab prev,api-cli window switch tab prev 5 --checkpoint 12345,/teststeps,SWITCH,✅ Working,position (int),--checkpoint (int),Yes,None,meta.type = PREV_TAB
 window,switch,tab INDEX,api-cli window switch tab INDEX 0 6 --checkpoint 12345,/teststeps,SWITCH,✅ Working,"index (int), position (int)",--checkpoint (int),Yes,None,meta.type = TAB
 window,switch,iframe,api-cli window switch iframe "#payment-frame" 7 --checkpoint 12345,/teststeps,SWITCH,✅ Working,"selector (string), position (int)",--checkpoint (int),Yes,None,meta.type = FRAME_BY_ELEMENT
 window,switch,parent-frame,api-cli window switch parent-frame 8 --checkpoint 12345,/teststeps,SWITCH,✅ Working,position (int),--checkpoint (int),Yes,None,meta.type = PARENT_FRAME
-window,switch,frame-index,api-cli window switch frame-index 0 9 --checkpoint 12345,/teststeps,SWITCH,❌ Failed,"index (int), position (int)",--checkpoint (int),Yes,Not supported,Invalid test step command
-window,switch,frame-name,api-cli window switch frame-name "content" 10 --checkpoint 12345,/teststeps,SWITCH,❌ Failed,"name (string), position (int)",--checkpoint (int),Yes,Not supported,Invalid test step command
-window,switch,main-content,api-cli window switch main-content 11 --checkpoint 12345,/teststeps,SWITCH,❌ Failed,position (int),--checkpoint (int),Yes,Not supported,Invalid test step command
 mouse,move,to element,api-cli mouse move "button" --checkpoint 12345,/teststeps,MOUSE,✅ Working,element (string),--checkpoint (int),Yes,None,meta.action = MOVE
 mouse,move-by,offset,api-cli mouse move-by 50 100 --checkpoint 12345,/teststeps,MOUSE,✅ Working,"x (int), y (int)",--checkpoint (int),Yes,None,Relative movement
 mouse,move-to,coordinates,api-cli mouse move-to 200 300 --checkpoint 12345,/teststeps,MOUSE,✅ Working,"x (int), y (int)",--checkpoint (int),Yes,None,Absolute movement
@@ -66,7 +59,7 @@ mouse,enter,basic,api-cli mouse enter "div.hover" --checkpoint 12345,/teststeps,
 select,option,by text,api-cli select option 12345 "select#country" "United States" 1,/teststeps,SELECT,✅ Working,"checkpoint (int), element (string), option (string), position (int)",None,Yes,None,Select by visible text
 select,index,by index,api-cli select index "select#country" 0 2 --checkpoint 12345,/teststeps,SELECT,✅ Working,"element (string), index (int), position (int)",--checkpoint (int),Yes,None,Select by option index
 select,last,last option,api-cli select last "select#country" 3 --checkpoint 12345,/teststeps,SELECT,✅ Working,"element (string), position (int)",--checkpoint (int),Yes,None,Select last option
-file,upload,local file,api-cli file upload 12345 "input[type=file]" "/tmp/test.txt" 1,/teststeps,UPLOAD,❌ Failed,"checkpoint (int), element (string), filepath (string), position (int)",None,Yes,Only URLs accepted,Invalid file URL error
+file,upload,file URL,api-cli file upload 12345 "input[type=file]" "https://example.com/test.pdf" 1,/teststeps,UPLOAD,✅ Working,"checkpoint (int), element (string), file-url (string), position (int)",None,Yes,Now accepts URLs only,Fixed to accept URLs instead of local paths
 file,upload-url,from URL,api-cli file upload-url 12345 "input[type=file]" "https://example.com/file.pdf" 2,/teststeps,UPLOAD,✅ Working,"checkpoint (int), element (string), url (string), position (int)",None,Yes,None,Working method
 misc,comment,basic,api-cli misc comment 12345 "Test comment" 1,/teststeps,COMMENT,✅ Working,"checkpoint (int), text (string), position (int)",None,Yes,None,Adds comment step
 misc,execute,JavaScript,api-cli misc execute 12345 "return document.title;" 2,/teststeps,EXECUTE,✅ Working,"checkpoint (int), script (string), position (int)",None,Yes,None,Executes JavaScript

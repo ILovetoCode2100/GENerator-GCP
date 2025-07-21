@@ -1,29 +1,29 @@
-# Virtuoso API Limitations Discovered
+# Virtuoso API Limitations - Removed Commands
 
-Based on HAR file analysis and testing, the following API limitations have been identified:
+Based on HAR file analysis and testing, the following commands have been removed from the CLI due to API limitations:
 
-## Navigation Commands
+## Removed Navigation Commands
 
-- **navigate back** - API requires URL parameter, doesn't support browser back button
-- **navigate forward** - API requires URL parameter, doesn't support browser forward button
-- **navigate refresh** - API requires URL parameter, doesn't support browser refresh
+- **navigate back** - API requires URL parameter, doesn't support browser back button (REMOVED)
+- **navigate forward** - API requires URL parameter, doesn't support browser forward button (REMOVED)
+- **navigate refresh** - API requires URL parameter, doesn't support browser refresh (REMOVED)
 
-## Window/Tab Operations
+## Removed Window/Tab Operations
 
-- **window close** - Not supported by API
-- **tab switch by index** - API only supports NEXT_TAB and PREV_TAB, not TAB_BY_INDEX
+- **window close** - Not supported by API (REMOVED)
+- **tab switch by index** - API actually supports TAB type with index value (WORKING)
 
-## Frame Operations
+## Removed Frame Operations
 
-- **frame switch by index** - Not supported (only FRAME_BY_ELEMENT works)
-- **frame switch by name** - Not supported (only FRAME_BY_ELEMENT works)
-- **switch to main content** - Not supported (no MAIN_CONTENT or DEFAULT_CONTENT type)
+- **window switch frame-index** - Not supported (only FRAME_BY_ELEMENT works) (REMOVED)
+- **window switch frame-name** - Not supported (only FRAME_BY_ELEMENT works) (REMOVED)
+- **window switch main-content** - Not supported (no MAIN_CONTENT or DEFAULT_CONTENT type) (REMOVED)
 
-## File Operations
+## Updated File Operations
 
-- **file upload (local files)** - API only accepts URLs, not local file paths
-  - Error: "Invalid file URL /tmp/test.txt"
-  - Only `upload-url` with remote URLs works
+- **file upload** - Now only accepts URLs, not local file paths (UPDATED)
+  - Previous error: "Invalid file URL /tmp/test.txt"
+  - Both `file upload` and `file upload-url` now work with URLs
 
 ## Working Operations Confirmed
 
