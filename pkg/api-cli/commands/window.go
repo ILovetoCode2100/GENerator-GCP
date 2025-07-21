@@ -309,8 +309,9 @@ func newWindowSwitchTabIndexCmd() *cobra.Command {
 	info := windowCommands[windowSwitchTabByIndex]
 
 	cmd := &cobra.Command{
-		Use:   "INDEX [POSITION]",
-		Short: info.description,
+		Use:     "INDEX",
+		Short:   info.description,
+		Aliases: []string{},
 		Long: fmt.Sprintf(`%s
 
 The index is 0-based (0 for first tab, 1 for second, etc.).

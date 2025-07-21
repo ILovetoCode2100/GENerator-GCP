@@ -1783,6 +1783,7 @@ func (c *Client) CreateSwitchIFrameStep(checkpointID int, selector string, posit
 			},
 		},
 		"meta": map[string]interface{}{
+			"kind": "SWITCH",
 			"type": "FRAME_BY_ELEMENT",
 		},
 	}
@@ -2695,6 +2696,7 @@ func (c *Client) CreateStepSwitchIframe(checkpointID int, selector string, posit
 			},
 		},
 		"meta": map[string]interface{}{
+			"kind": "SWITCH",
 			"type": "FRAME_BY_ELEMENT",
 		},
 	}
@@ -2707,6 +2709,7 @@ func (c *Client) CreateStepSwitchNextTab(checkpointID int, position int) (int, e
 	parsedStep := map[string]interface{}{
 		"action": "SWITCH",
 		"meta": map[string]interface{}{
+			"kind": "SWITCH",
 			"type": "NEXT_TAB",
 		},
 	}
@@ -2719,6 +2722,7 @@ func (c *Client) CreateStepSwitchParentFrame(checkpointID int, position int) (in
 	parsedStep := map[string]interface{}{
 		"action": "SWITCH",
 		"meta": map[string]interface{}{
+			"kind": "SWITCH",
 			"type": "PARENT_FRAME",
 		},
 	}
@@ -2731,6 +2735,7 @@ func (c *Client) CreateStepSwitchPrevTab(checkpointID int, position int) (int, e
 	parsedStep := map[string]interface{}{
 		"action": "SWITCH",
 		"meta": map[string]interface{}{
+			"kind": "SWITCH",
 			"type": "PREV_TAB",
 		},
 	}
@@ -4001,7 +4006,8 @@ func (c *Client) CreateStepSwitchTabByIndex(checkpointID int, index int, positio
 		"action": "SWITCH",
 		"value":  fmt.Sprintf("%d", index),
 		"meta": map[string]interface{}{
-			"type": "TAB_BY_INDEX",
+			"kind": "SWITCH",
+			"type": "TAB",
 		},
 	}
 
@@ -4072,9 +4078,10 @@ func (c *Client) CreateStepKeyTargetedWithModifiers(checkpointID int, selector, 
 func (c *Client) CreateStepSwitchFrameByIndex(checkpointID int, index int, position int) (int, error) {
 	parsedStep := map[string]interface{}{
 		"action": "SWITCH",
+		"value":  fmt.Sprintf("%d", index),
 		"meta": map[string]interface{}{
-			"type":  "FRAME_INDEX",
-			"index": index,
+			"kind": "SWITCH",
+			"type": "FRAME_BY_INDEX",
 		},
 	}
 

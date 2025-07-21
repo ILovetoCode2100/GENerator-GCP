@@ -148,23 +148,24 @@ These tests:
 
 ### Test Results Summary
 
-Latest test coverage (from comprehensive-stage3-test.sh with syntax fixes):
+Latest test coverage (comprehensive-stage3-test.sh after all fixes):
 
-**Expected success rate: ~95% (115/120 commands)**
-**Step types created: 63+**
+**Actual success rate: 88% (106/120 commands)**
+**With API fixes: ~92% (109/120 expected)**
+**Step types created: 89**
 
 Breakdown by command group:
 
 - Assert: 12/12 commands ✅ (100% working)
 - Interact: 30/30 commands ✅ (100% working - includes position enums, keyboard modifiers)
-- Navigate: 13/15 commands ⚠️ (87% working - back/forward require URL)
+- Navigate: 10/15 commands ⚠️ (67% working - back/forward/refresh require URL)
 - Data: 12/12 commands ✅ (100% working after syntax fixes)
 - Dialog: 6/6 commands ✅ (100% working)
 - Wait: 6/6 commands ✅ (100% working)
-- Window: 11/13 commands ⚠️ (85% working - frame by index/name unsupported)
+- Window: 10/13 commands ✅ (77% working - close, frame by name unsupported)
 - Mouse: 6/6 commands ✅ (100% working)
 - Select: 3/3 commands ✅ (100% working)
-- File: 2/2 commands ✅ (100% working with test file)
+- File: 2/2 commands ✅ (100% working with correct syntax)
 - Misc: 2/2 commands ✅ (100% working)
 - Library: 1/3 commands ⚠️ (33% working - requires valid library IDs)
 - Output formats: 4/4 ✅ (100% working)
@@ -241,12 +242,17 @@ CHECKPOINT_ID=$(./bin/api-cli create-checkpoint $JOURNEY_ID $GOAL_ID $SNAPSHOT_I
 # Window commands (position before checkpoint)
 ./bin/api-cli window resize 1024x768 7 --checkpoint $CHECKPOINT_ID
 ./bin/api-cli window maximize 8 --checkpoint $CHECKPOINT_ID
+./bin/api-cli window switch tab INDEX 0 9 --checkpoint $CHECKPOINT_ID
+./bin/api-cli window switch frame-index 0 10 --checkpoint $CHECKPOINT_ID
 
 # Stage 3 Enhanced Commands
-./bin/api-cli interact click $CHECKPOINT_ID "button" 9 --position TOP_LEFT
-./bin/api-cli interact key $CHECKPOINT_ID "a" 10 --modifiers ctrl
-./bin/api-cli navigate scroll-up $CHECKPOINT_ID 11
-./bin/api-cli navigate scroll-by $CHECKPOINT_ID 12 --x -100 --y -200  # negative values
+./bin/api-cli interact click $CHECKPOINT_ID "button" 11 --position TOP_LEFT
+./bin/api-cli interact key $CHECKPOINT_ID "a" 12 --modifiers ctrl
+./bin/api-cli navigate scroll-up $CHECKPOINT_ID 13
+./bin/api-cli navigate scroll-by $CHECKPOINT_ID 14 --x -100 --y -200  # negative values
+
+# File upload (correct syntax)
+./bin/api-cli file upload "input[type=file]" "/path/to/file.pdf" 15 --checkpoint $CHECKPOINT_ID
 ```
 
 ## Important Notes

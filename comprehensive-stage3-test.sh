@@ -210,8 +210,8 @@ test_cmd "Window maximize" "$CLI window maximize $((POS++)) --checkpoint $CHECKP
 test_cmd "Window close" "$CLI window close $((POS++)) --checkpoint $CHECKPOINT_ID"
 test_cmd "Switch next tab" "$CLI window switch tab next $((POS++)) --checkpoint $CHECKPOINT_ID"
 test_cmd "Switch prev tab" "$CLI window switch tab prev $((POS++)) --checkpoint $CHECKPOINT_ID"
-test_cmd "Switch tab index 0" "$CLI window switch tab 0 $((POS++)) --checkpoint $CHECKPOINT_ID"
-test_cmd "Switch tab index 2" "$CLI window switch tab 2 $((POS++)) --checkpoint $CHECKPOINT_ID"
+test_cmd "Switch tab index 0" "$CLI window switch tab INDEX 0 $((POS++)) --checkpoint $CHECKPOINT_ID"
+test_cmd "Switch tab index 2" "$CLI window switch tab INDEX 2 $((POS++)) --checkpoint $CHECKPOINT_ID"
 test_cmd "Switch iframe" "$CLI window switch iframe '#payment-frame' $((POS++)) --checkpoint $CHECKPOINT_ID"
 test_cmd "Switch parent frame" "$CLI window switch parent-frame $((POS++)) --checkpoint $CHECKPOINT_ID"
 test_cmd "Switch frame by index" "$CLI window switch frame-index 0 $((POS++)) --checkpoint $CHECKPOINT_ID"
@@ -243,7 +243,7 @@ echo -e "${YELLOW}11. File Commands${NC}"
 echo "=================="
 # Create test file for upload
 echo "test content" > /tmp/test.txt
-test_cmd "File upload" "$CLI file upload $CHECKPOINT_ID 'input[type=file]' '/tmp/test.txt' $((POS++))"
+test_cmd "File upload" "$CLI file upload 'input[type=file]' '/tmp/test.txt' $((POS++)) --checkpoint $CHECKPOINT_ID"
 test_cmd "File upload URL" "$CLI file upload-url $CHECKPOINT_ID 'input[type=file]' 'https://example.com/file.pdf' $((POS++))"
 echo ""
 
