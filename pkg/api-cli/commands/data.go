@@ -1,187 +1,223 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/marklovelady/api-cli-generator/pkg/api-cli/client"
 	"github.com/spf13/cobra"
 )
 
-// dataType represents the type of data operation
-type dataType string
-
-const (
-	dataStoreElementText dataType = "store-element-text"
-	dataStoreLiteral     dataType = "store-literal"
-	dataStoreAttribute   dataType = "store-attribute"
-	dataCookieCreate     dataType = "cookie-create"
-	dataCookieDelete     dataType = "cookie-delete"
-	dataCookieClearAll   dataType = "cookie-clear-all"
-)
-
-// dataCommandInfo contains metadata about each data operation type
-type dataCommandInfo struct {
-	stepType    string
-	description string
-	usage       string
-	examples    []string
-	argsCount   []int // Valid argument counts (excluding position)
-	parseStep   func(args []string, flags map[string]interface{}) string
+// DataCommand implements the data command group using BaseCommand pattern
+type DataCommand struct {
+	*BaseCommand
+	operation string
+	subtype   string
 }
 
-// dataCommands maps data operation types to their metadata
-var dataCommands = map[dataType]dataCommandInfo{
-	dataStoreElementText: {
+// dataConfig contains configuration for each data operation
+type dataConfig struct {
+	stepType     string
+	description  string
+	usage        string
+	examples     []string
+	requiredArgs int
+	buildMeta    func(args []string, flags map[string]interface{}) map[string]interface{}
+	extraFlags   []flagConfig
+}
+
+// flagConfig defines additional flags for certain data operations
+type flagConfig struct {
+	name        string
+	flagType    string // "string", "bool"
+	defaultVal  interface{}
+	description string
+}
+
+// dataConfigs maps data operations to their configurations
+var dataConfigs = map[string]dataConfig{
+	"store.element-text": {
 		stepType:    "STORE",
 		description: "Store element text in a variable",
-		usage:       "data store element-text SELECTOR VARIABLE_NAME [POSITION]",
+		usage:       "data store element-text [checkpoint-id] <selector> <variable-name> [position]",
 		examples: []string{
-			`api-cli data store element-text "Username field" "current_user" 1`,
-			`api-cli data store element-text "Order total" "order_amount"  # Auto-increment position`,
+			`api-cli data store element-text cp_12345 "Username field" "current_user" 1`,
+			`api-cli data store element-text "Order total" "order_amount"  # Uses session context`,
 		},
-		argsCount: []int{2},
-		parseStep: func(args []string, flags map[string]interface{}) string {
-			return fmt.Sprintf("store text from \"%s\" in $%s", args[0], args[1])
+		requiredArgs: 2,
+		buildMeta: func(args []string, flags map[string]interface{}) map[string]interface{} {
+			return map[string]interface{}{
+				"operation": "ELEMENT_TEXT",
+				"selector":  args[0],
+				"variable":  args[1],
+			}
 		},
 	},
-	dataStoreLiteral: {
+	"store.literal": {
 		stepType:    "STORE",
 		description: "Store a literal value in a variable",
-		usage:       "data store literal VALUE VARIABLE_NAME [POSITION]",
+		usage:       "data store literal [checkpoint-id] <value> <variable-name> [position]",
 		examples: []string{
-			`api-cli data store literal "test@example.com" "test_email" 1`,
-			`api-cli data store literal "2024-01-01" "test_date"  # Auto-increment position`,
+			`api-cli data store literal cp_12345 "test@example.com" "test_email" 1`,
+			`api-cli data store literal "2024-01-01" "test_date"  # Uses session context`,
 		},
-		argsCount: []int{2},
-		parseStep: func(args []string, flags map[string]interface{}) string {
-			return fmt.Sprintf("store \"%s\" in $%s", args[0], args[1])
+		requiredArgs: 2,
+		buildMeta: func(args []string, flags map[string]interface{}) map[string]interface{} {
+			return map[string]interface{}{
+				"operation": "LITERAL",
+				"value":     args[0],
+				"variable":  args[1],
+			}
 		},
 	},
-	dataStoreAttribute: {
+	"store.attribute": {
 		stepType:    "STORE",
 		description: "Store element attribute value in a variable",
-		usage:       "data store attribute SELECTOR ATTRIBUTE_NAME VARIABLE_NAME [POSITION]",
+		usage:       "data store attribute [checkpoint-id] <selector> <attribute-name> <variable-name> [position]",
 		examples: []string{
-			`api-cli data store attribute "#link" "href" "link_url" 1`,
-			`api-cli data store attribute "input[name='email']" "value" "email_value"  # Auto-increment position`,
+			`api-cli data store attribute cp_12345 "#link" "href" "link_url" 1`,
+			`api-cli data store attribute "input[name='email']" "value" "email_value"  # Uses session context`,
 		},
-		argsCount: []int{3},
-		parseStep: func(args []string, flags map[string]interface{}) string {
-			return fmt.Sprintf("store attribute \"%s\" from \"%s\" in $%s", args[1], args[0], args[2])
+		requiredArgs: 3,
+		buildMeta: func(args []string, flags map[string]interface{}) map[string]interface{} {
+			return map[string]interface{}{
+				"operation": "ATTRIBUTE",
+				"selector":  args[0],
+				"attribute": args[1],
+				"variable":  args[2],
+			}
 		},
 	},
-	dataCookieCreate: {
+	"cookie.create": {
 		stepType:    "ENVIRONMENT",
 		description: "Create a cookie with specified name and value",
-		usage:       "data cookie create NAME VALUE [POSITION]",
+		usage:       "data cookie create [checkpoint-id] <name> <value> [position] [--domain <domain>] [--path <path>] [--secure] [--http-only]",
 		examples: []string{
-			`api-cli data cookie create "session" "abc123" 1`,
+			`api-cli data cookie create cp_12345 "session" "abc123" 1`,
 			`api-cli data cookie create "user_id" "12345" --domain ".example.com"`,
 			`api-cli data cookie create "auth_token" "xyz789" --secure --http-only`,
 		},
-		argsCount: []int{2},
-		parseStep: func(args []string, flags map[string]interface{}) string {
-			parts := []string{fmt.Sprintf("create cookie \"%s\" with value \"%s\"", args[0], args[1])}
+		requiredArgs: 2,
+		buildMeta: func(args []string, flags map[string]interface{}) map[string]interface{} {
+			meta := map[string]interface{}{
+				"operation": "COOKIE_CREATE",
+				"name":      args[0],
+				"value":     args[1],
+			}
+			// Add optional cookie attributes
 			if domain, ok := flags["domain"].(string); ok && domain != "" {
-				parts = append(parts, fmt.Sprintf("for domain %s", domain))
+				meta["domain"] = domain
 			}
 			if path, ok := flags["path"].(string); ok && path != "" {
-				parts = append(parts, fmt.Sprintf("with path %s", path))
+				meta["path"] = path
 			}
 			if secure, ok := flags["secure"].(bool); ok && secure {
-				parts = append(parts, "secure")
+				meta["secure"] = true
 			}
 			if httpOnly, ok := flags["http-only"].(bool); ok && httpOnly {
-				parts = append(parts, "http-only")
+				meta["httpOnly"] = true
 			}
-			return strings.Join(parts, " ")
+			return meta
+		},
+		extraFlags: []flagConfig{
+			{name: "domain", flagType: "string", defaultVal: "", description: "Cookie domain"},
+			{name: "path", flagType: "string", defaultVal: "/", description: "Cookie path"},
+			{name: "secure", flagType: "bool", defaultVal: false, description: "Set secure flag on cookie"},
+			{name: "http-only", flagType: "bool", defaultVal: false, description: "Set httpOnly flag on cookie"},
 		},
 	},
-	dataCookieDelete: {
+	"cookie.delete": {
 		stepType:    "ENVIRONMENT",
 		description: "Delete a specific cookie",
-		usage:       "data cookie delete NAME [POSITION]",
+		usage:       "data cookie delete [checkpoint-id] <name> [position]",
 		examples: []string{
-			`api-cli data cookie delete "session" 1`,
-			`api-cli data cookie delete "auth_token"  # Auto-increment position`,
+			`api-cli data cookie delete cp_12345 "session" 1`,
+			`api-cli data cookie delete "auth_token"  # Uses session context`,
 		},
-		argsCount: []int{1},
-		parseStep: func(args []string, flags map[string]interface{}) string {
-			return fmt.Sprintf("delete cookie \"%s\"", args[0])
+		requiredArgs: 1,
+		buildMeta: func(args []string, flags map[string]interface{}) map[string]interface{} {
+			return map[string]interface{}{
+				"operation": "COOKIE_DELETE",
+				"name":      args[0],
+			}
 		},
 	},
-	dataCookieClearAll: {
+	"cookie.clear-all": {
 		stepType:    "ENVIRONMENT",
 		description: "Clear all cookies",
-		usage:       "data cookie clear-all [POSITION]",
+		usage:       "data cookie clear-all [checkpoint-id] [position]",
 		examples: []string{
-			`api-cli data cookie clear-all 1`,
-			`api-cli data cookie clear-all  # Auto-increment position`,
+			`api-cli data cookie clear-all cp_12345 1`,
+			`api-cli data cookie clear-all  # Uses session context`,
 		},
-		argsCount: []int{0},
-		parseStep: func(args []string, flags map[string]interface{}) string {
-			return "clear all cookies"
+		requiredArgs: 0,
+		buildMeta: func(args []string, flags map[string]interface{}) map[string]interface{} {
+			return map[string]interface{}{
+				"operation": "COOKIE_CLEAR_ALL",
+			}
 		},
 	},
 }
 
-// newDataCmd creates the consolidated data command with subcommands
+// newDataCmd creates the new data command using BaseCommand pattern
 func newDataCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "data",
 		Short: "Manage data storage and cookies in test steps",
 		Long: `Create data management steps including storing values in variables and managing cookies.
 
-This command consolidates all data-related operations into a single command with subcommands.
+This command uses the standardized positional argument pattern:
+- Optional checkpoint ID as first argument (falls back to session context)
+- Required data operation arguments
+- Optional position as last argument (auto-increments if not specified)
 
 Available operations:
   - store: Store values in variables
     - element-text: Store element text in variable
     - literal: Store literal value in variable
+    - attribute: Store element attribute in variable
   - cookie: Manage browser cookies
     - create: Create a new cookie
     - delete: Delete a specific cookie
     - clear-all: Clear all cookies`,
-		Example: `  # Store element text in variable
+		Example: `  # Store element text in variable (with explicit checkpoint)
+  api-cli data store element-text cp_12345 "Username field" "current_user" 1
+
+  # Store element text in variable (using session context)
   api-cli data store element-text "Username field" "current_user"
 
   # Store literal value in variable
   api-cli data store literal "test@example.com" "test_email"
 
-  # Create a cookie
-  api-cli data cookie create "session" "abc123"
-
-  # Delete a cookie
-  api-cli data cookie delete "session"
-
-  # Clear all cookies
-  api-cli data cookie clear-all`,
+  # Create cookie with options
+  api-cli data cookie create "session" "abc123" --domain ".example.com" --secure`,
 	}
 
 	// Add store subcommand
 	storeCmd := &cobra.Command{
 		Use:   "store",
 		Short: "Store values in variables",
-		Long:  "Store element text or literal values in variables for use in subsequent test steps.",
+		Long:  "Store element text, literal values, or attributes in variables for later use",
 	}
 
 	// Add store subcommands
-	storeCmd.AddCommand(newDataStoreSubCmd("element-text", dataStoreElementText, dataCommands[dataStoreElementText]))
-	storeCmd.AddCommand(newDataStoreSubCmd("literal", dataStoreLiteral, dataCommands[dataStoreLiteral]))
-	storeCmd.AddCommand(newDataStoreSubCmd("attribute", dataStoreAttribute, dataCommands[dataStoreAttribute]))
+	storeCmd.AddCommand(newDataV2SubCmd("element-text", "store.element-text", dataConfigs["store.element-text"]))
+	storeCmd.AddCommand(newDataV2SubCmd("literal", "store.literal", dataConfigs["store.literal"]))
+	storeCmd.AddCommand(newDataV2SubCmd("attribute", "store.attribute", dataConfigs["store.attribute"]))
 
 	// Add cookie subcommand
 	cookieCmd := &cobra.Command{
 		Use:   "cookie",
 		Short: "Manage browser cookies",
-		Long:  "Create, delete, or clear browser cookies in test steps.",
+		Long:  "Create, delete, or clear browser cookies",
 	}
 
 	// Add cookie subcommands
-	cookieCmd.AddCommand(newDataCookieCreateCmd())
-	cookieCmd.AddCommand(newDataCookieSubCmd("delete", dataCookieDelete, dataCommands[dataCookieDelete]))
-	cookieCmd.AddCommand(newDataCookieSubCmd("clear-all", dataCookieClearAll, dataCommands[dataCookieClearAll]))
+	cookieCmd.AddCommand(newDataV2SubCmd("create", "cookie.create", dataConfigs["cookie.create"]))
+	cookieCmd.AddCommand(newDataV2SubCmd("delete", "cookie.delete", dataConfigs["cookie.delete"]))
+	cookieCmd.AddCommand(newDataV2SubCmd("clear-all", "cookie.clear-all", dataConfigs["cookie.clear-all"]))
 
 	cmd.AddCommand(storeCmd)
 	cmd.AddCommand(cookieCmd)
@@ -189,338 +225,271 @@ Available operations:
 	return cmd
 }
 
-// newDataStoreSubCmd creates a subcommand for store operations
-func newDataStoreSubCmd(name string, dType dataType, info dataCommandInfo) *cobra.Command {
-	var checkpointFlag int
-
-	// Extract arguments from usage
-	usageParts := strings.Fields(info.usage)
-	argsUsage := ""
-	if len(usageParts) > 3 {
-		argsUsage = strings.Join(usageParts[3:], " ")
-	}
+// newDataV2SubCmd creates a subcommand for a specific data operation
+func newDataV2SubCmd(name string, operationKey string, config dataConfig) *cobra.Command {
+	// Store flag values
+	flagValues := make(map[string]interface{})
 
 	cmd := &cobra.Command{
-		Use:   name + " " + argsUsage,
-		Short: info.description,
+		Use:   name + " " + extractDataUsageArgs(config.usage),
+		Short: config.description,
 		Long: fmt.Sprintf(`%s
 
-Uses the current checkpoint from session context by default. Override with --checkpoint flag.
-Position is auto-incremented if not specified and auto-increment is enabled.
+%s
 
 Examples:
-%s`, info.description, strings.Join(info.examples, "\n")),
-		Args: func(cmd *cobra.Command, args []string) error {
-			// Validate argument count
-			validCounts := info.argsCount
-			for _, count := range validCounts {
-				if len(args) == count || len(args) == count+1 {
-					return nil
-				}
-			}
-
-			// Generate expected count message
-			expectedCounts := []string{}
-			for _, count := range validCounts {
-				expectedCounts = append(expectedCounts, fmt.Sprintf("%d", count))
-				expectedCounts = append(expectedCounts, fmt.Sprintf("%d", count+1))
-			}
-
-			return fmt.Errorf("accepts %s args, received %d", strings.Join(expectedCounts, " or "), len(args))
-		},
+%s`, config.description, config.usage, strings.Join(config.examples, "\n")),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runDataCommand(dType, info, args, checkpointFlag, nil)
+			dc := &DataCommand{
+				BaseCommand: NewBaseCommand(),
+				operation:   operationKey,
+			}
+			return dc.Execute(cmd, args, config, flagValues)
 		},
 	}
 
-	addCheckpointFlag(cmd, &checkpointFlag)
+	// Add extra flags if defined
+	for _, flag := range config.extraFlags {
+		switch flag.flagType {
+		case "string":
+			var val string
+			cmd.Flags().StringVar(&val, flag.name, flag.defaultVal.(string), flag.description)
+			flagValues[flag.name] = &val
+		case "bool":
+			var val bool
+			cmd.Flags().BoolVar(&val, flag.name, flag.defaultVal.(bool), flag.description)
+			flagValues[flag.name] = &val
+		}
+	}
 
 	return cmd
 }
 
-// newDataCookieCreateCmd creates the cookie create subcommand with additional flags
-func newDataCookieCreateCmd() *cobra.Command {
-	var checkpointFlag int
-	var domain, path string
-	var secure, httpOnly bool
-
-	info := dataCommands[dataCookieCreate]
-
-	cmd := &cobra.Command{
-		Use:   "create NAME VALUE [POSITION]",
-		Short: info.description,
-		Long: fmt.Sprintf(`%s
-
-Uses the current checkpoint from session context by default. Override with --checkpoint flag.
-Position is auto-incremented if not specified and auto-increment is enabled.
-
-Cookie options:
-  --domain: Cookie domain (e.g., ".example.com")
-  --path: Cookie path (default: "/")
-  --secure: Set secure flag on cookie
-  --http-only: Set httpOnly flag on cookie
-
-Examples:
-%s`, info.description, strings.Join(info.examples, "\n")),
-		Args: func(cmd *cobra.Command, args []string) error {
-			if len(args) < 2 || len(args) > 3 {
-				return fmt.Errorf("accepts 2 or 3 args, received %d", len(args))
-			}
-			return nil
-		},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			flags := map[string]interface{}{
-				"domain":    domain,
-				"path":      path,
-				"secure":    secure,
-				"http-only": httpOnly,
-			}
-			return runDataCommand(dataCookieCreate, info, args, checkpointFlag, flags)
-		},
+// extractDataUsageArgs extracts the arguments portion from the usage string
+func extractDataUsageArgs(usage string) string {
+	parts := strings.Fields(usage)
+	// Find where the actual args start (after "data store element-text" or similar)
+	for i, part := range parts {
+		if strings.HasPrefix(part, "[checkpoint-id]") {
+			return strings.Join(parts[i:], " ")
+		}
 	}
-
-	addCheckpointFlag(cmd, &checkpointFlag)
-	cmd.Flags().StringVar(&domain, "domain", "", "Cookie domain")
-	cmd.Flags().StringVar(&path, "path", "/", "Cookie path")
-	cmd.Flags().BoolVar(&secure, "secure", false, "Set secure flag on cookie")
-	cmd.Flags().BoolVar(&httpOnly, "http-only", false, "Set httpOnly flag on cookie")
-
-	return cmd
+	return ""
 }
 
-// newDataCookieSubCmd creates a subcommand for cookie operations (delete, clear-all)
-func newDataCookieSubCmd(name string, dType dataType, info dataCommandInfo) *cobra.Command {
-	var checkpointFlag int
-
-	// Extract arguments from usage
-	usageParts := strings.Fields(info.usage)
-	argsUsage := ""
-	if len(usageParts) > 3 {
-		argsUsage = strings.Join(usageParts[3:], " ")
-	}
-
-	cmd := &cobra.Command{
-		Use:   name + " " + argsUsage,
-		Short: info.description,
-		Long: fmt.Sprintf(`%s
-
-Uses the current checkpoint from session context by default. Override with --checkpoint flag.
-Position is auto-incremented if not specified and auto-increment is enabled.
-
-Examples:
-%s`, info.description, strings.Join(info.examples, "\n")),
-		Args: func(cmd *cobra.Command, args []string) error {
-			// Validate argument count
-			validCounts := info.argsCount
-			for _, count := range validCounts {
-				if len(args) == count || len(args) == count+1 {
-					return nil
-				}
-			}
-
-			// Generate expected count message
-			expectedCounts := []string{}
-			for _, count := range validCounts {
-				expectedCounts = append(expectedCounts, fmt.Sprintf("%d", count))
-				expectedCounts = append(expectedCounts, fmt.Sprintf("%d", count+1))
-			}
-
-			return fmt.Errorf("accepts %s args, received %d", strings.Join(expectedCounts, " or "), len(args))
-		},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runDataCommand(dType, info, args, checkpointFlag, nil)
-		},
-	}
-
-	addCheckpointFlag(cmd, &checkpointFlag)
-
-	return cmd
-}
-
-// runDataCommand executes the data command logic
-func runDataCommand(dType dataType, info dataCommandInfo, args []string, checkpointFlag int, flags map[string]interface{}) error {
-	// Validate arguments based on data type
-	if err := validateDataArgs(dType, args); err != nil {
+// Execute runs the data command
+func (dc *DataCommand) Execute(cmd *cobra.Command, args []string, config dataConfig, flagValues map[string]interface{}) error {
+	// Initialize base command
+	if err := dc.Init(cmd); err != nil {
 		return err
 	}
 
 	// Resolve checkpoint and position
-	// The position index depends on how many required arguments we have
-	positionIndex := -1
-	if len(info.argsCount) > 0 {
-		positionIndex = info.argsCount[0] // Position comes after required args
+	remainingArgs, err := dc.ResolveCheckpointAndPosition(args, config.requiredArgs)
+	if err != nil {
+		return fmt.Errorf("failed to resolve arguments: %w", err)
 	}
-	ctx, err := resolveStepContext(args, checkpointFlag, positionIndex)
+
+	// Validate we have the required number of arguments
+	if len(remainingArgs) != config.requiredArgs {
+		return fmt.Errorf("expected %d arguments, got %d", config.requiredArgs, len(remainingArgs))
+	}
+
+	// Resolve flag values
+	resolvedFlags := make(map[string]interface{})
+	for name, ptr := range flagValues {
+		switch v := ptr.(type) {
+		case *string:
+			resolvedFlags[name] = *v
+		case *bool:
+			resolvedFlags[name] = *v
+		}
+	}
+
+	// Build request metadata
+	meta := config.buildMeta(remainingArgs, resolvedFlags)
+
+	// Create the step
+	stepResult, err := dc.createDataStep(config.stepType, meta)
+	if err != nil {
+		return fmt.Errorf("failed to create %s step: %w", config.stepType, err)
+	}
+
+	// Format and output the result
+	output, err := dc.FormatOutput(stepResult, dc.OutputFormat)
 	if err != nil {
 		return err
 	}
 
-	// Create Virtuoso client
-	apiClient := client.NewClient(cfg)
-
-	// Call the appropriate API method based on data type
-	stepID, err := callDataAPI(apiClient, dType, ctx, args, flags)
-	if err != nil {
-		return fmt.Errorf("failed to create %s step: %w", info.stepType, err)
-	}
-
-	// Save config if position was auto-incremented
-	saveStepContext(ctx)
-
-	// Build extra data for output
-	extra := buildDataExtraData(dType, args, flags)
-
-	// Output result
-	output := &StepOutput{
-		Status:       "success",
-		StepType:     info.stepType,
-		CheckpointID: ctx.CheckpointID,
-		StepID:       stepID,
-		Position:     ctx.Position,
-		ParsedStep:   info.parseStep(args, flags),
-		UsingContext: ctx.UsingContext,
-		AutoPosition: ctx.AutoPosition,
-		Extra:        extra,
-	}
-
-	return outputStepResult(output)
-}
-
-// validateDataArgs validates arguments for a specific data operation type
-func validateDataArgs(dType dataType, args []string) error {
-	switch dType {
-	case dataStoreElementText:
-		if len(args) < 1 || args[0] == "" {
-			return fmt.Errorf("selector cannot be empty")
-		}
-		if len(args) < 2 || args[1] == "" {
-			return fmt.Errorf("variable name cannot be empty")
-		}
-		if !isValidVariableName(args[1]) {
-			return fmt.Errorf("invalid variable name: %s (must contain only letters, numbers, and underscores)", args[1])
-		}
-	case dataStoreLiteral:
-		if len(args) < 1 || args[0] == "" {
-			return fmt.Errorf("value cannot be empty")
-		}
-		if len(args) < 2 || args[1] == "" {
-			return fmt.Errorf("variable name cannot be empty")
-		}
-		if !isValidVariableName(args[1]) {
-			return fmt.Errorf("invalid variable name: %s (must contain only letters, numbers, and underscores)", args[1])
-		}
-	case dataStoreAttribute:
-		if len(args) < 1 || args[0] == "" {
-			return fmt.Errorf("selector cannot be empty")
-		}
-		if len(args) < 2 || args[1] == "" {
-			return fmt.Errorf("attribute name cannot be empty")
-		}
-		if len(args) < 3 || args[2] == "" {
-			return fmt.Errorf("variable name cannot be empty")
-		}
-		if !isValidVariableName(args[2]) {
-			return fmt.Errorf("invalid variable name: %s (must contain only letters, numbers, and underscores)", args[2])
-		}
-	case dataCookieCreate:
-		if len(args) < 1 || args[0] == "" {
-			return fmt.Errorf("cookie name cannot be empty")
-		}
-		if len(args) < 2 || args[1] == "" {
-			return fmt.Errorf("cookie value cannot be empty")
-		}
-	case dataCookieDelete:
-		if len(args) < 1 || args[0] == "" {
-			return fmt.Errorf("cookie name cannot be empty")
-		}
-	case dataCookieClearAll:
-		// No arguments required
-	}
+	fmt.Print(output)
 	return nil
 }
 
-// isValidVariableName checks if a variable name is valid
-func isValidVariableName(name string) bool {
-	if len(name) == 0 {
-		return false
+// createDataStep creates a data operation step via the API
+func (dc *DataCommand) createDataStep(stepType string, meta map[string]interface{}) (*StepResult, error) {
+	// Convert checkpoint ID from string to int
+	checkpointID, err := strconv.Atoi(dc.CheckpointID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid checkpoint ID: %s", dc.CheckpointID)
 	}
-	for i, ch := range name {
-		if !((ch >= 'a' && ch <= 'z') ||
-			(ch >= 'A' && ch <= 'Z') ||
-			(ch >= '0' && ch <= '9' && i > 0) ||
-			ch == '_') {
-			return false
-		}
-	}
-	return true
-}
 
-// callDataAPI calls the appropriate client API method for the data operation type
-func callDataAPI(apiClient *client.Client, dType dataType, ctx *StepContext, args []string, flags map[string]interface{}) (int, error) {
-	switch dType {
-	case dataStoreElementText:
-		return apiClient.CreateStepStoreElementText(ctx.CheckpointID, args[0], args[1], ctx.Position)
-	case dataStoreLiteral:
-		return apiClient.CreateStepStoreLiteralValue(ctx.CheckpointID, args[0], args[1], ctx.Position)
-	case dataStoreAttribute:
-		return apiClient.CreateStepStoreAttribute(ctx.CheckpointID, args[0], args[1], args[2], ctx.Position)
-	case dataCookieCreate:
-		if flags != nil && (flags["domain"] != nil || flags["path"] != nil || flags["secure"] != nil || flags["http-only"] != nil) {
-			options := map[string]interface{}{
-				"domain":   flags["domain"],
-				"path":     flags["path"],
-				"secure":   flags["secure"],
-				"httpOnly": flags["http-only"],
-			}
-			return apiClient.CreateStepCookieCreateWithOptions(ctx.CheckpointID, args[0], args[1], options, ctx.Position)
+	// Create context with timeout
+	ctx, cancel := dc.CommandContext()
+	defer cancel()
+
+	var stepID int
+	operation := meta["operation"].(string)
+
+	// Route to appropriate client method based on operation
+	switch operation {
+	case "ELEMENT_TEXT":
+		stepID, err = dc.Client.CreateStepStoreElementTextWithContext(ctx, checkpointID,
+			meta["selector"].(string),
+			meta["variable"].(string),
+			dc.Position)
+	case "LITERAL":
+		stepID, err = dc.Client.CreateStepStoreLiteralValueWithContext(ctx, checkpointID,
+			meta["value"].(string),
+			meta["variable"].(string),
+			dc.Position)
+	case "ATTRIBUTE":
+		stepID, err = dc.Client.CreateStepStoreAttributeWithContext(ctx, checkpointID,
+			meta["selector"].(string),
+			meta["attribute"].(string),
+			meta["variable"].(string),
+			dc.Position)
+	case "COOKIE_CREATE":
+		// Build cookie options
+		options := make(map[string]interface{})
+		if domain, ok := meta["domain"]; ok {
+			options["domain"] = domain
 		}
-		return apiClient.CreateStepCookieCreate(ctx.CheckpointID, args[0], args[1], ctx.Position)
-	case dataCookieDelete:
-		return apiClient.CreateStepDeleteCookie(ctx.CheckpointID, args[0], ctx.Position)
-	case dataCookieClearAll:
-		return apiClient.CreateStepCookieWipeAll(ctx.CheckpointID, ctx.Position)
+		if path, ok := meta["path"]; ok {
+			options["path"] = path
+		}
+		if secure, ok := meta["secure"]; ok {
+			options["secure"] = secure
+		}
+		if httpOnly, ok := meta["httpOnly"]; ok {
+			options["httpOnly"] = httpOnly
+		}
+		// Use the method with options if we have any
+		if len(options) > 0 {
+			stepID, err = dc.Client.CreateStepCookieCreateWithOptionsWithContext(ctx, checkpointID,
+				meta["name"].(string),
+				meta["value"].(string),
+				options,
+				dc.Position)
+		} else {
+			stepID, err = dc.Client.CreateStepCookieCreateWithContext(ctx, checkpointID,
+				meta["name"].(string),
+				meta["value"].(string),
+				dc.Position)
+		}
+	case "COOKIE_DELETE":
+		stepID, err = dc.Client.CreateStepCookieDeleteWithContext(ctx, checkpointID,
+			meta["name"].(string),
+			dc.Position)
+	case "COOKIE_CLEAR_ALL":
+		stepID, err = dc.Client.CreateStepCookieClearAllWithContext(ctx, checkpointID, dc.Position)
 	default:
-		return 0, fmt.Errorf("unsupported data operation type: %s", dType)
+		return nil, fmt.Errorf("unknown data operation: %s", operation)
+	}
+
+	if err != nil {
+		// Handle different error types
+		var apiErr *client.APIError
+		var clientErr *client.ClientError
+
+		if errors.As(err, &apiErr) {
+			// API errors - provide user-friendly messages
+			switch apiErr.Status {
+			case 400:
+				return nil, fmt.Errorf("invalid request: %s", apiErr.Message)
+			case 401:
+				return nil, fmt.Errorf("authentication failed: please check your API token")
+			case 403:
+				return nil, fmt.Errorf("access denied: you don't have permission to perform this operation")
+			case 404:
+				return nil, fmt.Errorf("checkpoint not found: %s", dc.CheckpointID)
+			case 429:
+				if apiErr.RetryAfter > 0 {
+					return nil, fmt.Errorf("rate limit exceeded: please wait %d seconds before retrying", apiErr.RetryAfter)
+				}
+				return nil, fmt.Errorf("rate limit exceeded: please wait before retrying")
+			case 500, 502, 503, 504:
+				return nil, fmt.Errorf("server error: %s (please try again later)", apiErr.Message)
+			default:
+				return nil, fmt.Errorf("API error (%d): %s", apiErr.Status, apiErr.Message)
+			}
+		} else if errors.As(err, &clientErr) {
+			// Client errors - provide context-specific messages
+			switch clientErr.Kind {
+			case client.KindTimeout:
+				return nil, fmt.Errorf("request timed out: the operation took too long to complete")
+			case client.KindContextCanceled:
+				return nil, fmt.Errorf("operation canceled")
+			case client.KindConnectionFailed:
+				return nil, fmt.Errorf("connection failed: please check your network and try again")
+			default:
+				return nil, fmt.Errorf("client error: %s", clientErr.Message)
+			}
+		}
+
+		// Generic error
+		return nil, fmt.Errorf("failed to create %s step: %w", stepType, err)
+	}
+
+	// Build the result
+	result := &StepResult{
+		ID:           fmt.Sprintf("%d", stepID),
+		CheckpointID: dc.CheckpointID,
+		Type:         stepType,
+		Position:     dc.Position,
+		Description:  dc.buildDescription(operation, meta),
+		Selector:     dc.extractSelector(meta),
+		Meta:         meta,
+	}
+
+	// Save session state if position was auto-incremented
+	if dc.Position == -1 && cfg.Session.AutoIncrementPos {
+		if err := cfg.SaveConfig(); err != nil {
+			// Don't fail the command, just warn
+			// Note: In production, this warning would be sent to stderr
+		}
+	}
+
+	return result, nil
+}
+
+// buildDescription creates a human-readable description for the step
+func (dc *DataCommand) buildDescription(operation string, meta map[string]interface{}) string {
+	switch operation {
+	case "ELEMENT_TEXT":
+		return fmt.Sprintf("store text from \"%s\" in $%s", meta["selector"], meta["variable"])
+	case "LITERAL":
+		return fmt.Sprintf("store \"%s\" in $%s", meta["value"], meta["variable"])
+	case "ATTRIBUTE":
+		return fmt.Sprintf("store attribute \"%s\" from \"%s\" in $%s", meta["attribute"], meta["selector"], meta["variable"])
+	case "COOKIE_CREATE":
+		desc := fmt.Sprintf("create cookie \"%s\" with value \"%s\"", meta["name"], meta["value"])
+		if domain, ok := meta["domain"]; ok {
+			desc += fmt.Sprintf(" for domain %s", domain)
+		}
+		return desc
+	case "COOKIE_DELETE":
+		return fmt.Sprintf("delete cookie \"%s\"", meta["name"])
+	case "COOKIE_CLEAR_ALL":
+		return "clear all cookies"
+	default:
+		return operation
 	}
 }
 
-// buildDataExtraData builds the extra data map for output based on data operation type
-func buildDataExtraData(dType dataType, args []string, flags map[string]interface{}) map[string]interface{} {
-	extra := make(map[string]interface{})
-
-	switch dType {
-	case dataStoreElementText:
-		extra["selector"] = args[0]
-		extra["variable_name"] = args[1]
-	case dataStoreLiteral:
-		extra["value"] = args[0]
-		extra["variable_name"] = args[1]
-	case dataStoreAttribute:
-		extra["selector"] = args[0]
-		extra["attribute"] = args[1]
-		extra["variable_name"] = args[2]
-	case dataCookieCreate:
-		extra["cookie_name"] = args[0]
-		extra["cookie_value"] = args[1]
-		if flags != nil {
-			if domain, ok := flags["domain"].(string); ok && domain != "" {
-				extra["domain"] = domain
-			}
-			if path, ok := flags["path"].(string); ok && path != "" {
-				extra["path"] = path
-			}
-			if secure, ok := flags["secure"].(bool); ok && secure {
-				extra["secure"] = secure
-			}
-			if httpOnly, ok := flags["http-only"].(bool); ok && httpOnly {
-				extra["http_only"] = httpOnly
-			}
-		}
-	case dataCookieDelete:
-		extra["cookie_name"] = args[0]
-	case dataCookieClearAll:
-		// No extra data needed
+// extractSelector extracts the selector from metadata if present
+func (dc *DataCommand) extractSelector(meta map[string]interface{}) string {
+	if selector, ok := meta["selector"].(string); ok {
+		return selector
 	}
-
-	return extra
+	return ""
 }

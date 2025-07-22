@@ -49,12 +49,13 @@ func init() {
 // - Session context for multi-step test workflows
 func loadConfig() {
 	var err error
-	
+
 	// Load configuration using the enhanced LoadConfig function
 	cfg, err = config.LoadConfig(cfgFile)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
-		os.Exit(1)
+		// Use consistent exit code for configuration errors
+		os.Exit(commands.ExitGeneralError)
 	}
 
 	// Apply command line flags (highest priority)
@@ -65,7 +66,8 @@ func loadConfig() {
 		// Validate output format - AI format is crucial for test generation
 		if err := validateOutputFormat(output); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			os.Exit(1)
+			// Use consistent exit code for validation errors
+			os.Exit(commands.ExitValidationError)
 		}
 		cfg.Output.DefaultFormat = output
 	}
@@ -74,7 +76,7 @@ func loadConfig() {
 	// This enables all commands to use consistent configuration
 	// for API endpoints, authentication, and AI-specific settings
 	commands.SetConfig(cfg)
-	
+
 	// Log configuration source for debugging (useful for AI troubleshooting)
 	if cfg.Output.Verbose {
 		fmt.Printf("Config loaded from: %s\n", config.GetConfigSource())
@@ -101,7 +103,16 @@ func main() {
 
 	// Execute root command (this triggers initConfig via cobra.OnInitialize)
 	if err := rootCmd.Execute(); err != nil {
+		// Use appropriate exit code based on error type
+		exitCode := commands.ExitGeneralError
+
+		// Print error to stderr
 		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+
+		// Exit with the determined code
+		os.Exit(exitCode)
 	}
+
+	// Successful execution
+	os.Exit(0)
 }

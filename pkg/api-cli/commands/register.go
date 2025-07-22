@@ -7,149 +7,75 @@ import (
 // RegisterCommands registers all CLI commands to the root command
 func RegisterCommands(rootCmd *cobra.Command) {
 	// ========================================
-	// CORE COMMANDS - Project/Journey/Goal Management
+	// CORE COMMANDS - Configuration and Session
 	// ========================================
 	rootCmd.AddCommand(newValidateConfigCmd())
+	// Set checkpoint functionality not implemented yet
+	// rootCmd.AddCommand(newSetCheckpointCmd())
+
+	// ========================================
+	// PROJECT MANAGEMENT COMMANDS (Consolidated)
+	// ========================================
+	// From project_management.go
 	rootCmd.AddCommand(newCreateProjectCmd())
 	rootCmd.AddCommand(newCreateGoalCmd())
 	rootCmd.AddCommand(newCreateJourneyCmd())
-	rootCmd.AddCommand(newUpdateJourneyCmd())
 	rootCmd.AddCommand(newCreateCheckpointCmd())
-	rootCmd.AddCommand(newSetCheckpointCmd())
-	rootCmd.AddCommand(newAddStepCmd())
+	rootCmd.AddCommand(newUpdateJourneyCmd())
 	rootCmd.AddCommand(newGetStepCmd())
 	rootCmd.AddCommand(newUpdateNavigationCmd())
-	rootCmd.AddCommand(newListProjectsCmd())
-	rootCmd.AddCommand(newListGoalsCmd())
-	rootCmd.AddCommand(newListJourneysCmd())
-	rootCmd.AddCommand(newListCheckpointsCmd())
 
 	// ========================================
-	// CONSOLIDATED STEP COMMANDS (11 Groups)
+	// LIST COMMANDS (Consolidated)
 	// ========================================
-	// These commands replace 54 individual legacy commands with a more organized structure
+	// From list.go
+	rootCmd.AddCommand(NewListProjectsCmd())
+	rootCmd.AddCommand(NewListGoalsCmd())
+	rootCmd.AddCommand(NewListJourneysCmd())
+	rootCmd.AddCommand(NewListCheckpointsCmd())
 
-	// 1. ASSERT - All assertion operations (12 legacy commands → 1 group)
-	rootCmd.AddCommand(newAssertV2Cmd()) // equals, not-equals, exists, not-exists, gt, gte, lt, lte, matches, checked, selected, variable
+	// ========================================
+	// STEP COMMANDS (8 Groups - Further Consolidated)
+	// ========================================
+	// All commands use unified positional argument syntax
 
-	// 2. INTERACT - User interaction actions (6 legacy commands → 1 group)
-	rootCmd.AddCommand(InteractCmd()) // click, double-click, right-click, hover, write, key
+	// 1. ASSERT - All assertion operations
+	rootCmd.AddCommand(newAssertCmd()) // equals, not-equals, exists, not-exists, gt, gte, lt, lte, matches, checked, selected, variable
 
-	// 3. NAVIGATE - Navigation and scrolling (5 legacy commands → 1 group)
-	rootCmd.AddCommand(NavigateCmd()) // url (navigate), scroll-to, scroll-top, scroll-bottom, scroll-element
+	// 2. INTERACT - All user interaction actions (consolidated from interact.go, mouse.go, select.go)
+	rootCmd.AddCommand(InteractionCmd()) // click, double-click, right-click, hover, write, key, mouse operations, select dropdowns
 
-	// 4. DATA - Data storage and cookies (5 legacy commands → 1 group)
-	rootCmd.AddCommand(newDataV2Cmd()) // store-text, store-value, cookie-create, cookie-delete, cookie-clear
+	// 3. BROWSER COMMANDS (consolidated from navigate.go, window.go)
+	rootCmd.AddCommand(NavigateCmd())  // to, scroll-to, scroll-top, scroll-bottom, scroll-element, scroll-by, scroll-up, scroll-down
+	rootCmd.AddCommand(newWindowCmd()) // resize, maximize, switch-tab, switch-iframe, switch-parent-frame
 
-	// 5. DIALOG - Dialog handling (4 legacy commands → 1 group)
-	rootCmd.AddCommand(newDialogV2Cmd()) // dismiss-alert, dismiss-confirm, dismiss-prompt, dismiss-prompt-with-text
+	// 4. DATA - Data storage and cookies
+	rootCmd.AddCommand(newDataCmd()) // store-text, store-value, store-attribute, cookie-create, cookie-delete, cookie-clear
 
-	// 6. WAIT - Wait operations (4 legacy commands → 1 group)
-	rootCmd.AddCommand(newWaitV2Cmd()) // element, element-not-visible, time (replaces wait-element, wait-for-element-default/timeout, wait-time)
+	// 5. DIALOG - Dialog handling
+	rootCmd.AddCommand(newDialogCmd()) // alert-accept, alert-dismiss, confirm-accept, confirm-reject, prompt
 
-	// 7. WINDOW - Window and frame management (5 legacy commands → 1 group)
-	rootCmd.AddCommand(newWindowV2Cmd()) // resize, switch-tab (next/prev), switch-frame (iframe/parent)
+	// 6. WAIT - Wait operations
+	rootCmd.AddCommand(newWaitCmd()) // element, element-not-visible, time
 
-	// 8. MOUSE - Advanced mouse operations (6 legacy commands → 1 group)
-	rootCmd.AddCommand(newMouseV2Cmd()) // move-to, move-by, move, down, up, enter
-
-	// 9. SELECT - Dropdown selection (3 legacy commands → 1 group)
-	rootCmd.AddCommand(newSelectV2Cmd()) // option, index, last
-
-	// 10. FILE - File operations (2 legacy commands → 1 group)
+	// 7. FILE - File operations
 	rootCmd.AddCommand(FileCmd()) // upload, upload-url
 
-	// 11. MISC - Miscellaneous actions (2 legacy commands → 1 group)
-	rootCmd.AddCommand(newMiscCmd()) // comment, execute (script)
+	// 8. MISC - Miscellaneous actions
+	rootCmd.AddCommand(newMiscCmd()) // comment, execute
 
-	// 12. LIBRARY - Library checkpoint operations (NEW)
-	rootCmd.AddCommand(LibraryCmd()) // add, get, attach
-
-	// ========================================
-	// LEGACY COMMAND SUPPORT
-	// ========================================
-	// Register all 54 legacy commands with deprecation warnings
-	// These provide backward compatibility and guide users to new commands
-	registerLegacyCommands(rootCmd)
+	// 9. LIBRARY - Library checkpoint operations
+	rootCmd.AddCommand(LibraryCmd()) // add, get, attach, move-step, remove-step, update
 
 	// ========================================
-	// LEGACY COMMANDS (ALL DEPRECATED - Use consolidated commands above)
+	// EXECUTION AND ANALYSIS COMMANDS (Consolidated)
 	// ========================================
-	// The following 54 individual commands are now replaced by the 11 consolidated groups above.
-	// They remain available through the legacy wrapper for backward compatibility.
-	// rootCmd.AddCommand(newCreateStepAssertExistsCmd())
-	// rootCmd.AddCommand(newCreateStepAssertNotExistsCmd())
-	// rootCmd.AddCommand(newCreateStepAssertEqualsCmd())
-	// rootCmd.AddCommand(newCreateStepAssertNotEqualsCmd())
-	// rootCmd.AddCommand(newCreateStepAssertGreaterThanCmd())
-	// rootCmd.AddCommand(newCreateStepAssertGreaterThanOrEqualCmd())
-	// rootCmd.AddCommand(newCreateStepAssertMatchesCmd())
-	// rootCmd.AddCommand(newCreateStepAssertCheckedCmd())
-	// rootCmd.AddCommand(newCreateStepDismissAlertCmd())  // Replaced by 'dialog dismiss alert'
-	// rootCmd.AddCommand(newCreateStepCommentCmd())  // Replaced by 'misc comment'
-	// rootCmd.AddCommand(newCreateStepAssertLessThanOrEqualCmd())
-	// rootCmd.AddCommand(newCreateStepAssertLessThanCmd())
-	// rootCmd.AddCommand(newCreateStepAssertSelectedCmd())
-	// rootCmd.AddCommand(newCreateStepAssertVariableCmd())
-	// rootCmd.AddCommand(newCreateStepDismissConfirmCmd())  // Replaced by 'dialog dismiss confirm'
-	// rootCmd.AddCommand(newCreateStepDismissPromptCmd())   // Replaced by 'dialog dismiss prompt'
-	// rootCmd.AddCommand(newCreateStepDeleteCookieCmd()) // Replaced by 'data cookie delete'
-	// rootCmd.AddCommand(newCreateStepMouseDownCmd())    // Replaced by 'mouse down'
-	// rootCmd.AddCommand(newCreateStepMouseUpCmd())      // Replaced by 'mouse up'
-	// rootCmd.AddCommand(newCreateStepMouseMoveCmd())    // Replaced by 'mouse move'
-	// rootCmd.AddCommand(newCreateStepMouseEnterCmd())   // Replaced by 'mouse enter'
-	// rootCmd.AddCommand(newCreateStepScrollPositionCmd())  // Replaced by 'navigate scroll-to'
-	// rootCmd.AddCommand(newCreateStepSwitchIframeCmd())      // Replaced by 'window switch iframe'
-	// rootCmd.AddCommand(newCreateStepSwitchNextTabCmd())     // Replaced by 'window switch tab next'
-	// rootCmd.AddCommand(newCreateStepSwitchParentFrameCmd()) // Replaced by 'window switch parent-frame'
-	// rootCmd.AddCommand(newCreateStepSwitchPrevTabCmd())     // Replaced by 'window switch tab prev'
-
-	// ===== VERSION B ENHANCED COMMANDS =====
-	// Cookie management commands (Version B) - Replaced by 'data cookie' commands
-	// rootCmd.AddCommand(newCreateStepCookieCreateCmd())  // Replaced by 'data cookie create'
-	// rootCmd.AddCommand(newCreateStepCookieWipeAllCmd()) // Replaced by 'data cookie clear-all'
-
-	// Upload and dismiss commands (Version B)
-	// rootCmd.AddCommand(newCreateStepUploadURLCmd())  // Replaced by 'file upload-url'
-	// rootCmd.AddCommand(newCreateStepDismissPromptWithTextCmd())  // Replaced by 'dialog dismiss prompt-with-text'
-
-	// Execute script command (Version B)
-	// rootCmd.AddCommand(newCreateStepExecuteScriptCmd())  // Replaced by 'misc execute'
-
-	// Enhanced mouse commands (Version B)
-	// rootCmd.AddCommand(newCreateStepMouseMoveToCmd())  // Replaced by 'mouse move-to'
-	// rootCmd.AddCommand(newCreateStepMouseMoveByCmd())  // Replaced by 'mouse move-by'
-
-	// Enhanced pick commands (Version B) - Replaced by 'select' commands
-	// rootCmd.AddCommand(newCreateStepPickIndexCmd())  // Replaced by 'select index'
-	// rootCmd.AddCommand(newCreateStepPickLastCmd())   // Replaced by 'select last'
-
-	// Enhanced wait commands (Version B) - Replaced by 'wait' command
-	// rootCmd.AddCommand(newCreateStepWaitForElementTimeoutCmd())  // Replaced by 'wait element --timeout'
-	// rootCmd.AddCommand(newCreateStepWaitForElementDefaultCmd())  // Replaced by 'wait element'
-
-	// Enhanced store commands (Version B) - Replaced by 'data store' commands
-	// rootCmd.AddCommand(newCreateStepStoreElementTextCmd())  // Replaced by 'data store element-text'
-	// rootCmd.AddCommand(newCreateStepStoreLiteralValueCmd()) // Replaced by 'data store literal'
-
-	// Scroll commands (Version B)
-	// Note: These are already registered above as:
-	// - newCreateStepScrollPositionCmd()
-	// - newCreateStepScrollTopCmd()
-	// - newCreateStepScrollBottomCmd()
-	// - newCreateStepScrollElementCmd()
-
-	// Window resize command (Version B)
-	// rootCmd.AddCommand(newCreateStepWindowResizeCmd())  // Replaced by 'window resize'
-
-	// ========================================
-	// EXECUTION AND ANALYSIS COMMANDS
-	// ========================================
-	rootCmd.AddCommand(newExecuteGoalCmd())
-	rootCmd.AddCommand(newMonitorExecutionCmd())
-	rootCmd.AddCommand(newGetExecutionAnalysisCmd())
-	rootCmd.AddCommand(newManageTestDataCmd())
-	rootCmd.AddCommand(newCreateEnvironmentCmd())
+	// From execution_management.go
+	rootCmd.AddCommand(NewCreateEnvironmentCmd())
+	rootCmd.AddCommand(NewManageTestDataCmd())
+	rootCmd.AddCommand(NewExecuteGoalCmd())
+	rootCmd.AddCommand(NewMonitorExecutionCmd())
+	rootCmd.AddCommand(NewGetExecutionAnalysisCmd())
 
 	// ========================================
 	// TEST TEMPLATE COMMANDS (AI Integration)
@@ -157,15 +83,4 @@ func RegisterCommands(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(LoadTestTemplateCmd)
 	rootCmd.AddCommand(GenerateCommandsCmd)
 	rootCmd.AddCommand(GetTestTemplatesCmd)
-}
-
-// registerLegacyCommands registers all legacy commands with deprecation warnings
-func registerLegacyCommands(rootCmd *cobra.Command) {
-	// Get all legacy commands
-	legacyCommands := GetLegacyCommands()
-
-	// Add each legacy command to root
-	for _, cmd := range legacyCommands {
-		rootCmd.AddCommand(cmd)
-	}
 }

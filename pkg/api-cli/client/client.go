@@ -3,6 +3,7 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -17,9 +18,11 @@ import (
 
 // Client wraps the Virtuoso API client
 type Client struct {
-	httpClient *resty.Client
-	config     *config.VirtuosoConfig
-	logger     *logrus.Logger
+	httpClient        *resty.Client
+	restyClient       *resty.Client // Alias for compatibility with context methods
+	config            *config.VirtuosoConfig
+	logger            *logrus.Logger
+	currentCheckpoint string // For session management
 }
 
 // NewClient creates a new Virtuoso API client
@@ -52,9 +55,10 @@ func NewClient(cfg *config.VirtuosoConfig) *Client {
 		})
 
 	return &Client{
-		httpClient: httpClient,
-		config:     cfg,
-		logger:     logger,
+		httpClient:  httpClient,
+		restyClient: httpClient, // Set alias for context methods
+		config:      cfg,
+		logger:      logger,
 	}
 }
 
@@ -110,9 +114,10 @@ func NewClientDirect(baseURL, token string) *Client {
 		})
 
 	return &Client{
-		httpClient: httpClient,
-		config:     cfg,
-		logger:     logger,
+		httpClient:  httpClient,
+		restyClient: httpClient, // Set alias for context methods
+		config:      cfg,
+		logger:      logger,
 	}
 }
 
@@ -491,23 +496,7 @@ func (c *Client) addStep(checkpointID int, stepIndex int, parsedStep map[string]
 
 // AddNavigateStep adds a navigation step to a checkpoint
 func (c *Client) AddNavigateStep(checkpointID int, url string) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "NAVIGATE",
-		"target": map[string]interface{}{
-			"selectors": []map[string]interface{}{
-				{
-					"type":  "GUESS",
-					"value": fmt.Sprintf(`{"clue":"%s"}`, url),
-				},
-			},
-		},
-		"value": url,
-		"meta":  map[string]interface{}{},
-	}
-
-	// For now, we'll append at the end by using a high stepIndex
-	// In a real implementation, we'd query existing steps first
-	return c.addStep(checkpointID, 999, parsedStep)
+	return c.AddNavigateStepWithContext(context.Background(), checkpointID, url)
 }
 
 // AddClickStep adds a click step to a checkpoint
@@ -1006,37 +995,12 @@ func (c *Client) AddFillStep(checkpointID int, selector, value string) (int, err
 
 // CreateNavigationStep creates a navigation step at a specific position
 func (c *Client) CreateNavigationStep(checkpointID int, url string, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "NAVIGATE",
-		"target": map[string]interface{}{
-			"selectors": []map[string]interface{}{
-				{
-					"type":  "GUESS",
-					"value": fmt.Sprintf(`{"clue":"%s"}`, url),
-				},
-			},
-		},
-		"value": url,
-		"meta":  map[string]interface{}{},
-	}
-
-	return c.addStep(checkpointID, position, parsedStep)
+	return c.CreateNavigationStepWithContext(context.Background(), checkpointID, url, position)
 }
 
 // CreateWaitTimeStep creates a wait time step at a specific position
 func (c *Client) CreateWaitTimeStep(checkpointID int, seconds int, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "WAIT",
-		"value":  fmt.Sprintf("%d", seconds*1000), // Convert seconds to milliseconds
-		"meta": map[string]interface{}{
-			"kind":     "WAIT",
-			"type":     "TIME",
-			"duration": seconds * 1000,
-			"poll":     100,
-		},
-	}
-
-	return c.addStep(checkpointID, position, parsedStep)
+	return c.CreateWaitTimeStepWithContext(context.Background(), checkpointID, seconds, position)
 }
 
 // CreateWaitElementStep creates a wait for element step at a specific position
@@ -1243,127 +1207,37 @@ func (c *Client) CreateUploadStep(checkpointID int, filename string, element str
 
 // CreateScrollTopStep creates a scroll to top step at a specific position
 func (c *Client) CreateScrollTopStep(checkpointID int, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "SCROLL",
-		"value":  "",
-		"meta": map[string]interface{}{
-			"kind": "SCROLL",
-			"type": "TOP",
-		},
-	}
-
-	return c.addStep(checkpointID, position, parsedStep)
+	return c.CreateScrollTopStepWithContext(context.Background(), checkpointID, position)
 }
 
 // CreateScrollBottomStep creates a scroll to bottom step at a specific position
 func (c *Client) CreateScrollBottomStep(checkpointID int, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "SCROLL",
-		"value":  "",
-		"meta": map[string]interface{}{
-			"kind": "SCROLL",
-			"type": "BOTTOM",
-		},
-	}
-
-	return c.addStep(checkpointID, position, parsedStep)
+	return c.CreateScrollBottomStepWithContext(context.Background(), checkpointID, position)
 }
 
 // CreateScrollElementStep creates a scroll to element step at a specific position
 func (c *Client) CreateScrollElementStep(checkpointID int, element string, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "SCROLL",
-		"target": map[string]interface{}{
-			"selectors": []map[string]interface{}{
-				{
-					"type":  "GUESS",
-					"value": fmt.Sprintf(`{"clue":"%s"}`, element),
-				},
-			},
-		},
-		"value": "",
-		"meta": map[string]interface{}{
-			"type": "ELEMENT",
-		},
-	}
-
-	return c.addStep(checkpointID, position, parsedStep)
+	return c.CreateScrollElementStepWithContext(context.Background(), checkpointID, element, position)
 }
 
 // CreateAssertExistsStep creates an assertion step that verifies an element exists
 func (c *Client) CreateAssertExistsStep(checkpointID int, element string, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "ASSERT_EXISTS",
-		"target": map[string]interface{}{
-			"selectors": []map[string]interface{}{
-				{
-					"type":  "GUESS",
-					"value": fmt.Sprintf(`{"clue":"%s"}`, element),
-				},
-			},
-		},
-		"value": fmt.Sprintf("see \"%s\"", element),
-		"meta":  map[string]interface{}{},
-	}
-
-	return c.addStep(checkpointID, position, parsedStep)
+	return c.CreateAssertExistsStepWithContext(context.Background(), checkpointID, element, position)
 }
 
 // CreateAssertNotExistsStep creates an assertion step that verifies an element does not exist
 func (c *Client) CreateAssertNotExistsStep(checkpointID int, element string, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "ASSERT_NOT_EXISTS",
-		"target": map[string]interface{}{
-			"selectors": []map[string]interface{}{
-				{
-					"type":  "GUESS",
-					"value": fmt.Sprintf(`{"clue":"%s"}`, element),
-				},
-			},
-		},
-		"value": fmt.Sprintf("do not see \"%s\"", element),
-		"meta":  map[string]interface{}{},
-	}
-
-	return c.addStep(checkpointID, position, parsedStep)
+	return c.CreateAssertNotExistsStepWithContext(context.Background(), checkpointID, element, position)
 }
 
 // CreateAssertEqualsStep creates an assertion step that verifies an element has a specific text value
 func (c *Client) CreateAssertEqualsStep(checkpointID int, element string, value string, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "ASSERT_EQUALS",
-		"target": map[string]interface{}{
-			"selectors": []map[string]interface{}{
-				{
-					"type":  "GUESS",
-					"value": fmt.Sprintf(`{"clue":"%s"}`, element),
-				},
-			},
-		},
-		"value": fmt.Sprintf("expect %s to have text \"%s\"", element, value),
-		"meta":  map[string]interface{}{},
-	}
-
-	return c.addStep(checkpointID, position, parsedStep)
+	return c.CreateAssertEqualsStepWithContext(context.Background(), checkpointID, element, value, position)
 }
 
 // CreateAssertCheckedStep creates an assertion step that verifies a checkbox or radio button is checked
 func (c *Client) CreateAssertCheckedStep(checkpointID int, element string, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "ASSERT_CHECKED",
-		"target": map[string]interface{}{
-			"selectors": []map[string]interface{}{
-				{
-					"type":  "GUESS",
-					"value": fmt.Sprintf(`{"clue":"%s"}`, element),
-				},
-			},
-		},
-		"value": fmt.Sprintf("see %s is checked", element),
-		"meta":  map[string]interface{}{},
-	}
-
-	return c.addStep(checkpointID, position, parsedStep)
+	return c.CreateAssertCheckedStepWithContext(context.Background(), checkpointID, element, position)
 }
 
 // CreateStoreStep creates a store step that saves an element value to a variable
@@ -1445,74 +1319,22 @@ func (c *Client) CreateCommentStep(checkpointID int, comment string, position in
 
 // CreateAssertLessThanOrEqualStep creates an assertion step that verifies a value is less than or equal
 func (c *Client) CreateAssertLessThanOrEqualStep(checkpointID int, element string, value string, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "ASSERT_LESS_THAN_OR_EQUAL",
-		"target": map[string]interface{}{
-			"selectors": []map[string]interface{}{
-				{
-					"type":  "GUESS",
-					"value": fmt.Sprintf(`{"clue":"%s"}`, element),
-				},
-			},
-		},
-		"value": value,
-		"meta":  map[string]interface{}{},
-	}
-
-	return c.addStep(checkpointID, position, parsedStep)
+	return c.CreateAssertLessThanOrEqualStepWithContext(context.Background(), checkpointID, element, value, position)
 }
 
 // CreateAssertLessThanStep creates an assertion step that verifies a value is less than
 func (c *Client) CreateAssertLessThanStep(checkpointID int, element string, value string, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "ASSERT_LESS_THAN",
-		"target": map[string]interface{}{
-			"selectors": []map[string]interface{}{
-				{
-					"type":  "GUESS",
-					"value": fmt.Sprintf(`{"clue":"%s"}`, element),
-				},
-			},
-		},
-		"value": value,
-		"meta":  map[string]interface{}{},
-	}
-
-	return c.addStep(checkpointID, position, parsedStep)
+	return c.CreateAssertLessThanStepWithContext(context.Background(), checkpointID, element, value, position)
 }
 
 // CreateAssertSelectedStep creates an assertion step that verifies an option is selected
 func (c *Client) CreateAssertSelectedStep(checkpointID int, element string, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "ASSERT_SELECTED",
-		"target": map[string]interface{}{
-			"selectors": []map[string]interface{}{
-				{
-					"type":  "GUESS",
-					"value": fmt.Sprintf(`{"clue":"%s"}`, element),
-				},
-			},
-		},
-		"value": "",
-		"meta":  map[string]interface{}{},
-	}
-
-	return c.addStep(checkpointID, position, parsedStep)
+	return c.CreateAssertSelectedStepWithContext(context.Background(), checkpointID, element, position)
 }
 
 // CreateAssertVariableStep creates an assertion step that verifies a variable value
 func (c *Client) CreateAssertVariableStep(checkpointID int, variableName string, expectedValue string, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action":   "ASSERT_VARIABLE",
-		"variable": variableName,
-		"value":    expectedValue,
-		"meta": map[string]interface{}{
-			"kind": "ASSERT_VARIABLE",
-			"type": "EQUALS",
-		},
-	}
-
-	return c.addStep(checkpointID, position, parsedStep)
+	return c.CreateAssertVariableStepWithContext(context.Background(), checkpointID, variableName, expectedValue, position)
 }
 
 // CreateDismissConfirmStep creates a dismiss confirm dialog step
@@ -1712,18 +1534,7 @@ func (c *Client) CreatePickTextStep(checkpointID int, text string, element strin
 
 // CreateScrollPositionStep creates a scroll to position step
 func (c *Client) CreateScrollPositionStep(checkpointID int, x int, y int, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "SCROLL",
-		"value":  "",
-		"meta": map[string]interface{}{
-			"kind": "SCROLL",
-			"type": "POSITION",
-			"x":    x,
-			"y":    y,
-		},
-	}
-
-	return c.addStep(checkpointID, position, parsedStep)
+	return c.CreateScrollPositionStepWithContext(context.Background(), checkpointID, x, y, position)
 }
 
 // CreateStoreValueStep creates a store value step (stores a literal value)
@@ -1829,78 +1640,22 @@ func (c *Client) CreateSwitchPrevTabStep(checkpointID int, position int) (int, e
 
 // CreateAssertNotEqualsStep creates an assertion step that verifies an element does not equal a value
 func (c *Client) CreateAssertNotEqualsStep(checkpointID int, element string, value string, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "ASSERT_NOT_EQUALS",
-		"target": map[string]interface{}{
-			"selectors": []map[string]interface{}{
-				{
-					"type":  "GUESS",
-					"value": fmt.Sprintf(`{"clue":"%s"}`, element),
-				},
-			},
-		},
-		"value": value,
-		"meta":  map[string]interface{}{},
-	}
-
-	return c.addStep(checkpointID, position, parsedStep)
+	return c.CreateAssertNotEqualsStepWithContext(context.Background(), checkpointID, element, value, position)
 }
 
 // CreateAssertGreaterThanStep creates an assertion step that verifies an element is greater than a value
 func (c *Client) CreateAssertGreaterThanStep(checkpointID int, element string, value string, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "ASSERT_GREATER_THAN",
-		"target": map[string]interface{}{
-			"selectors": []map[string]interface{}{
-				{
-					"type":  "GUESS",
-					"value": fmt.Sprintf(`{"clue":"%s"}`, element),
-				},
-			},
-		},
-		"value": value,
-		"meta":  map[string]interface{}{},
-	}
-
-	return c.addStep(checkpointID, position, parsedStep)
+	return c.CreateAssertGreaterThanStepWithContext(context.Background(), checkpointID, element, value, position)
 }
 
 // CreateAssertGreaterThanOrEqualStep creates an assertion step that verifies an element is greater than or equal to a value
 func (c *Client) CreateAssertGreaterThanOrEqualStep(checkpointID int, element string, value string, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "ASSERT_GREATER_THAN_OR_EQUAL",
-		"target": map[string]interface{}{
-			"selectors": []map[string]interface{}{
-				{
-					"type":  "GUESS",
-					"value": fmt.Sprintf(`{"clue":"%s"}`, element),
-				},
-			},
-		},
-		"value": value,
-		"meta":  map[string]interface{}{},
-	}
-
-	return c.addStep(checkpointID, position, parsedStep)
+	return c.CreateAssertGreaterThanOrEqualStepWithContext(context.Background(), checkpointID, element, value, position)
 }
 
 // CreateAssertMatchesStep creates an assertion step that verifies an element matches a regex pattern
 func (c *Client) CreateAssertMatchesStep(checkpointID int, element string, regexPattern string, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "ASSERT_MATCHES",
-		"target": map[string]interface{}{
-			"selectors": []map[string]interface{}{
-				{
-					"type":  "GUESS",
-					"value": fmt.Sprintf(`{"clue":"%s"}`, element),
-				},
-			},
-		},
-		"value": regexPattern,
-		"meta":  map[string]interface{}{},
-	}
-
-	return c.addStep(checkpointID, position, parsedStep)
+	return c.CreateAssertMatchesStepWithContext(context.Background(), checkpointID, element, regexPattern, position)
 }
 
 // ValidateCheckpoint validates that a checkpoint exists and is accessible
@@ -2443,29 +2198,10 @@ func (c *Client) CreateStepCookieCreateWithOptions(checkpointID int, name, value
 
 // CreateStepCookieWipeAll clears all cookies (Version B)
 func (c *Client) CreateStepCookieWipeAll(checkpointID int, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "ENVIRONMENT",
-		"meta": map[string]interface{}{
-			"type": "CLEAR",
-		},
-	}
-
-	return c.addStep(checkpointID, position, parsedStep)
+	return c.CreateStepCookieClearAllWithContext(context.Background(), checkpointID, position)
 }
 
-// CreateStepExecuteScript creates a step to execute a custom script (Version B)
-func (c *Client) CreateStepExecuteScript(checkpointID int, scriptName string, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "EXECUTE",
-		"value":  scriptName,
-		"meta": map[string]interface{}{
-			"explicit": true,
-			"script":   scriptName,
-		},
-	}
-
-	return c.addStep(checkpointID, position, parsedStep)
-}
+// CreateStepExecuteScript is defined in window_misc_wrappers.go for backward compatibility
 
 // CreateStepUploadURL creates a step to upload a file from URL (Version B)
 func (c *Client) CreateStepUploadURL(checkpointID int, url, selector string, position int) (int, error) {
@@ -2490,45 +2226,12 @@ func (c *Client) CreateStepUploadURL(checkpointID int, url, selector string, pos
 
 // CreateStepDismissPromptWithText creates a step to dismiss a prompt with response text (Version B)
 func (c *Client) CreateStepDismissPromptWithText(checkpointID int, text string, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "DISMISS",
-		"value":  text,
-		"meta": map[string]interface{}{
-			"type":   "PROMPT",
-			"action": "OK",
-		},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+	return c.CreateStepPromptDismissWithTextWithContext(context.Background(), checkpointID, text, position)
 }
 
 // CreateStepWaitForElementNotVisible creates a step to wait for element to disappear (Version B)
 func (c *Client) CreateStepWaitForElementNotVisible(checkpointID int, selector string, timeoutMs int, position int) (int, error) {
-	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
-
-	// Use default timeout if none specified
-	timeout := timeoutMs
-	if timeout <= 0 {
-		timeout = 20000 // 20 seconds default
-	}
-
-	parsedStep := map[string]interface{}{
-		"action": "WAIT",
-		"target": map[string]interface{}{
-			"selectors": []map[string]interface{}{
-				{
-					"type":  "GUESS",
-					"value": clueJSON,
-				},
-			},
-		},
-		"value": fmt.Sprintf("%d", timeout),
-		"meta": map[string]interface{}{
-			"waitForInvisible": true,
-		},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+	return c.CreateStepWaitForElementNotVisibleWithContext(context.Background(), checkpointID, selector, timeoutMs, position)
 }
 
 // CreateStepPickIndex creates a step to pick dropdown option by index (Version B)
@@ -2579,44 +2282,12 @@ func (c *Client) CreateStepPickLast(checkpointID int, selector string, position 
 
 // CreateStepWaitForElementTimeout creates a step to wait for element with custom timeout (Version B)
 func (c *Client) CreateStepWaitForElementTimeout(checkpointID int, selector string, timeoutMs int, position int) (int, error) {
-	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
-
-	parsedStep := map[string]interface{}{
-		"action": "WAIT",
-		"target": map[string]interface{}{
-			"selectors": []map[string]interface{}{
-				{
-					"type":  "GUESS",
-					"value": clueJSON,
-				},
-			},
-		},
-		"value": fmt.Sprintf("%d", timeoutMs),
-		"meta":  map[string]interface{}{},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+	return c.CreateStepWaitForElementTimeoutWithContext(context.Background(), checkpointID, selector, timeoutMs, position)
 }
 
 // CreateStepWaitForElementDefault creates a step to wait for element with default timeout (Version B)
 func (c *Client) CreateStepWaitForElementDefault(checkpointID int, selector string, position int) (int, error) {
-	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
-
-	parsedStep := map[string]interface{}{
-		"action": "WAIT",
-		"target": map[string]interface{}{
-			"selectors": []map[string]interface{}{
-				{
-					"type":  "GUESS",
-					"value": clueJSON,
-				},
-			},
-		},
-		"value": "20000",
-		"meta":  map[string]interface{}{},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+	return c.CreateStepWaitForElementWithContext(context.Background(), checkpointID, selector, position)
 }
 
 // CreateStepStoreElementText creates a step to store element text in variable (Version B)
@@ -2717,18 +2388,7 @@ func (c *Client) CreateStepSwitchNextTab(checkpointID int, position int) (int, e
 	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
 }
 
-// CreateStepSwitchParentFrame creates a step to switch to parent frame (Version B)
-func (c *Client) CreateStepSwitchParentFrame(checkpointID int, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "SWITCH",
-		"meta": map[string]interface{}{
-			"kind": "SWITCH",
-			"type": "PARENT_FRAME",
-		},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
-}
+// CreateStepSwitchParentFrame is defined in window_misc_wrappers.go for backward compatibility
 
 // CreateStepSwitchPrevTab creates a step to switch to previous tab (Version B)
 func (c *Client) CreateStepSwitchPrevTab(checkpointID int, position int) (int, error) {
@@ -2829,166 +2489,47 @@ func (c *Client) CreateStepAssertMatches(checkpointID int, selector, pattern str
 
 // CreateStepNavigate creates a navigation step (Version B)
 func (c *Client) CreateStepNavigate(checkpointID int, url string, useNewTab bool, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "NAVIGATE",
-		"value":  url,
-		"meta":   map[string]interface{}{},
-	}
-
-	if useNewTab {
-		parsedStep["meta"].(map[string]interface{})["useNewTab"] = true
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+	return c.CreateStepNavigateWithContext(context.Background(), checkpointID, url, useNewTab, position)
 }
 
 // CreateStepClick creates a click step (Version B)
 func (c *Client) CreateStepClick(checkpointID int, selector string, position int) (int, error) {
-	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
-
-	parsedStep := map[string]interface{}{
-		"action": "CLICK",
-		"target": map[string]interface{}{
-			"selectors": []map[string]interface{}{
-				{
-					"type":  "GUESS",
-					"value": clueJSON,
-				},
-			},
-		},
-		"value": "",
-		"meta":  map[string]interface{}{},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+	return c.CreateStepClickWithContext(context.Background(), checkpointID, selector, position)
 }
 
 // CreateStepClickWithVariable creates a click step with variable target (Version B)
 func (c *Client) CreateStepClickWithVariable(checkpointID int, variable string, position int) (int, error) {
-	clueJSON := fmt.Sprintf(`{"clue":"","variable":"%s"}`, variable)
-
-	parsedStep := map[string]interface{}{
-		"action": "CLICK",
-		"target": map[string]interface{}{
-			"selectors": []map[string]interface{}{
-				{
-					"type":  "GUESS",
-					"value": clueJSON,
-				},
-			},
-		},
-		"value": "",
-		"meta":  map[string]interface{}{},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+	return c.CreateStepClickWithVariableWithContext(context.Background(), checkpointID, variable, position)
 }
 
 // CreateStepClickWithDetails creates a click step with position and element type (Version B)
 func (c *Client) CreateStepClickWithDetails(checkpointID int, selector, positionType, elementType string, position int) (int, error) {
-	clueJSON := fmt.Sprintf(`{"clue":"%s","position":"%s","elementType":"%s"}`, selector, positionType, elementType)
-
-	parsedStep := map[string]interface{}{
-		"action": "CLICK",
-		"target": map[string]interface{}{
-			"selectors": []map[string]interface{}{
-				{
-					"type":  "GUESS",
-					"value": clueJSON,
-				},
-			},
-		},
-		"value": "",
-		"meta":  map[string]interface{}{},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+	return c.CreateStepClickWithDetailsWithContext(context.Background(), checkpointID, selector, positionType, elementType, position)
 }
 
 // CreateStepWrite creates a write/input step (Version B)
 func (c *Client) CreateStepWrite(checkpointID int, selector, value string, position int) (int, error) {
-	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
-
-	parsedStep := map[string]interface{}{
-		"action": "WRITE",
-		"target": map[string]interface{}{
-			"selectors": []map[string]interface{}{
-				{
-					"type":  "GUESS",
-					"value": clueJSON,
-				},
-			},
-		},
-		"value": value,
-		"meta":  map[string]interface{}{},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+	return c.CreateStepWriteWithContext(context.Background(), checkpointID, selector, value, position)
 }
 
 // CreateStepWriteWithVariable creates a write step with variable storage (Version B)
 func (c *Client) CreateStepWriteWithVariable(checkpointID int, selector, value, variable string, position int) (int, error) {
-	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
-
-	parsedStep := map[string]interface{}{
-		"action": "WRITE",
-		"target": map[string]interface{}{
-			"selectors": []map[string]interface{}{
-				{
-					"type":  "GUESS",
-					"value": clueJSON,
-				},
-			},
-		},
-		"value":    value,
-		"meta":     map[string]interface{}{},
-		"variable": variable,
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+	return c.CreateStepWriteWithVariableWithContext(context.Background(), checkpointID, selector, value, variable, position)
 }
 
 // CreateStepScrollToPosition creates a scroll to position step (Version B)
 func (c *Client) CreateStepScrollToPosition(checkpointID int, x, y, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "SCROLL",
-		"value":  "",
-		"meta": map[string]interface{}{
-			"x":    x,
-			"y":    y,
-			"type": "POSITION",
-		},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+	return c.CreateStepScrollToPositionWithContext(context.Background(), checkpointID, x, y, position)
 }
 
 // CreateStepScrollByOffset creates a scroll by offset step (Version B)
 func (c *Client) CreateStepScrollByOffset(checkpointID int, x, y, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "SCROLL",
-		"value":  "",
-		"meta": map[string]interface{}{
-			"x":    x,
-			"y":    y,
-			"type": "OFFSET",
-		},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+	return c.CreateStepScrollByOffsetWithContext(context.Background(), checkpointID, x, y, position)
 }
 
 // CreateStepScrollToTop creates a scroll to top step (Version B)
 func (c *Client) CreateStepScrollToTop(checkpointID int, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "SCROLL",
-		"value":  "",
-		"meta": map[string]interface{}{
-			"type": "TOP",
-		},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+	return c.CreateStepScrollToTopWithContext(context.Background(), checkpointID, position)
 }
 
 // CreateStepWindowResize creates a window resize step (Version B)
@@ -3010,46 +2551,15 @@ func (c *Client) CreateStepWindowResize(checkpointID int, width, height, positio
 
 // CreateStepKeyGlobal creates a global key press step (Version B)
 func (c *Client) CreateStepKeyGlobal(checkpointID int, key string, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "KEY",
-		"value":  key,
-		"meta":   map[string]interface{}{},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+	return c.CreateStepKeyGlobalWithContext(context.Background(), checkpointID, key, position)
 }
 
 // CreateStepKeyTargeted creates a targeted key press step (Version B)
 func (c *Client) CreateStepKeyTargeted(checkpointID int, selector, key string, position int) (int, error) {
-	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
-
-	parsedStep := map[string]interface{}{
-		"action": "KEY",
-		"target": map[string]interface{}{
-			"selectors": []map[string]interface{}{
-				{
-					"type":  "GUESS",
-					"value": clueJSON,
-				},
-			},
-		},
-		"value": key,
-		"meta":  map[string]interface{}{},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+	return c.CreateStepKeyTargetedWithContext(context.Background(), checkpointID, selector, key, position)
 }
 
-// CreateStepComment creates a comment step (Version B)
-func (c *Client) CreateStepComment(checkpointID int, comment string, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "COMMENT",
-		"value":  comment,
-		"meta":   map[string]interface{}{},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
-}
+// CreateStepComment is defined in window_misc_wrappers.go for backward compatibility
 
 // CreateStepAssertLessThan creates a step to assert element is less than value
 func (c *Client) CreateStepAssertLessThan(checkpointID int, selector, value string, position int) (int, error) {
@@ -3230,72 +2740,33 @@ func (c *Client) CreateStepAddCookie(checkpointID int, name, value, domain strin
 
 // CreateStepDeleteCookie creates a step to delete a specific cookie
 func (c *Client) CreateStepDeleteCookie(checkpointID int, name string, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "ENVIRONMENT",
-		"meta": map[string]interface{}{
-			"type": "DELETE",
-			"name": name,
-		},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+	return c.CreateStepCookieDeleteWithContext(context.Background(), checkpointID, name, position)
 }
 
 // CreateStepClearCookies creates a step to clear all cookies
 func (c *Client) CreateStepClearCookies(checkpointID int, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "ENVIRONMENT",
-		"meta": map[string]interface{}{
-			"type": "CLEAR",
-		},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+	return c.CreateStepCookieClearAllWithContext(context.Background(), checkpointID, position)
 }
 
 // CreateStepDismissAlert creates a step to dismiss an alert dialog
 func (c *Client) CreateStepDismissAlert(checkpointID int, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "DISMISS",
-		"value":  "",
-		"meta": map[string]interface{}{
-			"type": "ALERT",
-		},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+	return c.CreateStepAlertDismissWithContext(context.Background(), checkpointID, position)
 }
 
 // CreateStepDismissConfirm creates a step to dismiss a confirm dialog
 func (c *Client) CreateStepDismissConfirm(checkpointID int, accept bool, position int) (int, error) {
-	action := "CANCEL"
 	if accept {
-		action = "OK"
+		return c.CreateStepConfirmAcceptWithContext(context.Background(), checkpointID, position)
 	}
-	parsedStep := map[string]interface{}{
-		"action": "DISMISS",
-		"value":  "",
-		"meta": map[string]interface{}{
-			"type":   "CONFIRM",
-			"action": action,
-		},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+	return c.CreateStepConfirmDismissWithContext(context.Background(), checkpointID, position)
 }
 
 // CreateStepDismissPrompt creates a step to dismiss a prompt dialog
 func (c *Client) CreateStepDismissPrompt(checkpointID int, text string, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "DISMISS",
-		"value":  text,
-		"meta": map[string]interface{}{
-			"type":   "PROMPT",
-			"action": "OK",
-		},
+	if text == "" {
+		return c.CreateStepPromptDismissWithContext(context.Background(), checkpointID, position)
 	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+	return c.CreateStepPromptDismissWithTextWithContext(context.Background(), checkpointID, text, position)
 }
 
 // CreateStepMouseDown creates a mouse down step
@@ -3459,112 +2930,32 @@ func (c *Client) CreateStepPickValue(checkpointID int, selector, value string, p
 
 // CreateStepScrollBottom creates a scroll to bottom step
 func (c *Client) CreateStepScrollBottom(checkpointID int, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "SCROLL",
-		"value":  "",
-		"meta": map[string]interface{}{
-			"type": "BOTTOM",
-		},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+	return c.CreateStepScrollBottomWithContext(context.Background(), checkpointID, position)
 }
 
 // CreateStepScrollElement creates a scroll to element step
 func (c *Client) CreateStepScrollElement(checkpointID int, selector string, position int) (int, error) {
-	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
-
-	parsedStep := map[string]interface{}{
-		"action": "SCROLL",
-		"target": map[string]interface{}{
-			"selectors": []map[string]interface{}{
-				{
-					"type":  "GUESS",
-					"value": clueJSON,
-				},
-			},
-		},
-		"value": "",
-		"meta": map[string]interface{}{
-			"type": "ELEMENT",
-		},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+	return c.CreateStepScrollElementWithContext(context.Background(), checkpointID, selector, position)
 }
 
 // CreateStepScrollPosition creates a scroll to position step
 func (c *Client) CreateStepScrollPosition(checkpointID int, x, y, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "SCROLL",
-		"value":  "",
-		"meta": map[string]interface{}{
-			"type": "POSITION",
-			"x":    x,
-			"y":    y,
-		},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+	return c.CreateStepScrollPositionWithContext(context.Background(), checkpointID, x, y, position)
 }
 
 // CreateStepScrollTop creates a scroll to top step
 func (c *Client) CreateStepScrollTop(checkpointID int, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "SCROLL",
-		"value":  "",
-		"meta": map[string]interface{}{
-			"type": "TOP",
-		},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+	return c.CreateStepScrollTopWithContext(context.Background(), checkpointID, position)
 }
 
 // CreateStepStore creates a general store step
 func (c *Client) CreateStepStore(checkpointID int, selector, variableName string, position int) (int, error) {
-	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
-
-	parsedStep := map[string]interface{}{
-		"action": "STORE",
-		"target": map[string]interface{}{
-			"selectors": []map[string]interface{}{
-				{
-					"type":  "GUESS",
-					"value": clueJSON,
-				},
-			},
-		},
-		"value":    "",
-		"variable": variableName,
-		"meta":     map[string]interface{}{},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+	return c.CreateStepStoreWithContext(context.Background(), checkpointID, selector, variableName, position)
 }
 
 // CreateStepStoreValue creates a store value step
 func (c *Client) CreateStepStoreValue(checkpointID int, selector, variableName string, position int) (int, error) {
-	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
-
-	parsedStep := map[string]interface{}{
-		"action": "STORE",
-		"target": map[string]interface{}{
-			"selectors": []map[string]interface{}{
-				{
-					"type":  "GUESS",
-					"value": clueJSON,
-				},
-			},
-		},
-		"value":    "",
-		"variable": variableName,
-		"meta": map[string]interface{}{
-			"type": "VALUE",
-		},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+	return c.CreateStepStoreValueWithContext(context.Background(), checkpointID, selector, variableName, position)
 }
 
 // CreateStepUpload creates a file upload step
@@ -3676,71 +3067,17 @@ func (c *Client) CreateStepExecuteJs(checkpointID int, javascript string, positi
 
 // CreateStepDoubleClick creates a double-click step
 func (c *Client) CreateStepDoubleClick(checkpointID int, selector string, position int) (int, error) {
-	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
-
-	parsedStep := map[string]interface{}{
-		"action": "MOUSE",
-		"target": map[string]interface{}{
-			"selectors": []map[string]interface{}{
-				{
-					"type":  "GUESS",
-					"value": clueJSON,
-				},
-			},
-		},
-		"value": "",
-		"meta": map[string]interface{}{
-			"action": "DOUBLE_CLICK",
-		},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+	return c.CreateStepDoubleClickWithContext(context.Background(), checkpointID, selector, position)
 }
 
 // CreateStepHover creates a hover step
 func (c *Client) CreateStepHover(checkpointID int, selector string, position int) (int, error) {
-	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
-
-	parsedStep := map[string]interface{}{
-		"action": "MOUSE",
-		"target": map[string]interface{}{
-			"selectors": []map[string]interface{}{
-				{
-					"type":  "GUESS",
-					"value": clueJSON,
-				},
-			},
-		},
-		"value": "",
-		"meta": map[string]interface{}{
-			"action": "OVER",
-		},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+	return c.CreateStepHoverWithContext(context.Background(), checkpointID, selector, position)
 }
 
 // CreateStepRightClick creates a right-click step
 func (c *Client) CreateStepRightClick(checkpointID int, selector string, position int) (int, error) {
-	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
-
-	parsedStep := map[string]interface{}{
-		"action": "MOUSE",
-		"target": map[string]interface{}{
-			"selectors": []map[string]interface{}{
-				{
-					"type":  "GUESS",
-					"value": clueJSON,
-				},
-			},
-		},
-		"value": "",
-		"meta": map[string]interface{}{
-			"action": "RIGHT_CLICK",
-		},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
+	return c.CreateStepRightClickWithContext(context.Background(), checkpointID, selector, position)
 }
 
 // ============= LIBRARY CHECKPOINT METHODS =============
@@ -3944,36 +3281,6 @@ func (c *Client) UpdateLibraryCheckpoint(libraryCheckpointID int, name string) (
 	return &response.Item, nil
 }
 
-// CreateStepNavigateBack creates a browser back navigation step
-func (c *Client) CreateStepNavigateBack(checkpointID int, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"type":     "NAVIGATE_BACK",
-		"position": position,
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
-}
-
-// CreateStepNavigateForward creates a browser forward navigation step
-func (c *Client) CreateStepNavigateForward(checkpointID int, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"type":     "NAVIGATE_FORWARD",
-		"position": position,
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
-}
-
-// CreateStepNavigateRefresh creates a page refresh navigation step
-func (c *Client) CreateStepNavigateRefresh(checkpointID int, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"type":     "NAVIGATE_REFRESH",
-		"position": position,
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
-}
-
 // CreateStepWindowMaximize creates a window maximize step
 func (c *Client) CreateStepWindowMaximize(checkpointID int, position int) (int, error) {
 	parsedStep := map[string]interface{}{
@@ -3981,19 +3288,6 @@ func (c *Client) CreateStepWindowMaximize(checkpointID int, position int) (int, 
 		"value":  "",
 		"meta": map[string]interface{}{
 			"type": "MAXIMIZE",
-		},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
-}
-
-// CreateStepWindowClose creates a window close step
-func (c *Client) CreateStepWindowClose(checkpointID int, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "WINDOW",
-		"value":  "",
-		"meta": map[string]interface{}{
-			"type": "CLOSE",
 		},
 	}
 
@@ -4107,32 +3401,6 @@ func (c *Client) CreateStepSwitchToMainContent(checkpointID int, position int) (
 		"action": "SWITCH",
 		"meta": map[string]interface{}{
 			"type": "DEFAULT_CONTENT",
-		},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
-}
-
-// CreateStepNavigateBackN goes back N steps in browser history
-func (c *Client) CreateStepNavigateBackN(checkpointID int, steps int, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "NAVIGATE",
-		"meta": map[string]interface{}{
-			"kind":  "BACK",
-			"steps": steps,
-		},
-	}
-
-	return c.createStepWithCustomBody(checkpointID, parsedStep, position)
-}
-
-// CreateStepNavigateForwardN goes forward N steps in browser history
-func (c *Client) CreateStepNavigateForwardN(checkpointID int, steps int, position int) (int, error) {
-	parsedStep := map[string]interface{}{
-		"action": "NAVIGATE",
-		"meta": map[string]interface{}{
-			"kind":  "FORWARD",
-			"steps": steps,
 		},
 	}
 

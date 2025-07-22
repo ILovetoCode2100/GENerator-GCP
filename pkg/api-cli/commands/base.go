@@ -1,10 +1,12 @@
 package commands
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/marklovelady/api-cli-generator/pkg/api-cli/client"
 	"github.com/spf13/cobra"
@@ -43,6 +45,12 @@ func NewBaseCommand() *BaseCommand {
 	return &BaseCommand{
 		OutputFormat: "human",
 	}
+}
+
+// CommandContext creates a context with timeout for API operations
+func (bc *BaseCommand) CommandContext() (context.Context, context.CancelFunc) {
+	// Default timeout of 30 seconds for API operations
+	return context.WithTimeout(context.Background(), 30*time.Second)
 }
 
 // Init initializes the base command with client and config
@@ -240,7 +248,7 @@ func (bc *BaseCommand) FormatAI(result *StepResult) string {
 	// Create AI-optimized output structure
 	aiOutput := map[string]interface{}{
 		"command": result.Type,
-		"result": "success",
+		"result":  "success",
 		"message": fmt.Sprintf("Step created: %s", result.Description),
 		"step_details": map[string]interface{}{
 			"id":       result.ID,
@@ -258,7 +266,7 @@ func (bc *BaseCommand) FormatAI(result *StepResult) string {
 			"current_position": result.Position,
 		},
 	}
-	
+
 	// Convert to JSON for structured output
 	data, _ := json.MarshalIndent(aiOutput, "", "  ")
 	return string(data)
@@ -289,11 +297,11 @@ func (bc *BaseCommand) suggestNextSteps(stepType string) []string {
 			"assert equals 'element' 'expected text'",
 		},
 	}
-	
+
 	if steps, ok := suggestions[stepType]; ok {
 		return steps
 	}
-	
+
 	// Default suggestions
 	return []string{
 		"wait time 1000",

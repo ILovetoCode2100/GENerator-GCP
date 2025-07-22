@@ -2,191 +2,165 @@ package commands
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
-	"github.com/marklovelady/api-cli-generator/pkg/api-cli/client"
 	"github.com/spf13/cobra"
 )
 
-// dialogType represents the type of dialog being dismissed
-type dialogType string
-
-const (
-	dialogAlert          dialogType = "alert"
-	dialogConfirm        dialogType = "confirm"
-	dialogPrompt         dialogType = "prompt"
-	dialogPromptWithText dialogType = "prompt-with-text"
-)
-
-// dialogCommandInfo contains metadata about each dialog type
-type dialogCommandInfo struct {
-	stepType      string
-	description   string
-	usage         string
-	examples      []string
-	argsCount     []int // Valid argument counts (excluding position)
-	parseStep     func(args []string, accept bool) string
-	hasAcceptFlag bool
+// DialogCommand implements the dialog command group using BaseCommand pattern
+type DialogCommand struct {
+	*BaseCommand
+	dialogType string
 }
 
-// dialogCommands maps dialog types to their metadata
-var dialogCommands = map[dialogType]dialogCommandInfo{
-	dialogAlert: {
+// dialogV2Config contains configuration for each dialog type
+type dialogV2Config struct {
+	stepType     string
+	description  string
+	usage        string
+	examples     []string
+	requiredArgs int
+	acceptFlag   bool // Whether this dialog type supports accept/reject flags
+	buildMeta    func(args []string, accept bool) map[string]interface{}
+}
+
+// dialogV2Configs maps dialog operations to their configurations
+var dialogV2Configs = map[string]dialogV2Config{
+	"dismiss-alert": {
 		stepType:    "DISMISS_ALERT",
 		description: "Dismiss JavaScript alert dialog",
-		usage:       "dialog dismiss alert [POSITION]",
+		usage:       "dialog dismiss-alert [checkpoint-id] [position]",
 		examples: []string{
-			`api-cli dialog dismiss alert 1`,
-			`api-cli dialog dismiss alert  # Auto-increment position`,
+			`api-cli dialog dismiss-alert cp_12345 1`,
+			`api-cli dialog dismiss-alert  # Uses session context and auto-increment`,
 		},
-		argsCount: []int{0},
-		parseStep: func(args []string, accept bool) string {
-			return "dismiss alert"
+		requiredArgs: 0,
+		acceptFlag:   false,
+		buildMeta: func(args []string, accept bool) map[string]interface{} {
+			return map[string]interface{}{
+				"action": "dismiss",
+			}
 		},
-		hasAcceptFlag: false,
 	},
-	dialogConfirm: {
+	"dismiss-confirm": {
 		stepType:    "DISMISS_CONFIRM",
 		description: "Dismiss JavaScript confirmation dialog",
-		usage:       "dialog dismiss confirm [POSITION]",
+		usage:       "dialog dismiss-confirm [checkpoint-id] [position]",
 		examples: []string{
-			`api-cli dialog dismiss confirm 1`,
-			`api-cli dialog dismiss confirm --accept  # Accept and auto-increment position`,
-			`api-cli dialog dismiss confirm --reject 2  # Reject at position 2`,
+			`api-cli dialog dismiss-confirm cp_12345 1`,
+			`api-cli dialog dismiss-confirm --accept  # Accept and auto-increment position`,
+			`api-cli dialog dismiss-confirm --reject  # Reject (default)`,
 		},
-		argsCount: []int{0},
-		parseStep: func(args []string, accept bool) string {
-			if accept {
-				return "accept confirm dialog"
+		requiredArgs: 0,
+		acceptFlag:   true,
+		buildMeta: func(args []string, accept bool) map[string]interface{} {
+			return map[string]interface{}{
+				"action": map[string]bool{
+					"accept": accept,
+					"reject": !accept,
+				},
 			}
-			return "cancel confirm dialog"
 		},
-		hasAcceptFlag: true,
 	},
-	dialogPrompt: {
+	"dismiss-prompt": {
 		stepType:    "DISMISS_PROMPT",
-		description: "Dismiss JavaScript prompt dialog",
-		usage:       "dialog dismiss prompt [POSITION]",
+		description: "Dismiss JavaScript prompt dialog without text",
+		usage:       "dialog dismiss-prompt [checkpoint-id] [position]",
 		examples: []string{
-			`api-cli dialog dismiss prompt 1`,
-			`api-cli dialog dismiss prompt --accept  # Accept and auto-increment position`,
-			`api-cli dialog dismiss prompt --reject 2  # Reject at position 2`,
+			`api-cli dialog dismiss-prompt cp_12345 1`,
+			`api-cli dialog dismiss-prompt --accept  # Accept and auto-increment position`,
+			`api-cli dialog dismiss-prompt --reject  # Reject (default)`,
 		},
-		argsCount: []int{0},
-		parseStep: func(args []string, accept bool) string {
-			if accept {
-				return "accept prompt dialog"
+		requiredArgs: 0,
+		acceptFlag:   true,
+		buildMeta: func(args []string, accept bool) map[string]interface{} {
+			return map[string]interface{}{
+				"action": map[string]bool{
+					"accept": accept,
+					"reject": !accept,
+				},
+				"text": "",
 			}
-			return "cancel prompt dialog"
 		},
-		hasAcceptFlag: true,
 	},
-	dialogPromptWithText: {
+	"dismiss-prompt-with-text": {
 		stepType:    "DISMISS_PROMPT_WITH_TEXT",
 		description: "Dismiss JavaScript prompt dialog with text input",
-		usage:       "dialog dismiss prompt-with-text TEXT [POSITION]",
+		usage:       "dialog dismiss-prompt-with-text [checkpoint-id] <text> [position]",
 		examples: []string{
-			`api-cli dialog dismiss prompt-with-text "My input text" 1`,
-			`api-cli dialog dismiss prompt-with-text "Answer" --accept  # Accept with text`,
-			`api-cli dialog dismiss prompt-with-text "Text" --reject 2  # Reject (text ignored)`,
+			`api-cli dialog dismiss-prompt-with-text cp_12345 "My input text" 1`,
+			`api-cli dialog dismiss-prompt-with-text "Answer" --accept  # Accept with text`,
+			`api-cli dialog dismiss-prompt-with-text "Text" --reject  # Reject (text ignored)`,
 		},
-		argsCount: []int{1},
-		parseStep: func(args []string, accept bool) string {
-			if accept {
-				return fmt.Sprintf("accept prompt dialog with text \"%s\"", args[0])
+		requiredArgs: 1,
+		acceptFlag:   true,
+		buildMeta: func(args []string, accept bool) map[string]interface{} {
+			return map[string]interface{}{
+				"text": args[0],
+				"action": map[string]bool{
+					"accept": accept,
+					"reject": !accept,
+				},
 			}
-			return fmt.Sprintf("cancel prompt dialog (text: \"%s\")", args[0])
 		},
-		hasAcceptFlag: true,
 	},
 }
 
-// newDialogCmd creates the consolidated dialog command with subcommands
+// newDialogCmd creates the new dialog command using BaseCommand pattern
 func newDialogCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "dialog",
 		Short: "Create dialog interaction steps in checkpoints",
 		Long: `Create various types of dialog interaction steps in checkpoints.
 
-This command consolidates all dialog-related operations for handling JavaScript alerts, confirms, and prompts.
+This command uses the standardized positional argument pattern:
+- Optional checkpoint ID as first argument (falls back to session context)
+- Required dialog arguments (text for prompt-with-text)
+- Optional position as last argument (auto-increments if not specified)
 
 Available dialog operations:
-  - dismiss alert: Dismiss JavaScript alert dialogs
-  - dismiss confirm: Dismiss confirmation dialogs (with accept/reject option)
-  - dismiss prompt: Dismiss prompt dialogs (with accept/reject option)
-  - dismiss prompt-with-text: Dismiss prompt dialogs with text input`,
-		Example: `  # Dismiss alert dialog
-  api-cli dialog dismiss alert 1
+  - dismiss-alert: Dismiss JavaScript alert dialogs
+  - dismiss-confirm: Dismiss confirmation dialogs (with accept/reject option)
+  - dismiss-prompt: Dismiss prompt dialogs without text (with accept/reject option)
+  - dismiss-prompt-with-text: Dismiss prompt dialogs with text input`,
+		Example: `  # Dismiss alert dialog (with explicit checkpoint)
+  api-cli dialog dismiss-alert cp_12345 1
+
+  # Dismiss alert dialog (using session context)
+  api-cli dialog dismiss-alert
 
   # Accept confirmation dialog
-  api-cli dialog dismiss confirm --accept
+  api-cli dialog dismiss-confirm --accept
 
   # Reject prompt dialog
-  api-cli dialog dismiss prompt --reject
+  api-cli dialog dismiss-prompt --reject
 
   # Accept prompt with text
-  api-cli dialog dismiss prompt-with-text "My answer" --accept`,
-	}
-
-	// Add dismiss subcommand
-	dismissCmd := &cobra.Command{
-		Use:   "dismiss",
-		Short: "Dismiss various types of dialogs",
-		Long:  "Dismiss JavaScript alert, confirm, or prompt dialogs",
+  api-cli dialog dismiss-prompt-with-text "My answer" --accept`,
 	}
 
 	// Add subcommands for each dialog type
-	for dType, info := range dialogCommands {
-		dismissCmd.AddCommand(newDialogSubCmd(dType, info))
+	for dialogType, config := range dialogV2Configs {
+		cmd.AddCommand(newDialogV2SubCmd(dialogType, config))
 	}
-
-	cmd.AddCommand(dismissCmd)
 
 	return cmd
 }
 
-// extractDialogArgsFromUsage extracts the arguments part from the usage string
-func extractDialogArgsFromUsage(usage string) string {
-	parts := strings.Fields(usage)
-	if len(parts) > 3 {
-		return strings.Join(parts[3:], " ")
-	}
-	return ""
-}
-
-// newDialogSubCmd creates a subcommand for a specific dialog type
-func newDialogSubCmd(dType dialogType, info dialogCommandInfo) *cobra.Command {
-	var checkpointFlag int
+// newDialogV2SubCmd creates a subcommand for a specific dialog type
+func newDialogV2SubCmd(dialogType string, config dialogV2Config) *cobra.Command {
 	var acceptFlag, rejectFlag bool
 
 	cmd := &cobra.Command{
-		Use:   string(dType) + " " + extractDialogArgsFromUsage(info.usage),
-		Short: info.description,
+		Use:   dialogType + " " + extractDialogUsageArgs(config.usage),
+		Short: config.description,
 		Long: fmt.Sprintf(`%s
 
-Uses the current checkpoint from session context by default. Override with --checkpoint flag.
-Position is auto-incremented if not specified and auto-increment is enabled.
+%s
 
 Examples:
-%s`, info.description, strings.Join(info.examples, "\n")),
-		Args: func(cmd *cobra.Command, args []string) error {
-			// Validate argument count
-			validCounts := info.argsCount
-			for _, count := range validCounts {
-				if len(args) == count || len(args) == count+1 {
-					return nil
-				}
-			}
-
-			// Generate expected count message
-			expectedCounts := []string{}
-			for _, count := range validCounts {
-				expectedCounts = append(expectedCounts, fmt.Sprintf("%d", count))
-				expectedCounts = append(expectedCounts, fmt.Sprintf("%d", count+1))
-			}
-
-			return fmt.Errorf("accepts %s args, received %d", strings.Join(expectedCounts, " or "), len(args))
-		},
+%s`, config.description, config.usage, strings.Join(config.examples, "\n")),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Validate accept/reject flags
 			if acceptFlag && rejectFlag {
@@ -195,18 +169,20 @@ Examples:
 
 			// Default to reject if neither specified and dialog supports it
 			accept := acceptFlag
-			if info.hasAcceptFlag && !acceptFlag && !rejectFlag {
+			if config.acceptFlag && !acceptFlag && !rejectFlag {
 				accept = false // Default to reject/cancel
 			}
 
-			return runDialogCommand(dType, info, args, checkpointFlag, accept)
+			dc := &DialogCommand{
+				BaseCommand: NewBaseCommand(),
+				dialogType:  dialogType,
+			}
+			return dc.Execute(cmd, args, config, accept)
 		},
 	}
 
-	addCheckpointFlag(cmd, &checkpointFlag)
-
 	// Add accept/reject flags for dialogs that support them
-	if info.hasAcceptFlag {
+	if config.acceptFlag {
 		cmd.Flags().BoolVar(&acceptFlag, "accept", false, "Accept the dialog (default is reject)")
 		cmd.Flags().BoolVar(&rejectFlag, "reject", false, "Reject/cancel the dialog (default)")
 	}
@@ -214,104 +190,150 @@ Examples:
 	return cmd
 }
 
-// runDialogCommand executes the dialog command logic
-func runDialogCommand(dType dialogType, info dialogCommandInfo, args []string, checkpointFlag int, accept bool) error {
-	// Validate arguments based on dialog type
-	if err := validateDialogArgs(dType, args); err != nil {
+// extractDialogUsageArgs extracts the arguments portion from the usage string
+func extractDialogUsageArgs(usage string) string {
+	parts := strings.Fields(usage)
+	if len(parts) > 2 {
+		// Skip "dialog" and subcommand
+		return strings.Join(parts[2:], " ")
+	}
+	return ""
+}
+
+// Execute runs the dialog command
+func (dc *DialogCommand) Execute(cmd *cobra.Command, args []string, config dialogV2Config, accept bool) error {
+	// Initialize base command
+	if err := dc.Init(cmd); err != nil {
 		return err
 	}
 
 	// Resolve checkpoint and position
-	positionIndex := len(info.argsCount) // Position comes after required args
-	ctx, err := resolveStepContext(args, checkpointFlag, positionIndex)
+	remainingArgs, err := dc.ResolveCheckpointAndPosition(args, config.requiredArgs)
+	if err != nil {
+		return fmt.Errorf("failed to resolve arguments: %w", err)
+	}
+
+	// Validate we have the required number of arguments
+	if len(remainingArgs) != config.requiredArgs {
+		return fmt.Errorf("expected %d arguments, got %d", config.requiredArgs, len(remainingArgs))
+	}
+
+	// Validate dialog-specific arguments
+	if err := dc.validateDialogArgs(config, remainingArgs); err != nil {
+		return err
+	}
+
+	// Build request metadata
+	meta := config.buildMeta(remainingArgs, accept)
+
+	// Create the step
+	stepResult, err := dc.createDialogStep(config.stepType, meta, accept)
+	if err != nil {
+		return fmt.Errorf("failed to create %s step: %w", config.stepType, err)
+	}
+
+	// Format and output the result
+	output, err := dc.FormatOutput(stepResult, dc.OutputFormat)
 	if err != nil {
 		return err
 	}
 
-	// Create Virtuoso client
-	apiClient := client.NewClient(cfg)
-
-	// Call the appropriate API method based on dialog type
-	stepID, err := callDialogAPI(apiClient, dType, ctx, args, accept)
-	if err != nil {
-		return fmt.Errorf("failed to create %s step: %w", info.stepType, err)
-	}
-
-	// Save config if position was auto-incremented
-	saveStepContext(ctx)
-
-	// Build extra data for output
-	extra := buildDialogExtraData(dType, args, accept)
-
-	// Output result
-	output := &StepOutput{
-		Status:       "success",
-		StepType:     info.stepType,
-		CheckpointID: ctx.CheckpointID,
-		StepID:       stepID,
-		Position:     ctx.Position,
-		ParsedStep:   info.parseStep(args, accept),
-		UsingContext: ctx.UsingContext,
-		AutoPosition: ctx.AutoPosition,
-		Extra:        extra,
-	}
-
-	return outputStepResult(output)
+	fmt.Print(output)
+	return nil
 }
 
 // validateDialogArgs validates arguments for a specific dialog type
-func validateDialogArgs(dType dialogType, args []string) error {
-	switch dType {
-	case dialogAlert, dialogConfirm, dialogPrompt:
-		// No arguments required
-		return nil
-	case dialogPromptWithText:
-		if len(args) < 1 || args[0] == "" {
+func (dc *DialogCommand) validateDialogArgs(config dialogV2Config, args []string) error {
+	switch dc.dialogType {
+	case "dismiss-prompt-with-text":
+		if len(args) > 0 && args[0] == "" {
 			return fmt.Errorf("text cannot be empty")
 		}
 	}
 	return nil
 }
 
-// callDialogAPI calls the appropriate client API method for the dialog type
-func callDialogAPI(apiClient *client.Client, dType dialogType, ctx *StepContext, args []string, accept bool) (int, error) {
-	switch dType {
-	case dialogAlert:
-		return apiClient.CreateDismissAlertStep(ctx.CheckpointID, ctx.Position)
-	case dialogConfirm:
-		return apiClient.CreateDismissConfirmStep(ctx.CheckpointID, accept, ctx.Position)
-	case dialogPrompt:
-		// Use empty text for simple prompt dismissal
-		return apiClient.CreateDismissPromptStep(ctx.CheckpointID, "", ctx.Position)
-	case dialogPromptWithText:
-		// For prompt with text, we need to handle accept/reject differently
-		// The API might expect different behavior, but based on existing implementation,
-		// we'll pass the text regardless of accept/reject
-		return apiClient.CreateDismissPromptStep(ctx.CheckpointID, args[0], ctx.Position)
-	default:
-		return 0, fmt.Errorf("unsupported dialog type: %s", dType)
+// createDialogStep creates a dialog step via the API
+func (dc *DialogCommand) createDialogStep(stepType string, meta map[string]interface{}, accept bool) (*StepResult, error) {
+	// Convert checkpoint ID from string to int
+	checkpointID, err := strconv.Atoi(dc.CheckpointID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid checkpoint ID: %s", dc.CheckpointID)
 	}
+
+	// Build the request based on step type
+	var stepID int
+
+	// Use the client to create the appropriate step
+	switch stepType {
+	case "DISMISS_ALERT":
+		stepID, err = dc.Client.CreateDismissAlertStep(checkpointID, dc.Position)
+	case "DISMISS_CONFIRM":
+		stepID, err = dc.Client.CreateDismissConfirmStep(checkpointID, accept, dc.Position)
+	case "DISMISS_PROMPT":
+		// Use empty text for simple prompt dismissal
+		stepID, err = dc.Client.CreateDismissPromptStep(checkpointID, "", dc.Position)
+	case "DISMISS_PROMPT_WITH_TEXT":
+		// Pass the text from meta
+		text := ""
+		if textVal, ok := meta["text"].(string); ok {
+			text = textVal
+		}
+		stepID, err = dc.Client.CreateDismissPromptStep(checkpointID, text, dc.Position)
+	default:
+		return nil, fmt.Errorf("unknown dialog type: %s", stepType)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Build the result
+	result := &StepResult{
+		ID:           fmt.Sprintf("%d", stepID),
+		CheckpointID: dc.CheckpointID,
+		Type:         stepType,
+		Position:     dc.Position,
+		Description:  dc.buildDescription(stepType, meta, accept),
+		Meta:         meta,
+	}
+
+	// Save session state if position was auto-incremented
+	if dc.Position == -1 && cfg.Session.AutoIncrementPos {
+		if err := cfg.SaveConfig(); err != nil {
+			// Don't fail the command, just warn
+			// Note: In production, this warning would be sent to stderr
+		}
+	}
+
+	return result, nil
 }
 
-// buildDialogExtraData builds the extra data map for output based on dialog type
-func buildDialogExtraData(dType dialogType, args []string, accept bool) map[string]interface{} {
-	extra := make(map[string]interface{})
-
-	switch dType {
-	case dialogAlert:
-		// No extra data for alert
-	case dialogConfirm, dialogPrompt:
-		extra["action"] = map[string]bool{
-			"accept": accept,
-			"reject": !accept,
+// buildDescription creates a human-readable description for the step
+func (dc *DialogCommand) buildDescription(stepType string, meta map[string]interface{}, accept bool) string {
+	switch stepType {
+	case "DISMISS_ALERT":
+		return "dismiss alert"
+	case "DISMISS_CONFIRM":
+		if accept {
+			return "accept confirm dialog"
 		}
-	case dialogPromptWithText:
-		extra["text"] = args[0]
-		extra["action"] = map[string]bool{
-			"accept": accept,
-			"reject": !accept,
+		return "cancel confirm dialog"
+	case "DISMISS_PROMPT":
+		if accept {
+			return "accept prompt dialog"
 		}
+		return "cancel prompt dialog"
+	case "DISMISS_PROMPT_WITH_TEXT":
+		text := ""
+		if textVal, ok := meta["text"].(string); ok {
+			text = textVal
+		}
+		if accept {
+			return fmt.Sprintf("accept prompt dialog with text \"%s\"", text)
+		}
+		return fmt.Sprintf("cancel prompt dialog (text: \"%s\")", text)
+	default:
+		return stepType
 	}
-
-	return extra
 }

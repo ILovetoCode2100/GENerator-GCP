@@ -1,209 +1,236 @@
 package commands
 
 import (
+	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/marklovelady/api-cli-generator/pkg/api-cli/client"
 	"github.com/spf13/cobra"
 )
 
-// assertType represents the type of assertion being performed
-type assertType string
-
-const (
-	assertExists             assertType = "exists"
-	assertNotExists          assertType = "not-exists"
-	assertEquals             assertType = "equals"
-	assertNotEquals          assertType = "not-equals"
-	assertChecked            assertType = "checked"
-	assertSelected           assertType = "selected"
-	assertGreaterThan        assertType = "gt"
-	assertGreaterThanOrEqual assertType = "gte"
-	assertLessThan           assertType = "lt"
-	assertLessThanOrEqual    assertType = "lte"
-	assertMatches            assertType = "matches"
-	assertVariable           assertType = "variable"
-)
-
-// assertCommandInfo contains metadata about each assertion type
-type assertCommandInfo struct {
-	stepType    string
-	description string
-	usage       string
-	examples    []string
-	argsCount   []int // Valid argument counts (excluding position)
-	parseStep   func(args []string) string
+// AssertCommand implements the assert command group using BaseCommand pattern
+type AssertCommand struct {
+	*BaseCommand
+	assertType string
 }
 
-// assertCommands maps assertion types to their metadata
-var assertCommands = map[assertType]assertCommandInfo{
-	assertExists: {
+// assertConfig contains configuration for each assertion type
+type assertConfig struct {
+	stepType     string
+	description  string
+	usage        string
+	examples     []string
+	requiredArgs int
+	buildMeta    func(args []string) map[string]interface{}
+}
+
+// assertConfigs maps assertion types to their configurations
+var assertConfigs = map[string]assertConfig{
+	"exists": {
 		stepType:    "ASSERT_EXISTS",
 		description: "Assert that an element exists",
-		usage:       "assert exists ELEMENT [POSITION]",
+		usage:       "assert exists [checkpoint-id] <element> [position]",
 		examples: []string{
-			`api-cli assert exists "Login button" 1`,
-			`api-cli assert exists "Success message"  # Auto-increment position`,
+			`api-cli assert exists cp_12345 "Login button" 1`,
+			`api-cli assert exists "Login button" --checkpoint 12345`,
+			`api-cli assert exists "Login button"  # Uses session context`,
 		},
-		argsCount: []int{1},
-		parseStep: func(args []string) string {
-			return fmt.Sprintf("see \"%s\"", args[0])
+		requiredArgs: 1,
+		buildMeta: func(args []string) map[string]interface{} {
+			return map[string]interface{}{
+				"selector": args[0],
+			}
 		},
 	},
-	assertNotExists: {
+	"not-exists": {
 		stepType:    "ASSERT_NOT_EXISTS",
 		description: "Assert that an element does not exist",
-		usage:       "assert not-exists ELEMENT [POSITION]",
+		usage:       "assert not-exists [checkpoint-id] <element> [position]",
 		examples: []string{
-			`api-cli assert not-exists "Error message" 1`,
-			`api-cli assert not-exists "Loading spinner"  # Auto-increment position`,
+			`api-cli assert not-exists cp_12345 "Error message" 1`,
+			`api-cli assert not-exists "Error message" --checkpoint 12345`,
+			`api-cli assert not-exists "Error message"  # Uses session context`,
 		},
-		argsCount: []int{1},
-		parseStep: func(args []string) string {
-			return fmt.Sprintf("not see \"%s\"", args[0])
+		requiredArgs: 1,
+		buildMeta: func(args []string) map[string]interface{} {
+			return map[string]interface{}{
+				"selector": args[0],
+			}
 		},
 	},
-	assertEquals: {
+	"equals": {
 		stepType:    "ASSERT_EQUALS",
 		description: "Assert that an element has a specific text value",
-		usage:       "assert equals ELEMENT VALUE [POSITION]",
+		usage:       "assert equals [checkpoint-id] <element> <value> [position]",
 		examples: []string{
-			`api-cli assert equals "Username field" "john@example.com" 1`,
-			`api-cli assert equals "Total price" "$99.99"  # Auto-increment position`,
+			`api-cli assert equals cp_12345 "Username field" "john@example.com" 1`,
+			`api-cli assert equals "Total price" "$99.99"  # Uses session context`,
 		},
-		argsCount: []int{2},
-		parseStep: func(args []string) string {
-			return fmt.Sprintf("expect %s to have text \"%s\"", args[0], args[1])
+		requiredArgs: 2,
+		buildMeta: func(args []string) map[string]interface{} {
+			return map[string]interface{}{
+				"selector": args[0],
+				"value":    args[1],
+			}
 		},
 	},
-	assertNotEquals: {
+	"not-equals": {
 		stepType:    "ASSERT_NOT_EQUALS",
 		description: "Assert that an element does not have a specific text value",
-		usage:       "assert not-equals ELEMENT VALUE [POSITION]",
+		usage:       "assert not-equals [checkpoint-id] <element> <value> [position]",
 		examples: []string{
-			`api-cli assert not-equals "Status" "Error" 1`,
-			`api-cli assert not-equals "Username" "admin"  # Auto-increment position`,
+			`api-cli assert not-equals cp_12345 "Status" "Error" 1`,
+			`api-cli assert not-equals "Username" "admin"  # Uses session context`,
 		},
-		argsCount: []int{2},
-		parseStep: func(args []string) string {
-			return fmt.Sprintf("expect %s to not have text \"%s\"", args[0], args[1])
+		requiredArgs: 2,
+		buildMeta: func(args []string) map[string]interface{} {
+			return map[string]interface{}{
+				"selector": args[0],
+				"value":    args[1],
+			}
 		},
 	},
-	assertChecked: {
+	"checked": {
 		stepType:    "ASSERT_CHECKED",
 		description: "Assert that a checkbox is checked",
-		usage:       "assert checked ELEMENT [POSITION]",
+		usage:       "assert checked [checkpoint-id] <element> [position]",
 		examples: []string{
-			`api-cli assert checked "Terms checkbox" 1`,
-			`api-cli assert checked "Remember me"  # Auto-increment position`,
+			`api-cli assert checked cp_12345 "Terms checkbox" 1`,
+			`api-cli assert checked "Remember me"  # Uses session context`,
 		},
-		argsCount: []int{1},
-		parseStep: func(args []string) string {
-			return fmt.Sprintf("expect \"%s\" to be checked", args[0])
+		requiredArgs: 1,
+		buildMeta: func(args []string) map[string]interface{} {
+			return map[string]interface{}{
+				"selector": args[0],
+			}
 		},
 	},
-	assertSelected: {
+	"selected": {
 		stepType:    "ASSERT_SELECTED",
 		description: "Assert that an option is selected",
-		usage:       "assert selected ELEMENT [POSITION]",
+		usage:       "assert selected [checkpoint-id] <element> [position]",
 		examples: []string{
-			`api-cli assert selected "Country dropdown" 1`,
-			`api-cli assert selected "Payment method"  # Auto-increment position`,
+			`api-cli assert selected cp_12345 "Country dropdown" 1`,
+			`api-cli assert selected "Language selector"  # Uses session context`,
 		},
-		argsCount: []int{1},
-		parseStep: func(args []string) string {
-			return fmt.Sprintf("expect \"%s\" to be selected", args[0])
+		requiredArgs: 1,
+		buildMeta: func(args []string) map[string]interface{} {
+			return map[string]interface{}{
+				"selector": args[0],
+			}
 		},
 	},
-	assertGreaterThan: {
+	"gt": {
 		stepType:    "ASSERT_GREATER_THAN",
-		description: "Assert that an element's value is greater than a number",
-		usage:       "assert gt ELEMENT VALUE [POSITION]",
+		description: "Assert that a value is greater than another",
+		usage:       "assert gt [checkpoint-id] <element> <value> [position]",
 		examples: []string{
-			`api-cli assert gt "Price" "10" 1`,
-			`api-cli assert gt "Quantity" "0"  # Auto-increment position`,
+			`api-cli assert gt cp_12345 "Price" "10" 1`,
+			`api-cli assert gt "Score" "100"  # Uses session context`,
 		},
-		argsCount: []int{2},
-		parseStep: func(args []string) string {
-			return fmt.Sprintf("expect %s to be greater than %s", args[0], args[1])
+		requiredArgs: 2,
+		buildMeta: func(args []string) map[string]interface{} {
+			return map[string]interface{}{
+				"selector": args[0],
+				"value":    args[1],
+			}
 		},
 	},
-	assertGreaterThanOrEqual: {
+	"gte": {
 		stepType:    "ASSERT_GREATER_THAN_OR_EQUAL",
-		description: "Assert that an element's value is greater than or equal to a number",
-		usage:       "assert gte ELEMENT VALUE [POSITION]",
+		description: "Assert that a value is greater than or equal to another",
+		usage:       "assert gte [checkpoint-id] <element> <value> [position]",
 		examples: []string{
-			`api-cli assert gte "Score" "50" 1`,
-			`api-cli assert gte "Balance" "0"  # Auto-increment position`,
+			`api-cli assert gte cp_12345 "Age" "18" 1`,
+			`api-cli assert gte "Count" "0"  # Uses session context`,
 		},
-		argsCount: []int{2},
-		parseStep: func(args []string) string {
-			return fmt.Sprintf("expect %s to be greater than or equal to %s", args[0], args[1])
+		requiredArgs: 2,
+		buildMeta: func(args []string) map[string]interface{} {
+			return map[string]interface{}{
+				"selector": args[0],
+				"value":    args[1],
+			}
 		},
 	},
-	assertLessThan: {
+	"lt": {
 		stepType:    "ASSERT_LESS_THAN",
-		description: "Assert that an element's value is less than a number",
-		usage:       "assert lt ELEMENT VALUE [POSITION]",
+		description: "Assert that a value is less than another",
+		usage:       "assert lt [checkpoint-id] <element> <value> [position]",
 		examples: []string{
-			`api-cli assert lt "Error count" "5" 1`,
-			`api-cli assert lt "Processing time" "1000"  # Auto-increment position`,
+			`api-cli assert lt cp_12345 "Error count" "5" 1`,
+			`api-cli assert lt "Temperature" "32"  # Uses session context`,
 		},
-		argsCount: []int{2},
-		parseStep: func(args []string) string {
-			return fmt.Sprintf("expect %s to be less than %s", args[0], args[1])
+		requiredArgs: 2,
+		buildMeta: func(args []string) map[string]interface{} {
+			return map[string]interface{}{
+				"selector": args[0],
+				"value":    args[1],
+			}
 		},
 	},
-	assertLessThanOrEqual: {
+	"lte": {
 		stepType:    "ASSERT_LESS_THAN_OR_EQUAL",
-		description: "Assert that an element's value is less than or equal to a number",
-		usage:       "assert lte ELEMENT VALUE [POSITION]",
+		description: "Assert that a value is less than or equal to another",
+		usage:       "assert lte [checkpoint-id] <element> <value> [position]",
 		examples: []string{
-			`api-cli assert lte "Discount" "100" 1`,
-			`api-cli assert lte "Items" "10"  # Auto-increment position`,
+			`api-cli assert lte cp_12345 "Stock" "100" 1`,
+			`api-cli assert lte "Discount" "50"  # Uses session context`,
 		},
-		argsCount: []int{2},
-		parseStep: func(args []string) string {
-			return fmt.Sprintf("expect %s to be less than or equal to %s", args[0], args[1])
+		requiredArgs: 2,
+		buildMeta: func(args []string) map[string]interface{} {
+			return map[string]interface{}{
+				"selector": args[0],
+				"value":    args[1],
+			}
 		},
 	},
-	assertMatches: {
+	"matches": {
 		stepType:    "ASSERT_MATCHES",
-		description: "Assert that an element matches a regular expression",
-		usage:       "assert matches ELEMENT PATTERN [POSITION]",
+		description: "Assert that an element matches a regex pattern",
+		usage:       "assert matches [checkpoint-id] <element> <pattern> [position]",
 		examples: []string{
-			`api-cli assert matches "Email field" "^[\\w.-]+@[\\w.-]+\\.\\w+$" 1`,
-			`api-cli assert matches "Phone" "^\\d{3}-\\d{3}-\\d{4}$"  # Auto-increment position`,
+			`api-cli assert matches cp_12345 "Email" "^[\\w.-]+@[\\w.-]+\\.\\w+$" 1`,
+			`api-cli assert matches "Phone" "^\\d{3}-\\d{3}-\\d{4}$"  # Uses session context`,
 		},
-		argsCount: []int{2},
-		parseStep: func(args []string) string {
-			return fmt.Sprintf("expect %s to match pattern \"%s\"", args[0], args[1])
+		requiredArgs: 2,
+		buildMeta: func(args []string) map[string]interface{} {
+			return map[string]interface{}{
+				"selector": args[0],
+				"pattern":  args[1],
+			}
 		},
 	},
-	assertVariable: {
+	"variable": {
 		stepType:    "ASSERT_VARIABLE",
-		description: "Assert that a stored variable has the expected value",
-		usage:       "assert variable VARIABLE_NAME EXPECTED_VALUE [POSITION]",
+		description: "Assert that a variable equals a value",
+		usage:       "assert variable [checkpoint-id] <variable> <value> [position]",
 		examples: []string{
-			`api-cli assert variable "orderId" "12345" 1`,
-			`api-cli assert variable "username" "john.doe"  # Auto-increment position`,
+			`api-cli assert variable cp_12345 "userRole" "admin" 1`,
+			`api-cli assert variable "loginStatus" "success"  # Uses session context`,
 		},
-		argsCount: []int{2},
-		parseStep: func(args []string) string {
-			return fmt.Sprintf("expect $%s to equal \"%s\"", args[0], args[1])
+		requiredArgs: 2,
+		buildMeta: func(args []string) map[string]interface{} {
+			return map[string]interface{}{
+				"variable": args[0],
+				"value":    args[1],
+			}
 		},
 	},
 }
 
-// newAssertCmd creates the consolidated assert command with subcommands
+// newAssertCmd creates the new assert command using BaseCommand pattern
 func newAssertCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "assert",
 		Short: "Create assertion steps in checkpoints",
 		Long: `Create various types of assertion steps in checkpoints.
 
-This command consolidates all assertion operations into a single command with subcommands for each assertion type.
+This command uses the standardized positional argument pattern:
+- Optional checkpoint ID as first argument (falls back to session context)
+- Required assertion arguments
+- Optional position as last argument (auto-increments if not specified)
 
 Available assertion types:
   - exists: Assert element exists
@@ -218,8 +245,11 @@ Available assertion types:
   - lte: Assert value is less than or equal to
   - matches: Assert element matches regex pattern
   - variable: Assert variable equals value`,
-		Example: `  # Assert element exists
-  api-cli assert exists "Login button" 1
+		Example: `  # Assert element exists (with explicit checkpoint)
+  api-cli assert exists cp_12345 "Login button" 1
+
+  # Assert element exists (using session context)
+  api-cli assert exists "Login button"
 
   # Assert element text equals value
   api-cli assert equals "Username" "john@example.com"
@@ -232,182 +262,229 @@ Available assertion types:
 	}
 
 	// Add subcommands for each assertion type
-	for aType, info := range assertCommands {
-		cmd.AddCommand(newAssertSubCmd(aType, info))
+	for assertType, config := range assertConfigs {
+		cmd.AddCommand(newAssertV2SubCmd(assertType, config))
 	}
 
 	return cmd
 }
 
-// extractArgsFromUsage extracts the arguments part from the usage string
-func extractArgsFromUsage(usage string) string {
+// newAssertV2SubCmd creates a subcommand for a specific assertion type
+func newAssertV2SubCmd(assertType string, config assertConfig) *cobra.Command {
+	var checkpointFlag string
+
+	cmd := &cobra.Command{
+		Use:   assertType + " " + extractUsageArgs(config.usage),
+		Short: config.description,
+		Long: fmt.Sprintf(`%s
+
+%s
+
+Examples:
+%s`, config.description, config.usage, strings.Join(config.examples, "\n")),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ac := &AssertCommand{
+				BaseCommand: NewBaseCommand(),
+				assertType:  assertType,
+			}
+
+			// If --checkpoint flag is set, prepend it to args
+			if checkpointFlag != "" {
+				args = append([]string{checkpointFlag}, args...)
+			}
+
+			return ac.Execute(cmd, args, config)
+		},
+	}
+
+	// Add --checkpoint flag
+	cmd.Flags().StringVar(&checkpointFlag, "checkpoint", "", "Checkpoint ID (alternative to positional argument)")
+
+	return cmd
+}
+
+// extractUsageArgs extracts the arguments portion from the usage string
+func extractUsageArgs(usage string) string {
 	parts := strings.Fields(usage)
 	if len(parts) > 2 {
+		// Skip "assert" and subcommand
 		return strings.Join(parts[2:], " ")
 	}
 	return ""
 }
 
-// newAssertSubCmd creates a subcommand for a specific assertion type
-func newAssertSubCmd(aType assertType, info assertCommandInfo) *cobra.Command {
-	var checkpointFlag int
-
-	cmd := &cobra.Command{
-		Use:   string(aType) + " " + extractArgsFromUsage(info.usage),
-		Short: info.description,
-		Long: fmt.Sprintf(`%s
-
-Uses the current checkpoint from session context by default. Override with --checkpoint flag.
-Position is auto-incremented if not specified and auto-increment is enabled.
-
-Examples:
-%s`, info.description, strings.Join(info.examples, "\n")),
-		Args: func(cmd *cobra.Command, args []string) error {
-			// Validate argument count
-			validCounts := info.argsCount
-			for _, count := range validCounts {
-				if len(args) == count || len(args) == count+1 {
-					return nil
-				}
-			}
-
-			// Generate expected count message
-			expectedCounts := []string{}
-			for _, count := range validCounts {
-				expectedCounts = append(expectedCounts, fmt.Sprintf("%d", count))
-				expectedCounts = append(expectedCounts, fmt.Sprintf("%d", count+1))
-			}
-
-			return fmt.Errorf("accepts %s args, received %d", strings.Join(expectedCounts, " or "), len(args))
-		},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runAssertCommand(aType, info, args, checkpointFlag)
-		},
-	}
-
-	addCheckpointFlag(cmd, &checkpointFlag)
-
-	return cmd
-}
-
-// runAssertCommand executes the assertion command logic
-func runAssertCommand(aType assertType, info assertCommandInfo, args []string, checkpointFlag int) error {
-	// Validate arguments based on assertion type
-	if err := validateAssertArgs(aType, args); err != nil {
+// Execute runs the assert command
+func (ac *AssertCommand) Execute(cmd *cobra.Command, args []string, config assertConfig) error {
+	// Initialize base command
+	if err := ac.Init(cmd); err != nil {
 		return err
 	}
 
 	// Resolve checkpoint and position
-	positionIndex := info.argsCount[0] // Position comes after required args
-	ctx, err := resolveStepContext(args, checkpointFlag, positionIndex)
+	remainingArgs, err := ac.ResolveCheckpointAndPosition(args, config.requiredArgs)
+	if err != nil {
+		return fmt.Errorf("failed to resolve arguments: %w", err)
+	}
+
+	// Validate we have the required number of arguments
+	if len(remainingArgs) != config.requiredArgs {
+		return fmt.Errorf("expected %d arguments, got %d", config.requiredArgs, len(remainingArgs))
+	}
+
+	// Build request metadata
+	meta := config.buildMeta(remainingArgs)
+
+	// Create the step
+	stepResult, err := ac.createAssertStep(config.stepType, meta)
+	if err != nil {
+		return fmt.Errorf("failed to create %s step: %w", config.stepType, err)
+	}
+
+	// Format and output the result
+	output, err := ac.FormatOutput(stepResult, ac.OutputFormat)
 	if err != nil {
 		return err
 	}
 
-	// Create Virtuoso client
-	apiClient := client.NewClient(cfg)
-
-	// Call the appropriate API method based on assertion type
-	stepID, err := callAssertAPI(apiClient, aType, ctx, args)
-	if err != nil {
-		return fmt.Errorf("failed to create %s step: %w", info.stepType, err)
-	}
-
-	// Save config if position was auto-incremented
-	saveStepContext(ctx)
-
-	// Build extra data for output
-	extra := buildExtraData(aType, args)
-
-	// Output result
-	output := &StepOutput{
-		Status:       "success",
-		StepType:     info.stepType,
-		CheckpointID: ctx.CheckpointID,
-		StepID:       stepID,
-		Position:     ctx.Position,
-		ParsedStep:   info.parseStep(args),
-		UsingContext: ctx.UsingContext,
-		AutoPosition: ctx.AutoPosition,
-		Extra:        extra,
-	}
-
-	return outputStepResult(output)
-}
-
-// validateAssertArgs validates arguments for a specific assertion type
-func validateAssertArgs(aType assertType, args []string) error {
-	switch aType {
-	case assertExists, assertNotExists, assertChecked, assertSelected:
-		if len(args) < 1 || args[0] == "" {
-			return fmt.Errorf("element cannot be empty")
-		}
-	case assertEquals, assertNotEquals, assertGreaterThan, assertGreaterThanOrEqual,
-		assertLessThan, assertLessThanOrEqual, assertMatches:
-		if len(args) < 1 || args[0] == "" {
-			return fmt.Errorf("element cannot be empty")
-		}
-		if len(args) < 2 || args[1] == "" {
-			return fmt.Errorf("value cannot be empty")
-		}
-	case assertVariable:
-		if len(args) < 1 || args[0] == "" {
-			return fmt.Errorf("variable name cannot be empty")
-		}
-		if len(args) < 2 || args[1] == "" {
-			return fmt.Errorf("expected value cannot be empty")
-		}
-	}
+	fmt.Print(output)
 	return nil
 }
 
-// callAssertAPI calls the appropriate client API method for the assertion type
-func callAssertAPI(apiClient *client.Client, aType assertType, ctx *StepContext, args []string) (int, error) {
-	switch aType {
-	case assertExists:
-		return apiClient.CreateAssertExistsStep(ctx.CheckpointID, args[0], ctx.Position)
-	case assertNotExists:
-		return apiClient.CreateAssertNotExistsStep(ctx.CheckpointID, args[0], ctx.Position)
-	case assertEquals:
-		return apiClient.CreateAssertEqualsStep(ctx.CheckpointID, args[0], args[1], ctx.Position)
-	case assertNotEquals:
-		return apiClient.CreateAssertNotEqualsStep(ctx.CheckpointID, args[0], args[1], ctx.Position)
-	case assertChecked:
-		return apiClient.CreateAssertCheckedStep(ctx.CheckpointID, args[0], ctx.Position)
-	case assertSelected:
-		return apiClient.CreateAssertSelectedStep(ctx.CheckpointID, args[0], ctx.Position)
-	case assertGreaterThan:
-		return apiClient.CreateAssertGreaterThanStep(ctx.CheckpointID, args[0], args[1], ctx.Position)
-	case assertGreaterThanOrEqual:
-		return apiClient.CreateAssertGreaterThanOrEqualStep(ctx.CheckpointID, args[0], args[1], ctx.Position)
-	case assertLessThan:
-		return apiClient.CreateAssertLessThanStep(ctx.CheckpointID, args[0], args[1], ctx.Position)
-	case assertLessThanOrEqual:
-		return apiClient.CreateAssertLessThanOrEqualStep(ctx.CheckpointID, args[0], args[1], ctx.Position)
-	case assertMatches:
-		return apiClient.CreateAssertMatchesStep(ctx.CheckpointID, args[0], args[1], ctx.Position)
-	case assertVariable:
-		return apiClient.CreateAssertVariableStep(ctx.CheckpointID, args[0], args[1], ctx.Position)
+// createAssertStep creates an assertion step via the API
+func (ac *AssertCommand) createAssertStep(stepType string, meta map[string]interface{}) (*StepResult, error) {
+	// Convert checkpoint ID from string to int
+	checkpointID, err := strconv.Atoi(ac.CheckpointID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid checkpoint ID: %s", ac.CheckpointID)
+	}
+
+	// Create a context with timeout for the API operation
+	ctx, cancel := ac.CommandContext()
+	defer cancel()
+
+	// Build the request based on step type
+	var stepID int
+
+	// Use the client to create the appropriate step with context
+	switch stepType {
+	case "ASSERT_EXISTS":
+		stepID, err = ac.Client.CreateAssertExistsStepWithContext(ctx, checkpointID, meta["selector"].(string), ac.Position)
+	case "ASSERT_NOT_EXISTS":
+		stepID, err = ac.Client.CreateAssertNotExistsStepWithContext(ctx, checkpointID, meta["selector"].(string), ac.Position)
+	case "ASSERT_EQUALS":
+		stepID, err = ac.Client.CreateAssertEqualsStepWithContext(ctx, checkpointID, meta["selector"].(string), meta["value"].(string), ac.Position)
+	case "ASSERT_NOT_EQUALS":
+		stepID, err = ac.Client.CreateAssertNotEqualsStepWithContext(ctx, checkpointID, meta["selector"].(string), meta["value"].(string), ac.Position)
+	case "ASSERT_CHECKED":
+		stepID, err = ac.Client.CreateAssertCheckedStepWithContext(ctx, checkpointID, meta["selector"].(string), ac.Position)
+	case "ASSERT_SELECTED":
+		stepID, err = ac.Client.CreateAssertSelectedStepWithContext(ctx, checkpointID, meta["selector"].(string), ac.Position)
+	case "ASSERT_GREATER_THAN":
+		stepID, err = ac.Client.CreateAssertGreaterThanStepWithContext(ctx, checkpointID, meta["selector"].(string), meta["value"].(string), ac.Position)
+	case "ASSERT_GREATER_THAN_OR_EQUAL":
+		stepID, err = ac.Client.CreateAssertGreaterThanOrEqualStepWithContext(ctx, checkpointID, meta["selector"].(string), meta["value"].(string), ac.Position)
+	case "ASSERT_LESS_THAN":
+		stepID, err = ac.Client.CreateAssertLessThanStepWithContext(ctx, checkpointID, meta["selector"].(string), meta["value"].(string), ac.Position)
+	case "ASSERT_LESS_THAN_OR_EQUAL":
+		stepID, err = ac.Client.CreateAssertLessThanOrEqualStepWithContext(ctx, checkpointID, meta["selector"].(string), meta["value"].(string), ac.Position)
+	case "ASSERT_MATCHES":
+		stepID, err = ac.Client.CreateAssertMatchesStepWithContext(ctx, checkpointID, meta["selector"].(string), meta["pattern"].(string), ac.Position)
+	case "ASSERT_VARIABLE":
+		stepID, err = ac.Client.CreateAssertVariableStepWithContext(ctx, checkpointID, meta["variable"].(string), meta["value"].(string), ac.Position)
 	default:
-		return 0, fmt.Errorf("unsupported assertion type: %s", aType)
+		return nil, fmt.Errorf("unknown assertion type: %s", stepType)
+	}
+
+	if err != nil {
+		// Handle different error types with specific messages
+		if err == context.DeadlineExceeded {
+			return nil, fmt.Errorf("request timed out while creating %s step", stepType)
+		}
+		if err == context.Canceled {
+			return nil, fmt.Errorf("request was canceled while creating %s step", stepType)
+		}
+
+		// Check for specific API error types
+		if client.IsNotFound(err) {
+			return nil, fmt.Errorf("checkpoint %d not found", checkpointID)
+		}
+		if client.IsUnauthorized(err) {
+			return nil, fmt.Errorf("unauthorized: please check your API token")
+		}
+		if client.IsRateLimited(err) {
+			return nil, fmt.Errorf("rate limited: please try again later")
+		}
+		if client.IsTimeout(err) {
+			return nil, fmt.Errorf("API request timed out")
+		}
+
+		// For API errors, provide more context
+		if apiErr, ok := err.(*client.APIError); ok {
+			return nil, fmt.Errorf("API error creating %s step: %v", stepType, apiErr)
+		}
+
+		// Generic error
+		return nil, fmt.Errorf("failed to create %s step: %w", stepType, err)
+	}
+
+	// Build the result
+	result := &StepResult{
+		ID:           fmt.Sprintf("%d", stepID),
+		CheckpointID: ac.CheckpointID,
+		Type:         stepType,
+		Position:     ac.Position,
+		Description:  ac.buildDescription(stepType, meta),
+		Selector:     ac.extractSelector(meta),
+		Meta:         meta,
+	}
+
+	// Save session state if position was auto-incremented
+	if ac.Position == -1 && cfg.Session.AutoIncrementPos {
+		if err := cfg.SaveConfig(); err != nil {
+			// Don't fail the command, just warn
+			// Note: In production, this warning would be sent to stderr
+		}
+	}
+
+	return result, nil
+}
+
+// buildDescription creates a human-readable description for the step
+func (ac *AssertCommand) buildDescription(stepType string, meta map[string]interface{}) string {
+	switch stepType {
+	case "ASSERT_EXISTS":
+		return fmt.Sprintf("see \"%s\"", meta["selector"])
+	case "ASSERT_NOT_EXISTS":
+		return fmt.Sprintf("not see \"%s\"", meta["selector"])
+	case "ASSERT_EQUALS":
+		return fmt.Sprintf("expect %s to have text \"%s\"", meta["selector"], meta["value"])
+	case "ASSERT_NOT_EQUALS":
+		return fmt.Sprintf("expect %s to not have text \"%s\"", meta["selector"], meta["value"])
+	case "ASSERT_CHECKED":
+		return fmt.Sprintf("expect %s to be checked", meta["selector"])
+	case "ASSERT_SELECTED":
+		return fmt.Sprintf("expect %s to be selected", meta["selector"])
+	case "ASSERT_GREATER_THAN":
+		return fmt.Sprintf("expect %s to be greater than %s", meta["selector"], meta["value"])
+	case "ASSERT_GREATER_THAN_OR_EQUAL":
+		return fmt.Sprintf("expect %s to be greater than or equal to %s", meta["selector"], meta["value"])
+	case "ASSERT_LESS_THAN":
+		return fmt.Sprintf("expect %s to be less than %s", meta["selector"], meta["value"])
+	case "ASSERT_LESS_THAN_OR_EQUAL":
+		return fmt.Sprintf("expect %s to be less than or equal to %s", meta["selector"], meta["value"])
+	case "ASSERT_MATCHES":
+		return fmt.Sprintf("expect %s to match pattern \"%s\"", meta["selector"], meta["pattern"])
+	case "ASSERT_VARIABLE":
+		return fmt.Sprintf("expect variable %s to equal \"%s\"", meta["variable"], meta["value"])
+	default:
+		return stepType
 	}
 }
 
-// buildExtraData builds the extra data map for output based on assertion type
-func buildExtraData(aType assertType, args []string) map[string]interface{} {
-	extra := make(map[string]interface{})
-
-	switch aType {
-	case assertExists, assertNotExists, assertChecked, assertSelected:
-		extra["element"] = args[0]
-	case assertEquals, assertNotEquals, assertGreaterThan, assertGreaterThanOrEqual,
-		assertLessThan, assertLessThanOrEqual, assertMatches:
-		extra["element"] = args[0]
-		extra["value"] = args[1]
-	case assertVariable:
-		extra["variable_name"] = args[0]
-		extra["expected_value"] = args[1]
+// extractSelector extracts the selector from metadata if present
+func (ac *AssertCommand) extractSelector(meta map[string]interface{}) string {
+	if selector, ok := meta["selector"].(string); ok {
+		return selector
 	}
-
-	return extra
+	return ""
 }

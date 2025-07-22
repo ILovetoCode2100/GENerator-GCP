@@ -185,12 +185,16 @@ func runLibraryAddCommand(cmd *cobra.Command, args []string) error {
 
 	// Format result
 	result := map[string]interface{}{
-		"id":           libraryCheckpoint.ID,
-		"checkpointId": checkpointID,
-		"name":         libraryCheckpoint.Name,
-		"description":  libraryCheckpoint.Description,
-		"createdAt":    libraryCheckpoint.CreatedAt,
-		"message":      fmt.Sprintf("✅ Added checkpoint %d to library as library checkpoint %d", checkpointID, libraryCheckpoint.ID),
+		"library_checkpoint_id":  libraryCheckpoint.ID,
+		"original_checkpoint_id": checkpointID,
+		"name":                   libraryCheckpoint.Name,
+		"description":            libraryCheckpoint.Description,
+		"createdAt":              libraryCheckpoint.CreatedAt,
+		"message":                fmt.Sprintf("✅ Added checkpoint %d to library as library checkpoint %d", checkpointID, libraryCheckpoint.ID),
+		"next_steps": []string{
+			fmt.Sprintf("Use 'library get %d' to view details", libraryCheckpoint.ID),
+			fmt.Sprintf("Use 'library attach <journey-id> %d <position>' to attach to a journey", libraryCheckpoint.ID),
+		},
 	}
 
 	output, err := base.FormatOutput(result, base.OutputFormat)
@@ -219,7 +223,7 @@ func runLibraryGetCommand(cmd *cobra.Command, args []string) error {
 	// Get library checkpoint details
 	libraryCheckpoint, err := base.Client.GetLibraryCheckpoint(libraryCheckpointID)
 	if err != nil {
-		return fmt.Errorf("failed to get library checkpoint: %w", err)
+		return fmt.Errorf("failed to get library checkpoint %d: %w\nNote: Make sure the checkpoint has been added to the library using 'library add'", libraryCheckpointID, err)
 	}
 
 	// Format result
@@ -276,7 +280,7 @@ func runLibraryAttachCommand(cmd *cobra.Command, args []string) error {
 	// Attach library checkpoint to journey
 	checkpoint, err := base.Client.AttachLibraryCheckpoint(journeyID, libraryCheckpointID, position)
 	if err != nil {
-		return fmt.Errorf("failed to attach library checkpoint: %w", err)
+		return fmt.Errorf("failed to attach library checkpoint %d to journey %d: %w\nNote: Make sure the checkpoint exists in the library (use 'library get' to verify)", libraryCheckpointID, journeyID, err)
 	}
 
 	// Format result
