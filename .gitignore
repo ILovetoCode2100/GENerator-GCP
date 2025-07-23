@@ -70,15 +70,37 @@ scripts/test/.env
 
 # Temporary and test files
 test-*.sh
-!test-all-commands.sh
-!test-all-cli-commands.sh
+!test-all-commands-fixed.sh
+!test-commands/test-unified-commands.sh
 ultrathink-*
 *-checkpoint-*.sh
 fix-*.sh
 *-report.md
 *-REPORT.md
+test-results-*.log
+test-results-*.md
+
+# Implementation and migration notes
+CONTEXT_IMPLEMENTATION_*.md
+CONTEXT_ERROR_*.md
+CONTEXT_MIGRATION_*.md
+CLI_*.md
+COMPREHENSIVE_*.md
+CONSOLIDATION_*.md
+FIX_SUMMARY.md
+FINAL_*.md
+*_migration_*.md
+*-analysis.md
 
 # Temporary JSON files
 *-result.json
 *_analysis.json
 *_endpoints.json
+
+# Test output files
+comprehensive-test-*.log
+context-test-*.log
+final-test-*.log
+step-verification-*.log
+test-output.log
+full-test-output.log

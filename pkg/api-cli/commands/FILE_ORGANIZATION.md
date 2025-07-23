@@ -1,88 +1,173 @@
 # Commands Package File Organization
 
-This document describes the file organization after major consolidation efforts. All files remain in the same package to avoid circular dependencies.
+## Overview
 
-## Consolidation Summary
+The commands package has been significantly consolidated and reorganized for better maintainability and consistency. This document outlines the current file structure and organization principles.
 
-**Before**: 35+ individual files
-**After**: ~20 files (43% reduction)
-**Code Reduction**: ~30% through elimination of duplication
+**Latest Update:** January 2025
+**Files:** 19 (reduced from 27)
+**Reduction:** 30% fewer files with improved naming consistency
 
-## File Categories
+## File Structure
 
 ### Core Infrastructure (6 files)
 
-- `base.go` - Base command functionality with session support
-- `config.go` - Global configuration management
-- `register.go` - Command registration
-- `types.go` - Shared type definitions
-- `validate_config.go` - Configuration validation
-- `list_commands_test.go` - Tests
+These files provide the foundation for all commands:
 
-### Consolidated Command Files (5 files)
+1. **`base.go`** - Base command functionality with session support
+2. **`config.go`** - Global configuration management
+3. **`context_helpers.go`** - Context utility functions
+4. **`register.go`** - Command registration with rootCmd
+5. **`types.go`** - Shared type definitions
+6. **`validate_config.go`** - Configuration validation
 
-Major consolidations for better maintainability:
+### Step Commands (8 files)
 
-1. **`interaction_commands.go`** - All user interactions
+All commands that create test steps follow the `step_*.go` naming pattern:
 
-   - Consolidated from: interact.go, mouse.go, select.go
-   - Contains: click, hover, write, key, mouse operations, dropdown selection
+1. **`step_assert.go`** - Assertion commands (12 types)
 
-2. **`browser_commands.go`** - Browser operations
+   - exists, not-exists, equals, not-equals
+   - checked, selected, variable
+   - gt, gte, lt, lte, matches
 
-   - Consolidated from: navigate.go, window.go
-   - Contains: navigation, scrolling, window management, tab/frame switching
+2. **`step_browser.go`** - Browser operations (consolidated)
 
-3. **`list.go`** - All list operations
+   - Navigation: to, scroll operations
+   - Window: resize, maximize, switch tab/iframe
 
-   - Consolidated from: list_projects.go, list_goals.go, list_journeys.go, list_checkpoints.go
-   - Contains: Generic list framework for all entity types
+3. **`step_data.go`** - Data management (6 types)
 
-4. **`project_management.go`** - Project CRUD operations
+   - Store: element-text, element-value, attribute
+   - Cookies: create, delete, clear
 
-   - Consolidated from: create_project.go, create_goal.go, create_journey.go, create_checkpoint.go, update_journey.go, update_navigation.go, get_step.go
-   - Contains: All project/goal/journey/checkpoint management
+4. **`step_dialog.go`** - Dialog handling (4 types)
 
-5. **`execution_management.go`** - Execution operations
-   - Consolidated from: execute-goal.go, monitor-execution.go, get-execution-analysis.go, manage-test-data.go, create-environment.go
-   - Contains: Test execution, monitoring, analysis, and environment management
+   - dismiss-alert, dismiss-confirm
+   - dismiss-prompt, dismiss-prompt-with-text
 
-### Individual Step Commands (7 files)
+5. **`step_file.go`** - File operations (2 types)
 
-Specialized commands that remain separate:
+   - upload, upload-url (URL only)
 
-- `assert.go` - Assertion commands (exists, equals, gt, etc.)
-- `data.go` - Data storage and cookie commands
-- `dialog.go` - Dialog handling commands
-- `wait.go` - Wait operation commands
-- `file.go` - File upload commands
-- `misc.go` - Miscellaneous commands (comment, execute)
-- `library.go` - Library checkpoint operations
+6. **`step_interact.go`** - User interactions (consolidated)
 
-### Other (2 files)
+   - Basic: click, double-click, right-click, hover, write, key
+   - Mouse: move-to, move-by, move, down, up, enter
+   - Select: option, index, last
 
-- `test_templates.go` - AI test template integration
-- `set_checkpoint.go` - Session management (if exists)
+7. **`step_misc.go`** - Miscellaneous (2 types)
 
-## Command Structure
+   - comment, execute (JavaScript)
 
-All commands follow the unified pattern:
+8. **`step_wait.go`** - Wait operations (2 types)
+   - element, time
 
-```
-api-cli <command> <subcommand> [checkpoint-id] <args...> [position]
-```
+### Management Commands (5 files)
 
-With session context:
+Commands for managing projects, executions, and resources:
 
-```
-export VIRTUOSO_SESSION_ID=cp_12345
-api-cli <command> <subcommand> <args...>
-```
+1. **`manage_projects.go`** - Project hierarchy CRUD (consolidated)
 
-## Benefits of Consolidation
+   - Create: project, goal, journey, checkpoint
+   - Update: journey, navigation
+   - Get: step details
 
-1. **Reduced File Count**: 43% fewer files to navigate
-2. **Code Reuse**: ~30% less code through shared functions
-3. **Logical Grouping**: Related functionality in same file
-4. **Easier Maintenance**: Changes to related features in one place
-5. **Better AI Understanding**: Clear patterns and fewer files to analyze
+2. **`manage_executions.go`** - Execution workflow
+
+   - Create environment
+   - Manage test data
+   - Execute goals
+   - Monitor execution
+   - Get analysis
+
+3. **`manage_library.go`** - Library checkpoint operations
+
+   - add, get, attach
+   - move-step, remove-step, update
+
+4. **`manage_lists.go`** - List operations for all entities
+
+   - List projects, goals, journeys, checkpoints
+   - Generic framework with pagination
+
+5. **`manage_templates.go`** - Test template integration
+   - Load templates
+   - Generate commands
+   - Get available templates
+
+## Key Design Principles
+
+### 1. Consistent Naming
+
+- **Step commands**: `step_*.go` pattern aligns with CLI `step-*` commands
+- **Management commands**: `manage_*.go` pattern for CRUD and control operations
+- **Core files**: Simple names for infrastructure components
+
+### 2. Functional Cohesion
+
+- Related commands are grouped together
+- Shared functionality reduces code duplication
+- Each file has a clear, single purpose
+
+### 3. Maintainability
+
+- 30% fewer files to navigate
+- Logical grouping makes changes easier
+- Consistent patterns across all files
+
+### 4. Single Package Structure
+
+- All files remain in the commands package
+- Avoids circular dependency issues
+- Simplifies imports and references
+
+## Major Consolidations
+
+### 1. User Interactions (3 → 1 file)
+
+- `interact.go` + `mouse.go` + `select.go` → **`step_interact.go`**
+- Shares common interaction helpers
+- Reduces duplication in element targeting
+
+### 2. Browser Operations (2 → 1 file)
+
+- `navigate.go` + `window.go` → **`step_browser.go`**
+- Combined navigation and window management
+- Shared browser state handling
+
+### 3. Project Management (7 → 1 file)
+
+- 7 individual CRUD files → **`manage_projects.go`**
+- Shared output formatting functions
+- Consistent error handling
+- ~30% code reduction through consolidation
+
+### 4. Execution Management (5 → 1 file)
+
+- Multiple execution files → **`manage_executions.go`**
+- Unified execution workflow
+- Shared monitoring utilities
+
+## Benefits Achieved
+
+1. **File Reduction**: 27 → 19 files (30% reduction)
+2. **Code Reduction**: ~30% less code through shared functions
+3. **Better Organization**: Clear separation between step commands and management
+4. **Improved Naming**: Consistent patterns make purpose obvious
+5. **Easier Navigation**: Related functionality in single files
+6. **AI-Friendly**: Fewer files with clearer structure
+
+## Command Count
+
+- **Total Commands**: 70+
+- **Step Commands**: ~50 (across 8 files)
+- **Management Commands**: ~20 (across 5 files)
+- **Core Commands**: 2 (validate-config, session management)
+
+## Future Considerations
+
+1. Further consolidation should maintain balance between file size and functionality
+2. New commands should follow established naming patterns
+3. Shared utilities should be extracted to reduce duplication
+4. Test coverage should be maintained through integration tests

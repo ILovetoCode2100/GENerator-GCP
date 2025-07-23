@@ -17,21 +17,21 @@ type TestTemplate struct {
 
 // JourneyTemplate defines the structure of a test journey
 type JourneyTemplate struct {
-	Name         string                 `yaml:"name"`
-	ProjectID    interface{}            `yaml:"project_id"` // Can be string or int
-	Description  string                 `yaml:"description,omitempty"`
-	Config       *JourneyConfig         `yaml:"config,omitempty"`
-	Variables    []Variable             `yaml:"variables,omitempty"`
-	Checkpoints  []CheckpointTemplate   `yaml:"checkpoints"`
+	Name        string               `yaml:"name"`
+	ProjectID   interface{}          `yaml:"project_id"` // Can be string or int
+	Description string               `yaml:"description,omitempty"`
+	Config      *JourneyConfig       `yaml:"config,omitempty"`
+	Variables   []Variable           `yaml:"variables,omitempty"`
+	Checkpoints []CheckpointTemplate `yaml:"checkpoints"`
 }
 
 // JourneyConfig holds journey-level configuration
 type JourneyConfig struct {
-	RetryFailedSteps    bool `yaml:"retry_failed_steps,omitempty"`
-	ScreenshotOnError   bool `yaml:"screenshot_on_error,omitempty"`
-	ContinueOnError     bool `yaml:"continue_on_error,omitempty"`
-	TimeoutDefault      int  `yaml:"timeout_default,omitempty"`
-	MaxRetryCount       int  `yaml:"max_retry_count,omitempty"`
+	RetryFailedSteps  bool `yaml:"retry_failed_steps,omitempty"`
+	ScreenshotOnError bool `yaml:"screenshot_on_error,omitempty"`
+	ContinueOnError   bool `yaml:"continue_on_error,omitempty"`
+	TimeoutDefault    int  `yaml:"timeout_default,omitempty"`
+	MaxRetryCount     int  `yaml:"max_retry_count,omitempty"`
 }
 
 // Variable represents a test variable
@@ -64,11 +64,11 @@ type StepTemplate struct {
 
 // ConditionTemplate represents a conditional check
 type ConditionTemplate struct {
-	Command  string                 `yaml:"command,omitempty"`
-	Args     []string               `yaml:"args,omitempty"`
-	Variable string                 `yaml:"variable,omitempty"`
-	Exists   bool                   `yaml:"exists,omitempty"`
-	Timeout  int                    `yaml:"timeout,omitempty"`
+	Command  string   `yaml:"command,omitempty"`
+	Args     []string `yaml:"args,omitempty"`
+	Variable string   `yaml:"variable,omitempty"`
+	Exists   bool     `yaml:"exists,omitempty"`
+	Timeout  int      `yaml:"timeout,omitempty"`
 }
 
 // LoadTestTemplateCmd provides a command to load and validate test templates
@@ -80,24 +80,24 @@ This command is useful for AI systems to verify template correctness.`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		templateFile := args[0]
-		
+
 		// Read the template file
 		data, err := os.ReadFile(templateFile)
 		if err != nil {
 			return fmt.Errorf("failed to read template file: %w", err)
 		}
-		
+
 		// Parse the YAML
 		var template TestTemplate
 		if err := yaml.Unmarshal(data, &template); err != nil {
 			return fmt.Errorf("failed to parse YAML: %w", err)
 		}
-		
+
 		// Validate the template
 		if err := validateTemplate(&template); err != nil {
 			return fmt.Errorf("template validation failed: %w", err)
 		}
-		
+
 		// Output based on format
 		outputFormat, _ := cmd.Flags().GetString("output")
 		return outputTemplateInfo(&template, outputFormat)
@@ -109,53 +109,53 @@ func validateTemplate(template *TestTemplate) error {
 	if template.Journey.Name == "" {
 		return fmt.Errorf("journey name is required")
 	}
-	
+
 	if template.Journey.ProjectID == nil {
 		return fmt.Errorf("project_id is required")
 	}
-	
+
 	if len(template.Journey.Checkpoints) == 0 {
 		return fmt.Errorf("at least one checkpoint is required")
 	}
-	
+
 	for i, checkpoint := range template.Journey.Checkpoints {
 		if checkpoint.Name == "" {
 			return fmt.Errorf("checkpoint %d: name is required", i+1)
 		}
-		
+
 		if len(checkpoint.Steps) == 0 {
 			return fmt.Errorf("checkpoint '%s': at least one step is required", checkpoint.Name)
 		}
-		
+
 		for j, step := range checkpoint.Steps {
 			if step.Command == "" {
 				return fmt.Errorf("checkpoint '%s', step %d: command is required", checkpoint.Name, j+1)
 			}
 		}
 	}
-	
+
 	return nil
 }
 
 // outputTemplateInfo outputs template information in the requested format
 func outputTemplateInfo(template *TestTemplate, format string) error {
 	info := map[string]interface{}{
-		"valid": true,
-		"journey_name": template.Journey.Name,
-		"project_id": template.Journey.ProjectID,
+		"valid":            true,
+		"journey_name":     template.Journey.Name,
+		"project_id":       template.Journey.ProjectID,
 		"checkpoint_count": len(template.Journey.Checkpoints),
-		"total_steps": countSteps(template.Journey.Checkpoints),
-		"has_config": template.Journey.Config != nil,
-		"variable_count": len(template.Journey.Variables),
-		"checkpoints": summarizeCheckpoints(template.Journey.Checkpoints),
+		"total_steps":      countSteps(template.Journey.Checkpoints),
+		"has_config":       template.Journey.Config != nil,
+		"variable_count":   len(template.Journey.Variables),
+		"checkpoints":      summarizeCheckpoints(template.Journey.Checkpoints),
 	}
-	
+
 	bc := NewBaseCommand()
 	output, err := bc.FormatOutput(info, format)
 	if err != nil {
 		return err
 	}
-	
+
 	fmt.Println(output)
 	return nil
 }
@@ -187,9 +187,9 @@ func summarizeCheckpoints(checkpoints []CheckpointTemplate) []map[string]interfa
 	summary := make([]map[string]interface{}, len(checkpoints))
 	for i, cp := range checkpoints {
 		summary[i] = map[string]interface{}{
-			"name": cp.Name,
-			"position": cp.Position,
-			"step_count": countStepsRecursive(cp.Steps),
+			"name":             cp.Name,
+			"position":         cp.Position,
+			"step_count":       countStepsRecursive(cp.Steps),
 			"has_conditionals": hasConditionals(cp.Steps),
 		}
 	}
@@ -202,9 +202,9 @@ func hasConditionals(steps []StepTemplate) bool {
 		if step.Condition != nil || len(step.Then) > 0 || len(step.Try) > 0 {
 			return true
 		}
-		if hasConditionals(step.Then) || hasConditionals(step.Else) || 
-		   hasConditionals(step.Try) || hasConditionals(step.Catch) || 
-		   hasConditionals(step.Finally) {
+		if hasConditionals(step.Then) || hasConditionals(step.Else) ||
+			hasConditionals(step.Try) || hasConditionals(step.Catch) ||
+			hasConditionals(step.Finally) {
 			return true
 		}
 	}
@@ -220,38 +220,38 @@ This is useful for AI systems to convert templates into actual test executions.`
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		templateFile := args[0]
-		
+
 		// Read and parse template
 		data, err := os.ReadFile(templateFile)
 		if err != nil {
 			return fmt.Errorf("failed to read template: %w", err)
 		}
-		
+
 		var template TestTemplate
 		if err := yaml.Unmarshal(data, &template); err != nil {
 			return fmt.Errorf("failed to parse YAML: %w", err)
 		}
-		
+
 		// Generate commands
 		commands := generateCommands(&template)
-		
+
 		// Output format
 		outputFormat, _ := cmd.Flags().GetString("output")
 		scriptMode, _ := cmd.Flags().GetBool("script")
-		
+
 		if scriptMode || outputFormat == "script" {
 			// Output as executable script
 			fmt.Println("#!/bin/bash")
 			fmt.Println("# Generated from:", templateFile)
 			fmt.Println("# Journey:", template.Journey.Name)
 			fmt.Println()
-			
+
 			// Add variables
 			for _, v := range template.Journey.Variables {
 				fmt.Printf("export %s=\"%s\"\n", v.Name, v.Value)
 			}
 			fmt.Println()
-			
+
 			// Add commands
 			for _, cmd := range commands {
 				fmt.Println(cmd)
@@ -262,7 +262,7 @@ This is useful for AI systems to convert templates into actual test executions.`
 			output, _ := bc.FormatOutput(commands, outputFormat)
 			fmt.Println(output)
 		}
-		
+
 		return nil
 	},
 }
@@ -270,38 +270,38 @@ This is useful for AI systems to convert templates into actual test executions.`
 // generateCommands converts a template into CLI commands
 func generateCommands(template *TestTemplate) []string {
 	var commands []string
-	
+
 	// Create journey (placeholder - would need actual IDs)
 	commands = append(commands, fmt.Sprintf(
 		"# Create journey: %s", template.Journey.Name))
 	commands = append(commands, fmt.Sprintf(
-		"api-cli create-journey %v \"%s\"", 
+		"api-cli create-journey %v \"%s\"",
 		template.Journey.ProjectID, template.Journey.Name))
 	commands = append(commands, "JOURNEY_ID=$LAST_ID  # Capture from response")
 	commands = append(commands, "")
-	
+
 	// Create checkpoints and steps
 	for i, checkpoint := range template.Journey.Checkpoints {
 		position := checkpoint.Position
 		if position == 0 {
 			position = i + 1
 		}
-		
+
 		commands = append(commands, fmt.Sprintf(
 			"# Checkpoint %d: %s", position, checkpoint.Name))
 		commands = append(commands, fmt.Sprintf(
-			"api-cli create-checkpoint $JOURNEY_ID \"%s\" %d", 
+			"api-cli create-checkpoint $JOURNEY_ID \"%s\" %d",
 			checkpoint.Name, position))
 		commands = append(commands, "CHECKPOINT_ID=$LAST_ID")
 		commands = append(commands, "export VIRTUOSO_SESSION_ID=$CHECKPOINT_ID")
 		commands = append(commands, "")
-		
+
 		// Generate step commands
 		stepCommands := generateStepCommands(checkpoint.Steps, 1)
 		commands = append(commands, stepCommands...)
 		commands = append(commands, "")
 	}
-	
+
 	return commands
 }
 
@@ -309,7 +309,7 @@ func generateCommands(template *TestTemplate) []string {
 func generateStepCommands(steps []StepTemplate, startPos int) []string {
 	var commands []string
 	position := startPos
-	
+
 	for _, step := range steps {
 		if step.Command == "conditional" {
 			// Handle conditional logic
@@ -318,13 +318,13 @@ func generateStepCommands(steps []StepTemplate, startPos int) []string {
 				commands = append(commands, fmt.Sprintf(
 					"if api-cli %s %s --output json | jq -e '.success' > /dev/null; then",
 					step.Condition.Command, joinArgs(step.Condition.Args)))
-				
+
 				thenCommands := generateStepCommands(step.Then, position)
 				for _, cmd := range thenCommands {
 					commands = append(commands, "  "+cmd)
 				}
 				position += len(step.Then)
-				
+
 				if len(step.Else) > 0 {
 					commands = append(commands, "else")
 					elseCommands := generateStepCommands(step.Else, position)
@@ -333,18 +333,18 @@ func generateStepCommands(steps []StepTemplate, startPos int) []string {
 					}
 					position += len(step.Else)
 				}
-				
+
 				commands = append(commands, "fi")
 			}
 		} else if step.Command == "try-catch" {
 			// Handle try-catch blocks
 			commands = append(commands, "# Try-catch block")
 			commands = append(commands, "set +e  # Allow errors")
-			
+
 			tryCommands := generateStepCommands(step.Try, position)
 			commands = append(commands, tryCommands...)
 			position += len(step.Try)
-			
+
 			commands = append(commands, "if [ $? -ne 0 ]; then")
 			catchCommands := generateStepCommands(step.Catch, position)
 			for _, cmd := range catchCommands {
@@ -352,38 +352,38 @@ func generateStepCommands(steps []StepTemplate, startPos int) []string {
 			}
 			position += len(step.Catch)
 			commands = append(commands, "fi")
-			
+
 			if len(step.Finally) > 0 {
 				finallyCommands := generateStepCommands(step.Finally, position)
 				commands = append(commands, finallyCommands...)
 				position += len(step.Finally)
 			}
-			
+
 			commands = append(commands, "set -e  # Re-enable error handling")
 		} else {
 			// Regular command
 			cmd := fmt.Sprintf("api-cli %s", step.Command)
-			
+
 			// Add arguments
 			if len(step.Args) > 0 {
 				cmd += " " + joinArgs(step.Args)
 			}
-			
+
 			// Add options as flags
 			for key, value := range step.Options {
 				cmd += fmt.Sprintf(" --%s %v", key, value)
 			}
-			
+
 			// Add description as comment
 			if step.Description != "" {
 				commands = append(commands, fmt.Sprintf("# %s", step.Description))
 			}
-			
+
 			commands = append(commands, cmd)
 			position++
 		}
 	}
-	
+
 	return commands
 }
 
@@ -429,13 +429,13 @@ var GetTestTemplatesCmd = &cobra.Command{
 		if len(args) > 0 {
 			dir = args[0]
 		}
-		
+
 		// Find all YAML files
 		matches, err := filepath.Glob(filepath.Join(dir, "*.yaml"))
 		if err != nil {
 			return err
 		}
-		
+
 		templates := make([]map[string]interface{}, 0)
 		for _, file := range matches {
 			// Read and parse each template
@@ -443,28 +443,28 @@ var GetTestTemplatesCmd = &cobra.Command{
 			if err != nil {
 				continue
 			}
-			
+
 			var template TestTemplate
 			if err := yaml.Unmarshal(data, &template); err != nil {
 				continue
 			}
-			
+
 			templates = append(templates, map[string]interface{}{
-				"file": filepath.Base(file),
-				"path": file,
-				"name": template.Journey.Name,
+				"file":        filepath.Base(file),
+				"path":        file,
+				"name":        template.Journey.Name,
 				"description": template.Journey.Description,
 				"checkpoints": len(template.Journey.Checkpoints),
-				"steps": countSteps(template.Journey.Checkpoints),
+				"steps":       countSteps(template.Journey.Checkpoints),
 			})
 		}
-		
+
 		// Output
 		outputFormat, _ := cmd.Flags().GetString("output")
 		bc := NewBaseCommand()
 		output, _ := bc.FormatOutput(templates, outputFormat)
 		fmt.Println(output)
-		
+
 		return nil
 	},
 }

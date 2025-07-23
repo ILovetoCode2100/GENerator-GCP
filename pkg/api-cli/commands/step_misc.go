@@ -8,10 +8,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// newMiscCmd creates the misc command with subcommands
-func newMiscCmd() *cobra.Command {
+// newStepMiscCmd creates the misc command with subcommands
+func newStepMiscCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "misc",
+		Use:   "step-misc",
 		Short: "Miscellaneous operations (comments, scripts)",
 		Long: `Miscellaneous operations including adding comments and executing scripts.
 

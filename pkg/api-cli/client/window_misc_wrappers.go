@@ -85,21 +85,35 @@ func (c *Client) CreateStepSwitchParentFrame(checkpointID int, position int) (in
 
 // CreateStepComment creates a comment step (backward compatibility)
 func (c *Client) CreateStepComment(checkpointID int, comment string, position int) (int, error) {
-	_, err := c.CreateStepCommentWithContext(context.Background(), strconv.Itoa(checkpointID), comment, position)
+	resp, err := c.CreateStepCommentWithContext(context.Background(), strconv.Itoa(checkpointID), comment, position)
 	if err != nil {
 		return 0, err
 	}
-	// Return position as step ID for backward compatibility
+	// Try to parse step ID from response
+	if resp != nil && resp.ID != "" {
+		stepID, _ := strconv.Atoi(resp.ID)
+		if stepID > 0 {
+			return stepID, nil
+		}
+	}
+	// Fallback to position for backward compatibility
 	return position, nil
 }
 
 // CreateStepExecuteScript creates a step to execute a custom script (backward compatibility)
 func (c *Client) CreateStepExecuteScript(checkpointID int, scriptName string, position int) (int, error) {
 	// For backward compatibility, scriptName is treated as the script content
-	_, err := c.CreateStepExecuteScriptWithContext(context.Background(), strconv.Itoa(checkpointID), scriptName, position)
+	resp, err := c.CreateStepExecuteScriptWithContext(context.Background(), strconv.Itoa(checkpointID), scriptName, position)
 	if err != nil {
 		return 0, err
 	}
-	// Return position as step ID for backward compatibility
+	// Try to parse step ID from response
+	if resp != nil && resp.ID != "" {
+		stepID, _ := strconv.Atoi(resp.ID)
+		if stepID > 0 {
+			return stepID, nil
+		}
+	}
+	// Fallback to position for backward compatibility
 	return position, nil
 }

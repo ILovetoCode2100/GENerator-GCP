@@ -1,0 +1,7 @@
+name: "Minimal Test"
+steps:
+  - type: navigate
+    target: "https://example.com"
+  - type: assert
+    command: exists
+    target: "body"

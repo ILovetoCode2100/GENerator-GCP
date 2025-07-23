@@ -14,10 +14,10 @@ import (
 // MAIN INTERACTION COMMAND
 // ================================================================================
 
-// InteractionCmd creates the consolidated interaction command with all subcommands
-func InteractionCmd() *cobra.Command {
+// StepInteractionCmd creates the consolidated interaction command with all subcommands
+func StepInteractionCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "interact",
+		Use:   "step-interact",
 		Short: "Interact with page elements (click, hover, type, select, etc.)",
 		Long: `Interact with page elements through various actions including:
   - Click actions: click, double-click, right-click
@@ -66,12 +66,12 @@ func clickSubCmd() *cobra.Command {
 
 Examples:
   # Using session context (modern)
-  api-cli interact click "button.submit"
-  api-cli interact click "#login-btn" --position TOP_RIGHT
-  api-cli interact click "a.nav-link" --variable "linkText"
+  api-cli step-interact click "button.submit"
+  api-cli step-interact click "#login-btn" --position TOP_RIGHT
+  api-cli step-interact click "a.nav-link" --variable "linkText"
 
   # Using explicit checkpoint (legacy)
-  api-cli interact click cp_12345 "button.submit" 1`,
+  api-cli step-interact click cp_12345 "button.submit" 1`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runInteraction(cmd, args, "click", map[string]interface{}{
@@ -100,11 +100,11 @@ func doubleClickSubCmd() *cobra.Command {
 
 Examples:
   # Using session context
-  api-cli interact double-click ".item-card"
-  api-cli interact double-click "#file-icon" --position CENTER
+  api-cli step-interact double-click ".item-card"
+  api-cli step-interact double-click "#file-icon" --position CENTER
 
   # Using explicit checkpoint
-  api-cli interact double-click cp_12345 ".item-card" 1`,
+  api-cli step-interact double-click cp_12345 ".item-card" 1`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runInteraction(cmd, args, "double-click", map[string]interface{}{
@@ -129,11 +129,11 @@ func rightClickSubCmd() *cobra.Command {
 
 Examples:
   # Using session context
-  api-cli interact right-click ".data-row"
-  api-cli interact right-click "#context-target" --position TOP_LEFT
+  api-cli step-interact right-click ".data-row"
+  api-cli step-interact right-click "#context-target" --position TOP_LEFT
 
   # Using explicit checkpoint
-  api-cli interact right-click cp_12345 ".data-row" 1`,
+  api-cli step-interact right-click cp_12345 ".data-row" 1`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runInteraction(cmd, args, "right-click", map[string]interface{}{
@@ -166,12 +166,12 @@ func writeSubCmd() *cobra.Command {
 
 Examples:
   # Using session context
-  api-cli interact write "input#username" "john.doe@example.com"
-  api-cli interact write "textarea.comment" "This is a comment" --clear
-  api-cli interact write "#search" "{{searchTerm}}" --variable searchTerm
+  api-cli step-interact write "input#username" "john.doe@example.com"
+  api-cli step-interact write "textarea.comment" "This is a comment" --clear
+  api-cli step-interact write "#search" "{{searchTerm}}" --variable searchTerm
 
   # Using explicit checkpoint
-  api-cli interact write cp_12345 "input#username" "john.doe@example.com" 1`,
+  api-cli step-interact write cp_12345 "input#username" "john.doe@example.com" 1`,
 		Args: cobra.MinimumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runInteraction(cmd, args, "write", map[string]interface{}{
@@ -204,13 +204,13 @@ func keySubCmd() *cobra.Command {
 
 Examples:
   # Using session context
-  api-cli interact key "Enter"
-  api-cli interact key "Escape"
-  api-cli interact key "a" --modifiers ctrl
-  api-cli interact key "Tab" --target "input#username"
+  api-cli step-interact key "Enter"
+  api-cli step-interact key "Escape"
+  api-cli step-interact key "a" --modifiers ctrl
+  api-cli step-interact key "Tab" --target "input#username"
 
   # Using explicit checkpoint
-  api-cli interact key cp_12345 "Enter" 1`,
+  api-cli step-interact key cp_12345 "Enter" 1`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runInteraction(cmd, args, "key", map[string]interface{}{
@@ -246,11 +246,11 @@ func hoverSubCmd() *cobra.Command {
 
 Examples:
   # Using session context
-  api-cli interact hover ".menu-item"
-  api-cli interact hover "#tooltip-trigger" --duration 2000
+  api-cli step-interact hover ".menu-item"
+  api-cli step-interact hover "#tooltip-trigger" --duration 2000
 
   # Using explicit checkpoint
-  api-cli interact hover cp_12345 ".menu-item" 1`,
+  api-cli step-interact hover cp_12345 ".menu-item" 1`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runInteraction(cmd, args, "hover", map[string]interface{}{
@@ -301,8 +301,8 @@ func mouseMoveToSubCmd() *cobra.Command {
 		Long: `Move the mouse cursor to the center of an element.
 
 Examples:
-  api-cli interact mouse move-to "button.submit"
-  api-cli interact mouse move-to cp_12345 "#target" 1`,
+  api-cli step-interact mouse move-to "button.submit"
+  api-cli step-interact mouse move-to cp_12345 "#target" 1`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runMouseAction(cmd, args, "move-to")
@@ -319,9 +319,9 @@ func mouseMoveBySubCmd() *cobra.Command {
 		Long: `Move the mouse cursor by a relative offset from its current position.
 
 Examples:
-  api-cli interact mouse move-by "100,50"
-  api-cli interact mouse move-by "-50,25"
-  api-cli interact mouse move-by cp_12345 "100,-50" 1`,
+  api-cli step-interact mouse move-by "100,50"
+  api-cli step-interact mouse move-by "-50,25"
+  api-cli step-interact mouse move-by cp_12345 "100,-50" 1`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runMouseAction(cmd, args, "move-by")
@@ -338,8 +338,8 @@ func mouseMoveSubCmd() *cobra.Command {
 		Long: `Move the mouse cursor to absolute screen coordinates.
 
 Examples:
-  api-cli interact mouse move "500,300"
-  api-cli interact mouse move cp_12345 "100,200" 1`,
+  api-cli step-interact mouse move "500,300"
+  api-cli step-interact mouse move cp_12345 "100,200" 1`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runMouseAction(cmd, args, "move")
@@ -356,8 +356,8 @@ func mouseDownSubCmd() *cobra.Command {
 		Long: `Press and hold the mouse button on an element.
 
 Examples:
-  api-cli interact mouse down "#drag-handle"
-  api-cli interact mouse down cp_12345 "button" 1`,
+  api-cli step-interact mouse down "#drag-handle"
+  api-cli step-interact mouse down cp_12345 "button" 1`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runMouseAction(cmd, args, "down")
@@ -374,8 +374,8 @@ func mouseUpSubCmd() *cobra.Command {
 		Long: `Release the mouse button on an element.
 
 Examples:
-  api-cli interact mouse up "#drop-zone"
-  api-cli interact mouse up cp_12345 "button" 1`,
+  api-cli step-interact mouse up "#drop-zone"
+  api-cli step-interact mouse up cp_12345 "button" 1`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runMouseAction(cmd, args, "up")
@@ -392,8 +392,8 @@ func mouseEnterSubCmd() *cobra.Command {
 		Long: `Move the mouse cursor into an element's boundaries.
 
 Examples:
-  api-cli interact mouse enter "#tooltip-target"
-  api-cli interact mouse enter cp_12345 ".dropdown-trigger" 1`,
+  api-cli step-interact mouse enter "#tooltip-target"
+  api-cli step-interact mouse enter cp_12345 ".dropdown-trigger" 1`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runMouseAction(cmd, args, "enter")
@@ -435,8 +435,8 @@ func selectOptionSubCmd() *cobra.Command {
 		Long: `Select a dropdown option by its value attribute or visible text.
 
 Examples:
-  api-cli interact select option "#country" "United States"
-  api-cli interact select option cp_12345 "select[name='country']" "US" 1`,
+  api-cli step-interact select option "#country" "United States"
+  api-cli step-interact select option cp_12345 "select[name='country']" "US" 1`,
 		Args: cobra.MinimumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runSelectAction(cmd, args, "option")
@@ -453,8 +453,8 @@ func selectIndexSubCmd() *cobra.Command {
 		Long: `Select a dropdown option by its index position (0-based).
 
 Examples:
-  api-cli interact select index "#country" 0
-  api-cli interact select index cp_12345 ".dropdown" 3 1`,
+  api-cli step-interact select index "#country" 0
+  api-cli step-interact select index cp_12345 ".dropdown" 3 1`,
 		Args: cobra.MinimumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runSelectAction(cmd, args, "index")
@@ -471,8 +471,8 @@ func selectLastSubCmd() *cobra.Command {
 		Long: `Select the last option in a dropdown.
 
 Examples:
-  api-cli interact select last "#country"
-  api-cli interact select last cp_12345 ".dropdown" 1`,
+  api-cli step-interact select last "#country"
+  api-cli step-interact select last cp_12345 ".dropdown" 1`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runSelectAction(cmd, args, "last")
@@ -905,6 +905,18 @@ func isValidClickPosition(position string) bool {
 
 // validateMouseArgs validates arguments for mouse actions
 func validateMouseArgs(args []string, action string) error {
+	// First check if we have any arguments
+	if len(args) == 0 {
+		switch action {
+		case "down", "up", "enter", "move-to":
+			return fmt.Errorf("selector is required")
+		case "move-by", "move":
+			return fmt.Errorf("coordinates are required")
+		default:
+			return fmt.Errorf("arguments are required")
+		}
+	}
+
 	switch action {
 	case "down", "up", "enter", "move-to":
 		if args[0] == "" {

@@ -107,10 +107,10 @@ var dialogV2Configs = map[string]dialogV2Config{
 	},
 }
 
-// newDialogCmd creates the new dialog command using BaseCommand pattern
-func newDialogCmd() *cobra.Command {
+// newStepDialogCmd creates the new dialog command using BaseCommand pattern
+func newStepDialogCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "dialog",
+		Use:   "step-dialog",
 		Short: "Create dialog interaction steps in checkpoints",
 		Long: `Create various types of dialog interaction steps in checkpoints.
 

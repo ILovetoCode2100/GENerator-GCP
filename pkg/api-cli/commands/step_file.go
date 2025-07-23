@@ -8,10 +8,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// FileCmd creates the file command with subcommands
-func FileCmd() *cobra.Command {
+// StepFileCmd creates the file command with subcommands
+func StepFileCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "file",
+		Use:   "step-file",
 		Short: "Handle file upload operations",
 		Long: `Manage file upload operations including uploading local files and files from URLs.
 

@@ -33,9 +33,9 @@ var assertConfigs = map[string]assertConfig{
 		description: "Assert that an element exists",
 		usage:       "assert exists [checkpoint-id] <element> [position]",
 		examples: []string{
-			`api-cli assert exists cp_12345 "Login button" 1`,
-			`api-cli assert exists "Login button" --checkpoint 12345`,
-			`api-cli assert exists "Login button"  # Uses session context`,
+			`api-cli step-assert exists cp_12345 "Login button" 1`,
+			`api-cli step-assert exists "Login button" --checkpoint 12345`,
+			`api-cli step-assert exists "Login button"  # Uses session context`,
 		},
 		requiredArgs: 1,
 		buildMeta: func(args []string) map[string]interface{} {
@@ -49,9 +49,9 @@ var assertConfigs = map[string]assertConfig{
 		description: "Assert that an element does not exist",
 		usage:       "assert not-exists [checkpoint-id] <element> [position]",
 		examples: []string{
-			`api-cli assert not-exists cp_12345 "Error message" 1`,
-			`api-cli assert not-exists "Error message" --checkpoint 12345`,
-			`api-cli assert not-exists "Error message"  # Uses session context`,
+			`api-cli step-assert not-exists cp_12345 "Error message" 1`,
+			`api-cli step-assert not-exists "Error message" --checkpoint 12345`,
+			`api-cli step-assert not-exists "Error message"  # Uses session context`,
 		},
 		requiredArgs: 1,
 		buildMeta: func(args []string) map[string]interface{} {
@@ -65,8 +65,8 @@ var assertConfigs = map[string]assertConfig{
 		description: "Assert that an element has a specific text value",
 		usage:       "assert equals [checkpoint-id] <element> <value> [position]",
 		examples: []string{
-			`api-cli assert equals cp_12345 "Username field" "john@example.com" 1`,
-			`api-cli assert equals "Total price" "$99.99"  # Uses session context`,
+			`api-cli step-assert equals cp_12345 "Username field" "john@example.com" 1`,
+			`api-cli step-assert equals "Total price" "$99.99"  # Uses session context`,
 		},
 		requiredArgs: 2,
 		buildMeta: func(args []string) map[string]interface{} {
@@ -81,8 +81,8 @@ var assertConfigs = map[string]assertConfig{
 		description: "Assert that an element does not have a specific text value",
 		usage:       "assert not-equals [checkpoint-id] <element> <value> [position]",
 		examples: []string{
-			`api-cli assert not-equals cp_12345 "Status" "Error" 1`,
-			`api-cli assert not-equals "Username" "admin"  # Uses session context`,
+			`api-cli step-assert not-equals cp_12345 "Status" "Error" 1`,
+			`api-cli step-assert not-equals "Username" "admin"  # Uses session context`,
 		},
 		requiredArgs: 2,
 		buildMeta: func(args []string) map[string]interface{} {
@@ -97,8 +97,8 @@ var assertConfigs = map[string]assertConfig{
 		description: "Assert that a checkbox is checked",
 		usage:       "assert checked [checkpoint-id] <element> [position]",
 		examples: []string{
-			`api-cli assert checked cp_12345 "Terms checkbox" 1`,
-			`api-cli assert checked "Remember me"  # Uses session context`,
+			`api-cli step-assert checked cp_12345 "Terms checkbox" 1`,
+			`api-cli step-assert checked "Remember me"  # Uses session context`,
 		},
 		requiredArgs: 1,
 		buildMeta: func(args []string) map[string]interface{} {
@@ -112,8 +112,8 @@ var assertConfigs = map[string]assertConfig{
 		description: "Assert that an option is selected",
 		usage:       "assert selected [checkpoint-id] <element> [position]",
 		examples: []string{
-			`api-cli assert selected cp_12345 "Country dropdown" 1`,
-			`api-cli assert selected "Language selector"  # Uses session context`,
+			`api-cli step-assert selected cp_12345 "Country dropdown" 1`,
+			`api-cli step-assert selected "Language selector"  # Uses session context`,
 		},
 		requiredArgs: 1,
 		buildMeta: func(args []string) map[string]interface{} {
@@ -127,8 +127,8 @@ var assertConfigs = map[string]assertConfig{
 		description: "Assert that a value is greater than another",
 		usage:       "assert gt [checkpoint-id] <element> <value> [position]",
 		examples: []string{
-			`api-cli assert gt cp_12345 "Price" "10" 1`,
-			`api-cli assert gt "Score" "100"  # Uses session context`,
+			`api-cli step-assert gt cp_12345 "Price" "10" 1`,
+			`api-cli step-assert gt "Score" "100"  # Uses session context`,
 		},
 		requiredArgs: 2,
 		buildMeta: func(args []string) map[string]interface{} {
@@ -143,8 +143,8 @@ var assertConfigs = map[string]assertConfig{
 		description: "Assert that a value is greater than or equal to another",
 		usage:       "assert gte [checkpoint-id] <element> <value> [position]",
 		examples: []string{
-			`api-cli assert gte cp_12345 "Age" "18" 1`,
-			`api-cli assert gte "Count" "0"  # Uses session context`,
+			`api-cli step-assert gte cp_12345 "Age" "18" 1`,
+			`api-cli step-assert gte "Count" "0"  # Uses session context`,
 		},
 		requiredArgs: 2,
 		buildMeta: func(args []string) map[string]interface{} {
@@ -159,8 +159,8 @@ var assertConfigs = map[string]assertConfig{
 		description: "Assert that a value is less than another",
 		usage:       "assert lt [checkpoint-id] <element> <value> [position]",
 		examples: []string{
-			`api-cli assert lt cp_12345 "Error count" "5" 1`,
-			`api-cli assert lt "Temperature" "32"  # Uses session context`,
+			`api-cli step-assert lt cp_12345 "Error count" "5" 1`,
+			`api-cli step-assert lt "Temperature" "32"  # Uses session context`,
 		},
 		requiredArgs: 2,
 		buildMeta: func(args []string) map[string]interface{} {
@@ -175,8 +175,8 @@ var assertConfigs = map[string]assertConfig{
 		description: "Assert that a value is less than or equal to another",
 		usage:       "assert lte [checkpoint-id] <element> <value> [position]",
 		examples: []string{
-			`api-cli assert lte cp_12345 "Stock" "100" 1`,
-			`api-cli assert lte "Discount" "50"  # Uses session context`,
+			`api-cli step-assert lte cp_12345 "Stock" "100" 1`,
+			`api-cli step-assert lte "Discount" "50"  # Uses session context`,
 		},
 		requiredArgs: 2,
 		buildMeta: func(args []string) map[string]interface{} {
@@ -191,8 +191,8 @@ var assertConfigs = map[string]assertConfig{
 		description: "Assert that an element matches a regex pattern",
 		usage:       "assert matches [checkpoint-id] <element> <pattern> [position]",
 		examples: []string{
-			`api-cli assert matches cp_12345 "Email" "^[\\w.-]+@[\\w.-]+\\.\\w+$" 1`,
-			`api-cli assert matches "Phone" "^\\d{3}-\\d{3}-\\d{4}$"  # Uses session context`,
+			`api-cli step-assert matches cp_12345 "Email" "^[\\w.-]+@[\\w.-]+\\.\\w+$" 1`,
+			`api-cli step-assert matches "Phone" "^\\d{3}-\\d{3}-\\d{4}$"  # Uses session context`,
 		},
 		requiredArgs: 2,
 		buildMeta: func(args []string) map[string]interface{} {
@@ -207,8 +207,8 @@ var assertConfigs = map[string]assertConfig{
 		description: "Assert that a variable equals a value",
 		usage:       "assert variable [checkpoint-id] <variable> <value> [position]",
 		examples: []string{
-			`api-cli assert variable cp_12345 "userRole" "admin" 1`,
-			`api-cli assert variable "loginStatus" "success"  # Uses session context`,
+			`api-cli step-assert variable cp_12345 "userRole" "admin" 1`,
+			`api-cli step-assert variable "loginStatus" "success"  # Uses session context`,
 		},
 		requiredArgs: 2,
 		buildMeta: func(args []string) map[string]interface{} {
@@ -220,10 +220,10 @@ var assertConfigs = map[string]assertConfig{
 	},
 }
 
-// newAssertCmd creates the new assert command using BaseCommand pattern
-func newAssertCmd() *cobra.Command {
+// newStepAssertCmd creates the new assert command using BaseCommand pattern
+func newStepAssertCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "assert",
+		Use:   "step-assert",
 		Short: "Create assertion steps in checkpoints",
 		Long: `Create various types of assertion steps in checkpoints.
 
@@ -246,19 +246,19 @@ Available assertion types:
   - matches: Assert element matches regex pattern
   - variable: Assert variable equals value`,
 		Example: `  # Assert element exists (with explicit checkpoint)
-  api-cli assert exists cp_12345 "Login button" 1
+  api-cli step-assert exists cp_12345 "Login button" 1
 
   # Assert element exists (using session context)
-  api-cli assert exists "Login button"
+  api-cli step-assert exists "Login button"
 
   # Assert element text equals value
-  api-cli assert equals "Username" "john@example.com"
+  api-cli step-assert equals "Username" "john@example.com"
 
   # Assert numeric comparison
-  api-cli assert gt "Price" "10"
+  api-cli step-assert gt "Price" "10"
 
   # Assert pattern match
-  api-cli assert matches "Email" "^[\\w.-]+@[\\w.-]+\\.\\w+$"`,
+  api-cli step-assert matches "Email" "^[\\w.-]+@[\\w.-]+\\.\\w+$"`,
 	}
 
 	// Add subcommands for each assertion type

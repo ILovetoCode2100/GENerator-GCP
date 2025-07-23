@@ -57,34 +57,6 @@ var waitConfigs = map[string]waitConfig{
 			return fmt.Sprintf("wait until %s appears", args[0])
 		},
 	},
-	"element-not-visible": {
-		stepType:    "WAIT_ELEMENT_NOT_VISIBLE",
-		description: "Wait for an element to disappear",
-		usage:       "wait element-not-visible [checkpoint-id] <selector> [position] [--timeout ms]",
-		examples: []string{
-			`api-cli wait element-not-visible cp_12345 "Loading spinner" 1`,
-			`api-cli wait element-not-visible "Loading spinner"  # Uses session context`,
-			`api-cli wait element-not-visible "Modal overlay" --timeout 5000`,
-			`api-cli wait element-not-visible cp_12345 ".progress-bar" 2 --timeout 10000`,
-		},
-		requiredArgs: 1,
-		hasTimeout:   true,
-		buildMeta: func(args []string, timeout int) map[string]interface{} {
-			meta := map[string]interface{}{
-				"selector": args[0],
-			}
-			if timeout > 0 {
-				meta["timeout_ms"] = timeout
-			}
-			return meta
-		},
-		parseStep: func(args []string, timeout int) string {
-			if timeout > 0 {
-				return fmt.Sprintf("wait until %s disappears (timeout: %dms)", args[0], timeout)
-			}
-			return fmt.Sprintf("wait until %s disappears", args[0])
-		},
-	},
 	"time": {
 		stepType:    "WAIT_TIME",
 		description: "Wait for a specified time in milliseconds",
@@ -115,10 +87,10 @@ var waitConfigs = map[string]waitConfig{
 	},
 }
 
-// newWaitCmd creates the new wait command using BaseCommand pattern
-func newWaitCmd() *cobra.Command {
+// newStepWaitCmd creates the new wait command using BaseCommand pattern
+func newStepWaitCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "wait",
+		Use:   "step-wait",
 		Short: "Create wait steps in checkpoints",
 		Long: `Create various types of wait steps in checkpoints.
 
@@ -129,7 +101,6 @@ This command uses the standardized positional argument pattern:
 
 Available wait types:
   - element: Wait for element to be visible (with optional timeout)
-  - element-not-visible: Wait for element to disappear (with optional timeout)
   - time: Wait for specified time in milliseconds`,
 		Example: `  # Wait for element to appear (with explicit checkpoint)
   api-cli wait element cp_12345 "Login button" 1
@@ -139,9 +110,6 @@ Available wait types:
 
   # Wait for element with custom timeout
   api-cli wait element "Success message" --timeout 5000
-
-  # Wait for element to disappear
-  api-cli wait element-not-visible "Loading spinner"
 
   # Wait for 2 seconds
   api-cli wait time 2000`,
@@ -347,14 +315,9 @@ func (wc *WaitCommand) createWaitStep(stepType string, args []string, timeout in
 			return nil, fmt.Errorf("failed to create wait element not visible step: %w", err)
 		}
 	case "WAIT_TIME":
-		// Convert milliseconds to seconds for the API (if it expects seconds)
+		// The API expects milliseconds, not seconds
 		ms, _ := strconv.Atoi(args[0])
-		seconds := ms / 1000
-		if ms%1000 != 0 {
-			// If there are remaining milliseconds, round up to next second
-			seconds++
-		}
-		stepID, err = wc.createWaitTime(ctx, checkpointID, seconds, position)
+		stepID, err = wc.createWaitTime(ctx, checkpointID, ms, position)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create wait time step: %w", err)
 		}
@@ -452,15 +415,14 @@ func (wc *WaitCommand) createWaitElementNotVisible(ctx context.Context, checkpoi
 }
 
 // createWaitTime creates a wait time step with context
-func (wc *WaitCommand) createWaitTime(ctx context.Context, checkpointID int, seconds int, position int) (int, error) {
-	// Since the client doesn't have context-aware methods yet, we'll call the regular method
-	// In the future, this should call wc.Client.CreateWaitTimeStepWithContext
+func (wc *WaitCommand) createWaitTime(ctx context.Context, checkpointID int, milliseconds int, position int) (int, error) {
+	// Use CreateStepWaitTime which expects milliseconds directly
 	done := make(chan struct{})
 	var stepID int
 	var err error
 
 	go func() {
-		stepID, err = wc.Client.CreateWaitTimeStep(checkpointID, seconds, position)
+		stepID, err = wc.Client.CreateStepWaitTime(checkpointID, milliseconds, position)
 		close(done)
 	}()
 

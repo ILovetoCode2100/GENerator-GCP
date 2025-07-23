@@ -44,9 +44,9 @@ var browserConfigs = map[string]browserConfig{
 		description: "Navigate to a URL",
 		usage:       "navigate to [checkpoint-id] <url> [position]",
 		examples: []string{
-			`api-cli navigate to "https://example.com"`,
-			`api-cli navigate to "https://example.com/page" --new-tab`,
-			`api-cli navigate to cp_12345 "https://example.com" 1`,
+			`api-cli step-navigate to "https://example.com"`,
+			`api-cli step-navigate to "https://example.com/page" --new-tab`,
+			`api-cli step-navigate to cp_12345 "https://example.com" 1`,
 		},
 		requiredArgs: 1,
 		buildMeta: func(args []string, flags map[string]interface{}) map[string]interface{} {
@@ -67,9 +67,9 @@ var browserConfigs = map[string]browserConfig{
 		description: "Scroll to the top of the page",
 		usage:       "navigate scroll-top [checkpoint-id] [position]",
 		examples: []string{
-			`api-cli navigate scroll-top`,
-			`api-cli navigate scroll-top --smooth`,
-			`api-cli navigate scroll-top cp_12345 1`,
+			`api-cli step-navigate scroll-top`,
+			`api-cli step-navigate scroll-top --smooth`,
+			`api-cli step-navigate scroll-top cp_12345 1`,
 		},
 		requiredArgs: 0,
 		buildMeta: func(args []string, flags map[string]interface{}) map[string]interface{} {
@@ -87,9 +87,9 @@ var browserConfigs = map[string]browserConfig{
 		description: "Scroll to the bottom of the page",
 		usage:       "navigate scroll-bottom [checkpoint-id] [position]",
 		examples: []string{
-			`api-cli navigate scroll-bottom`,
-			`api-cli navigate scroll-bottom --smooth`,
-			`api-cli navigate scroll-bottom cp_12345 1`,
+			`api-cli step-navigate scroll-bottom`,
+			`api-cli step-navigate scroll-bottom --smooth`,
+			`api-cli step-navigate scroll-bottom cp_12345 1`,
 		},
 		requiredArgs: 0,
 		buildMeta: func(args []string, flags map[string]interface{}) map[string]interface{} {
@@ -107,10 +107,10 @@ var browserConfigs = map[string]browserConfig{
 		description: "Scroll an element into view",
 		usage:       "navigate scroll-element [checkpoint-id] <selector> [position]",
 		examples: []string{
-			`api-cli navigate scroll-element "#target-section"`,
-			`api-cli navigate scroll-element ".important-content" --smooth`,
-			`api-cli navigate scroll-element "#form-submit" --block center`,
-			`api-cli navigate scroll-element cp_12345 "#target-section" 1`,
+			`api-cli step-navigate scroll-element "#target-section"`,
+			`api-cli step-navigate scroll-element ".important-content" --smooth`,
+			`api-cli step-navigate scroll-element "#form-submit" --block center`,
+			`api-cli step-navigate scroll-element cp_12345 "#target-section" 1`,
 		},
 		requiredArgs: 1,
 		buildMeta: func(args []string, flags map[string]interface{}) map[string]interface{} {
@@ -135,10 +135,10 @@ var browserConfigs = map[string]browserConfig{
 		description: "Scroll to specific coordinates",
 		usage:       "navigate scroll-position [checkpoint-id] <x,y> [position]",
 		examples: []string{
-			`api-cli navigate scroll-position "0,500"`,
-			`api-cli navigate scroll-position "100,1000" --smooth`,
-			`api-cli navigate scroll-position --x 0 --y 500`,
-			`api-cli navigate scroll-position cp_12345 "0,500" 1`,
+			`api-cli step-navigate scroll-position "0,500"`,
+			`api-cli step-navigate scroll-position "100,1000" --smooth`,
+			`api-cli step-navigate scroll-position --x 0 --y 500`,
+			`api-cli step-navigate scroll-position cp_12345 "0,500" 1`,
 		},
 		requiredArgs: 0, // Can use flags or positional arg
 		buildMeta: func(args []string, flags map[string]interface{}) map[string]interface{} {
@@ -160,10 +160,10 @@ var browserConfigs = map[string]browserConfig{
 		description: "Scroll by relative offset",
 		usage:       "navigate scroll-by [checkpoint-id] <x,y> [position]",
 		examples: []string{
-			`api-cli navigate scroll-by "0,500"    # Scroll down 500px`,
-			`api-cli navigate scroll-by "-100,0"  # Scroll left 100px`,
-			`api-cli navigate scroll-by --x 0 --y -500  # Scroll up 500px`,
-			`api-cli navigate scroll-by cp_12345 "0,500" 1`,
+			`api-cli step-navigate scroll-by "0,500"    # Scroll down 500px`,
+			`api-cli step-navigate scroll-by "-100,0"  # Scroll left 100px`,
+			`api-cli step-navigate scroll-by --x 0 --y -500  # Scroll up 500px`,
+			`api-cli step-navigate scroll-by cp_12345 "0,500" 1`,
 		},
 		requiredArgs: 0, // Can use flags or positional arg
 		buildMeta: func(args []string, flags map[string]interface{}) map[string]interface{} {
@@ -185,9 +185,9 @@ var browserConfigs = map[string]browserConfig{
 		description: "Scroll up by one viewport height",
 		usage:       "navigate scroll-up [checkpoint-id] [position]",
 		examples: []string{
-			`api-cli navigate scroll-up`,
-			`api-cli navigate scroll-up --smooth`,
-			`api-cli navigate scroll-up cp_12345 1`,
+			`api-cli step-navigate scroll-up`,
+			`api-cli step-navigate scroll-up --smooth`,
+			`api-cli step-navigate scroll-up cp_12345 1`,
 		},
 		requiredArgs: 0,
 		buildMeta: func(args []string, flags map[string]interface{}) map[string]interface{} {
@@ -205,9 +205,9 @@ var browserConfigs = map[string]browserConfig{
 		description: "Scroll down by one viewport height",
 		usage:       "navigate scroll-down [checkpoint-id] [position]",
 		examples: []string{
-			`api-cli navigate scroll-down`,
-			`api-cli navigate scroll-down --smooth`,
-			`api-cli navigate scroll-down cp_12345 1`,
+			`api-cli step-navigate scroll-down`,
+			`api-cli step-navigate scroll-down --smooth`,
+			`api-cli step-navigate scroll-down cp_12345 1`,
 		},
 		requiredArgs: 0,
 		buildMeta: func(args []string, flags map[string]interface{}) map[string]interface{} {
@@ -227,8 +227,8 @@ var browserConfigs = map[string]browserConfig{
 		description: "Resize browser window",
 		usage:       "window resize [checkpoint-id] <WIDTHxHEIGHT> [position]",
 		examples: []string{
-			`api-cli window resize cp_12345 1024x768 1`,
-			`api-cli window resize 800x600  # Uses session context`,
+			`api-cli step-window resize cp_12345 1024x768 1`,
+			`api-cli step-window resize 800x600  # Uses session context`,
 		},
 		requiredArgs: 1,
 		buildMeta: func(args []string, flags map[string]interface{}) map[string]interface{} {
@@ -249,8 +249,8 @@ var browserConfigs = map[string]browserConfig{
 		description: "Maximize browser window",
 		usage:       "window maximize [checkpoint-id] [position]",
 		examples: []string{
-			`api-cli window maximize cp_12345 1`,
-			`api-cli window maximize  # Uses session context`,
+			`api-cli step-window maximize cp_12345 1`,
+			`api-cli step-window maximize  # Uses session context`,
 		},
 		requiredArgs: 0,
 		buildMeta: func(args []string, flags map[string]interface{}) map[string]interface{} {
@@ -266,8 +266,8 @@ var browserConfigs = map[string]browserConfig{
 		description: "Switch to next browser tab",
 		usage:       "window switch tab next [checkpoint-id] [position]",
 		examples: []string{
-			`api-cli window switch tab next cp_12345 1`,
-			`api-cli window switch tab next  # Uses session context`,
+			`api-cli step-window switch tab next cp_12345 1`,
+			`api-cli step-window switch tab next  # Uses session context`,
 		},
 		requiredArgs: 0,
 		buildMeta: func(args []string, flags map[string]interface{}) map[string]interface{} {
@@ -284,8 +284,8 @@ var browserConfigs = map[string]browserConfig{
 		description: "Switch to previous browser tab",
 		usage:       "window switch tab prev [checkpoint-id] [position]",
 		examples: []string{
-			`api-cli window switch tab prev cp_12345 1`,
-			`api-cli window switch tab prev  # Uses session context`,
+			`api-cli step-window switch tab prev cp_12345 1`,
+			`api-cli step-window switch tab prev  # Uses session context`,
 		},
 		requiredArgs: 0,
 		buildMeta: func(args []string, flags map[string]interface{}) map[string]interface{} {
@@ -302,8 +302,8 @@ var browserConfigs = map[string]browserConfig{
 		description: "Switch to browser tab by index (0-based)",
 		usage:       "window switch tab index [checkpoint-id] <index> [position]",
 		examples: []string{
-			`api-cli window switch tab index cp_12345 0 1  # Switch to first tab`,
-			`api-cli window switch tab index 2  # Switch to third tab, uses session context`,
+			`api-cli step-window switch tab index cp_12345 0 1  # Switch to first tab`,
+			`api-cli step-window switch tab index 2  # Switch to third tab, uses session context`,
 		},
 		requiredArgs: 1,
 		buildMeta: func(args []string, flags map[string]interface{}) map[string]interface{} {
@@ -321,8 +321,8 @@ var browserConfigs = map[string]browserConfig{
 		description: "Switch to iframe by element selector",
 		usage:       "window switch iframe [checkpoint-id] <selector> [position]",
 		examples: []string{
-			`api-cli window switch iframe cp_12345 "#payment-frame" 1`,
-			`api-cli window switch iframe "iframe[name='content']"  # Uses session context`,
+			`api-cli step-window switch iframe cp_12345 "#payment-frame" 1`,
+			`api-cli step-window switch iframe "iframe[name='content']"  # Uses session context`,
 		},
 		requiredArgs: 1,
 		buildMeta: func(args []string, flags map[string]interface{}) map[string]interface{} {
@@ -339,8 +339,8 @@ var browserConfigs = map[string]browserConfig{
 		description: "Switch to parent frame",
 		usage:       "window switch parent-frame [checkpoint-id] [position]",
 		examples: []string{
-			`api-cli window switch parent-frame cp_12345 1`,
-			`api-cli window switch parent-frame  # Uses session context`,
+			`api-cli step-window switch parent-frame cp_12345 1`,
+			`api-cli step-window switch parent-frame  # Uses session context`,
 		},
 		requiredArgs: 0,
 		buildMeta: func(args []string, flags map[string]interface{}) map[string]interface{} {
@@ -352,10 +352,10 @@ var browserConfigs = map[string]browserConfig{
 	},
 }
 
-// NavigateCmd creates the navigate command with subcommands
-func NavigateCmd() *cobra.Command {
+// StepNavigateCmd creates the navigate command with subcommands
+func StepNavigateCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "navigate",
+		Use:   "step-navigate",
 		Short: "Navigate and scroll within the browser",
 		Long: `Navigate to URLs and scroll within pages using various methods.
 
@@ -375,10 +375,10 @@ This command consolidates URL navigation and scrolling actions.`,
 	return cmd
 }
 
-// newWindowCmd creates the window command with subcommands
-func newWindowCmd() *cobra.Command {
+// newStepWindowCmd creates the window command with subcommands
+func newStepWindowCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "window",
+		Use:   "step-window",
 		Short: "Manage browser windows, tabs, and frames",
 		Long: `Perform various window operations including tab switching, frame navigation, and window resizing.
 
@@ -394,22 +394,22 @@ Available operations:
   - switch iframe: Switch context to an iframe
   - switch parent-frame: Switch back to parent frame`,
 		Example: `  # Resize window (with explicit checkpoint)
-  api-cli window resize cp_12345 1024x768 1
+  api-cli step-window resize cp_12345 1024x768 1
 
   # Resize window (using session context)
-  api-cli window resize 800x600
+  api-cli step-window resize 800x600
 
   # Maximize window
-  api-cli window maximize
+  api-cli step-window maximize
 
   # Switch to next tab
-  api-cli window switch tab next
+  api-cli step-window switch tab next
 
   # Switch to iframe
-  api-cli window switch iframe "#payment-frame"
+  api-cli step-window switch iframe "#payment-frame"
 
   # Switch to tab by index
-  api-cli window switch tab index 2`,
+  api-cli step-window switch tab index 2`,
 	}
 
 	// Add resize subcommand

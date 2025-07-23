@@ -16,7 +16,7 @@ func RegisterCommands(rootCmd *cobra.Command) {
 	// ========================================
 	// PROJECT MANAGEMENT COMMANDS (Consolidated)
 	// ========================================
-	// From project_management.go
+	// From manage_projects.go
 	rootCmd.AddCommand(newCreateProjectCmd())
 	rootCmd.AddCommand(newCreateGoalCmd())
 	rootCmd.AddCommand(newCreateJourneyCmd())
@@ -35,36 +35,40 @@ func RegisterCommands(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(NewListCheckpointsCmd())
 
 	// ========================================
-	// STEP COMMANDS (8 Groups - Further Consolidated)
+	// TEST STEP COMMANDS (9 Groups - All create test steps)
 	// ========================================
-	// All commands use unified positional argument syntax
+	// All commands use unified positional argument syntax with 'step-' prefix
 
-	// 1. ASSERT - All assertion operations
-	rootCmd.AddCommand(newAssertCmd()) // equals, not-equals, exists, not-exists, gt, gte, lt, lte, matches, checked, selected, variable
+	// 1. STEP-ASSERT - All assertion operations
+	rootCmd.AddCommand(newStepAssertCmd()) // equals, not-equals, exists, not-exists, gt, gte, lt, lte, matches, checked, selected, variable
 
-	// 2. INTERACT - All user interaction actions (consolidated from interact.go, mouse.go, select.go)
-	rootCmd.AddCommand(InteractionCmd()) // click, double-click, right-click, hover, write, key, mouse operations, select dropdowns
+	// 2. STEP-INTERACT - All user interaction actions (consolidated from interact.go, mouse.go, select.go)
+	rootCmd.AddCommand(StepInteractionCmd()) // click, double-click, right-click, hover, write, key, mouse operations, select dropdowns
 
-	// 3. BROWSER COMMANDS (consolidated from navigate.go, window.go)
-	rootCmd.AddCommand(NavigateCmd())  // to, scroll-to, scroll-top, scroll-bottom, scroll-element, scroll-by, scroll-up, scroll-down
-	rootCmd.AddCommand(newWindowCmd()) // resize, maximize, switch-tab, switch-iframe, switch-parent-frame
+	// 3. STEP-NAVIGATE - Browser navigation and scrolling
+	rootCmd.AddCommand(StepNavigateCmd()) // to, scroll-top, scroll-bottom, scroll-element, scroll-position, scroll-by, scroll-up, scroll-down
 
-	// 4. DATA - Data storage and cookies
-	rootCmd.AddCommand(newDataCmd()) // store-text, store-value, store-attribute, cookie-create, cookie-delete, cookie-clear
+	// 4. STEP-WINDOW - Window management operations
+	rootCmd.AddCommand(newStepWindowCmd()) // resize, maximize, switch tab/iframe/parent-frame
 
-	// 5. DIALOG - Dialog handling
-	rootCmd.AddCommand(newDialogCmd()) // alert-accept, alert-dismiss, confirm-accept, confirm-reject, prompt
+	// 5. STEP-DATA - Data storage and cookies
+	rootCmd.AddCommand(newStepDataCmd()) // store element-text/attribute/literal, cookie create/delete/clear-all
 
-	// 6. WAIT - Wait operations
-	rootCmd.AddCommand(newWaitCmd()) // element, element-not-visible, time
+	// 6. STEP-DIALOG - Dialog handling
+	rootCmd.AddCommand(newStepDialogCmd()) // dismiss-alert, dismiss-confirm, dismiss-prompt, dismiss-prompt-with-text
 
-	// 7. FILE - File operations
-	rootCmd.AddCommand(FileCmd()) // upload, upload-url
+	// 7. STEP-WAIT - Wait operations
+	rootCmd.AddCommand(newStepWaitCmd()) // element, time
 
-	// 8. MISC - Miscellaneous actions
-	rootCmd.AddCommand(newMiscCmd()) // comment, execute
+	// 8. STEP-FILE - File operations
+	rootCmd.AddCommand(StepFileCmd()) // upload, upload-url
 
-	// 9. LIBRARY - Library checkpoint operations
+	// 9. STEP-MISC - Miscellaneous actions
+	rootCmd.AddCommand(newStepMiscCmd()) // comment, execute
+
+	// ========================================
+	// LIBRARY MANAGEMENT COMMANDS
+	// ========================================
 	rootCmd.AddCommand(LibraryCmd()) // add, get, attach, move-step, remove-step, update
 
 	// ========================================
@@ -83,4 +87,9 @@ func RegisterCommands(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(LoadTestTemplateCmd)
 	rootCmd.AddCommand(GenerateCommandsCmd)
 	rootCmd.AddCommand(GetTestTemplatesCmd)
+
+	// ========================================
+	// UNIFIED TEST INTERFACE
+	// ========================================
+	rootCmd.AddCommand(newRunTestCmd()) // New simplified run-test command
 }

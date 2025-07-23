@@ -1,0 +1,76 @@
+name: "E-commerce Purchase Flow"
+project: "E-commerce Tests" # Will create project if it doesn't exist
+config:
+  base_url: "https://shop.example.com"
+  continue_on_error: true
+  default_timeout: 30000
+
+steps:
+  # Navigate to product page
+  - navigate: "https://shop.example.com/products/laptop"
+
+  # Check product details
+  - assert: "High-Performance Laptop"
+  - store:
+      selector: ".price"
+      as: "productPrice"
+
+  # Add to cart
+  - click: "#add-to-cart"
+  - wait: ".cart-notification" # Wait for element
+
+  # Go to cart
+  - click: ".cart-icon"
+  - assert: "Shopping Cart (1 item)"
+
+  # Store and verify price
+  - store:
+      selector: ".cart-total"
+      as: "cartTotal"
+  - execute: |
+      // Verify prices match
+      const productPrice = variables.productPrice;
+      const cartTotal = variables.cartTotal;
+      console.log('Product:', productPrice, 'Cart:', cartTotal);
+
+  # Proceed to checkout
+  - click: "#checkout-button"
+  - wait: 3000
+
+  # Fill shipping info
+  - write:
+      selector: "#shipping-name"
+      text: "Test User"
+  - write:
+      selector: "#shipping-address"
+      text: "123 Test Street"
+  - write:
+      selector: "#shipping-city"
+      text: "Test City"
+  - write:
+      selector: "#shipping-zip"
+      text: "12345"
+
+  # Select shipping method
+  - click: "input[value='standard']"
+
+  # Scroll to payment section
+  - scroll:
+      to: "#payment-section"
+
+  # Add comment for manual review
+  - comment: "Payment step would normally be handled by test environment"
+
+  # Complete order (test mode)
+  - click: "#complete-order-test"
+  - wait: 5000
+
+  # Verify success
+  - assert: "Order Confirmed"
+  - store:
+      selector: ".order-number"
+      as: "orderNumber"
+
+  # Final verification
+  - execute: |
+      console.log('Order completed:', variables.orderNumber);

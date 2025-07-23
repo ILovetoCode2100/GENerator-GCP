@@ -81,6 +81,7 @@ const (
 	KindTimeout          = "timeout"
 	KindContextCanceled  = "context_canceled"
 	KindSerialization    = "serialization_error"
+	KindInvalidResponse  = "invalid_response"
 )
 
 // Helper functions for creating common errors

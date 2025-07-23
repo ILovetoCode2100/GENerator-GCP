@@ -1,0 +1,57 @@
+name: "Simple Login Test"
+description: "Test basic login functionality"
+
+steps:
+  # Navigate to the login page
+  - type: navigate
+    target: "https://example.com/login"
+    description: "Go to login page"
+
+  # Wait for page to load
+  - type: wait
+    command: element
+    target: "form#login-form"
+    description: "Wait for login form"
+
+  # Enter username
+  - type: interact
+    command: write
+    target: "input#username"
+    value: "testuser@example.com"
+    description: "Enter username"
+
+  # Enter password
+  - type: interact
+    command: write
+    target: "input#password"
+    value: "SecurePassword123"
+    description: "Enter password"
+
+  # Click login button
+  - type: interact
+    command: click
+    target: "button[type='submit']"
+    description: "Click login button"
+
+  # Wait for login to complete
+  - type: wait
+    command: time
+    value: "2000"
+    description: "Wait 2 seconds for login"
+
+  # Verify successful login
+  - type: assert
+    command: exists
+    target: "div.dashboard"
+    description: "Verify dashboard is visible"
+
+  # Store user name
+  - type: data
+    command: store
+    target: "span.username"
+    value: "loggedInUser"
+    description: "Store username for later use"
+
+config:
+  continue_on_error: false
+  screenshot_on_error: true

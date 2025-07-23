@@ -2050,10 +2050,15 @@ func (c *Client) createStepWithCustomBody(checkpointID int, parsedStepBody map[s
 		"parsedStep":   parsedStepBody,
 	}
 
+	// Try multiple response formats as the API might return different structures
 	var response struct {
 		Item struct {
 			ID int `json:"id"`
 		} `json:"item"`
+		TestStep struct {
+			ID int `json:"id"`
+		} `json:"testStep"`
+		ID    int    `json:"id"` // Sometimes API returns ID directly
 		Error string `json:"error,omitempty"`
 	}
 
@@ -2061,6 +2066,19 @@ func (c *Client) createStepWithCustomBody(checkpointID int, parsedStepBody map[s
 		SetBody(body).
 		SetResult(&response).
 		Post("/teststeps?envelope=false")
+
+	// Always log raw response for debugging window maximize issue
+	if parsedStepBody["action"] == "WINDOW" {
+		if meta, ok := parsedStepBody["meta"].(map[string]interface{}); ok {
+			if meta["type"] == "MAXIMIZE" {
+				c.logger.WithFields(logrus.Fields{
+					"raw_response":    resp.String(),
+					"status_code":     resp.StatusCode(),
+					"response_struct": fmt.Sprintf("%+v", response),
+				}).Info("Window maximize API response")
+			}
+		}
+	}
 
 	if err != nil {
 		return 0, fmt.Errorf("create step request failed: %w", err)
@@ -2073,7 +2091,72 @@ func (c *Client) createStepWithCustomBody(checkpointID int, parsedStepBody map[s
 		return 0, fmt.Errorf("create step failed with status %d: %s", resp.StatusCode(), resp.String())
 	}
 
-	return response.Item.ID, nil
+	// Debug logging to check response
+	if c.config != nil && c.config.Output.Verbose {
+		c.logger.WithFields(logrus.Fields{
+			"response_body": resp.String(),
+			"item_id":       response.Item.ID,
+			"testStep_id":   response.TestStep.ID,
+			"direct_id":     response.ID,
+		}).Debug("createStepWithCustomBody response")
+	}
+
+	// Special debug for wait time steps
+	if parsedStepBody["action"] == "WAIT" {
+		if meta, ok := parsedStepBody["meta"].(map[string]interface{}); ok {
+			if meta["type"] == "TIME" {
+				c.logger.WithFields(logrus.Fields{
+					"raw_response":    resp.String(),
+					"status_code":     resp.StatusCode(),
+					"response_struct": fmt.Sprintf("%+v", response),
+					"item_id":         response.Item.ID,
+					"direct_id":       response.ID,
+				}).Info("Wait time API response")
+			}
+		}
+	}
+
+	// Check all possible response formats
+	if response.Item.ID > 0 {
+		return response.Item.ID, nil
+	}
+	if response.TestStep.ID > 0 {
+		return response.TestStep.ID, nil
+	}
+	if response.ID > 0 {
+		return response.ID, nil
+	}
+
+	// Try parsing raw response for wait time steps
+	if parsedStepBody["action"] == "WAIT" {
+		// Try to parse the raw response as JSON to find the ID
+		var rawResponse map[string]interface{}
+		if err := json.Unmarshal(resp.Body(), &rawResponse); err == nil {
+			// Check for id field at root level
+			if id, ok := rawResponse["id"].(float64); ok {
+				return int(id), nil
+			}
+			// Check for item.id
+			if item, ok := rawResponse["item"].(map[string]interface{}); ok {
+				if id, ok := item["id"].(float64); ok {
+					return int(id), nil
+				}
+			}
+			// Check for testStep.id
+			if testStep, ok := rawResponse["testStep"].(map[string]interface{}); ok {
+				if id, ok := testStep["id"].(float64); ok {
+					return int(id), nil
+				}
+			}
+			// Log the structure for debugging
+			c.logger.WithFields(logrus.Fields{
+				"raw_json": rawResponse,
+			}).Warn("Could not find ID in wait time response")
+		}
+	}
+
+	// If we got here, neither ID was set
+	return 0, fmt.Errorf("no step ID returned in response")
 }
 
 // CreateStep creates a generic step using a structured request

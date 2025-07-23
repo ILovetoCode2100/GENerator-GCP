@@ -14,10 +14,15 @@ func (c *Client) addStepContext(ctx context.Context, checkpointID int, stepIndex
 		"parsedStep":   parsedStep,
 	}
 
+	// Try multiple response formats as the API might return different structures
 	var response struct {
 		Item struct {
 			ID int `json:"id"`
 		} `json:"item"`
+		TestStep struct {
+			ID int `json:"id"`
+		} `json:"testStep"`
+		ID    int    `json:"id"` // Sometimes API returns ID directly
 		Error string `json:"error,omitempty"`
 	}
 
@@ -45,7 +50,18 @@ func (c *Client) addStepContext(ctx context.Context, checkpointID int, stepIndex
 		return 0, c.handleErrorResponse("addStepContext", resp)
 	}
 
-	return response.Item.ID, nil
+	// Check all possible response formats
+	if response.Item.ID > 0 {
+		return response.Item.ID, nil
+	}
+	if response.TestStep.ID > 0 {
+		return response.TestStep.ID, nil
+	}
+	if response.ID > 0 {
+		return response.ID, nil
+	}
+
+	return 0, NewClientError("addStepContext", KindInvalidResponse, "no step ID returned in response", nil)
 }
 
 // Data Storage Methods with Context

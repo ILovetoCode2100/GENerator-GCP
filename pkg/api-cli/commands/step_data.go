@@ -161,10 +161,10 @@ var dataConfigs = map[string]dataConfig{
 	},
 }
 
-// newDataCmd creates the new data command using BaseCommand pattern
-func newDataCmd() *cobra.Command {
+// newStepDataCmd creates the new data command using BaseCommand pattern
+func newStepDataCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "data",
+		Use:   "step-data",
 		Short: "Manage data storage and cookies in test steps",
 		Long: `Create data management steps including storing values in variables and managing cookies.
 

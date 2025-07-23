@@ -14,10 +14,15 @@ func (c *Client) createStepWithCustomBodyContext(ctx context.Context, checkpoint
 		"parsedStep":   parsedStepBody,
 	}
 
+	// Try multiple response formats as the API might return different structures
 	var response struct {
 		Item struct {
 			ID int `json:"id"`
 		} `json:"item"`
+		TestStep struct {
+			ID int `json:"id"`
+		} `json:"testStep"`
+		ID    int    `json:"id"` // Sometimes API returns ID directly
 		Error string `json:"error,omitempty"`
 	}
 
@@ -45,7 +50,19 @@ func (c *Client) createStepWithCustomBodyContext(ctx context.Context, checkpoint
 		return 0, c.handleErrorResponse("createStepWithCustomBodyContext", resp)
 	}
 
-	return response.Item.ID, nil
+	// Check all possible response formats
+	if response.Item.ID > 0 {
+		return response.Item.ID, nil
+	}
+	if response.TestStep.ID > 0 {
+		return response.TestStep.ID, nil
+	}
+	if response.ID > 0 {
+		return response.ID, nil
+	}
+
+	// If we got here, no ID was found in any expected location
+	return 0, NewClientError("createStepWithCustomBodyContext", KindSerialization, "no step ID returned in response", nil)
 }
 
 // CreateStepClickWithContext creates a click step with context support

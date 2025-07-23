@@ -80,6 +80,7 @@ func (bc *BaseCommand) Init(cmd *cobra.Command) error {
 // ResolveCheckpointAndPosition resolves checkpoint ID and position from arguments
 // Supports both modern (session-based) and legacy (explicit checkpoint) formats
 func (bc *BaseCommand) ResolveCheckpointAndPosition(args []string, requiresArgs int) ([]string, error) {
+
 	// Check if we have a checkpoint ID from session
 	var sessionCheckpoint string
 	if cfg != nil && cfg.Session.CurrentCheckpointID != nil {
@@ -91,8 +92,9 @@ func (bc *BaseCommand) ResolveCheckpointAndPosition(args []string, requiresArgs 
 	}
 
 	// Try to parse position from last argument
+	// Only try to parse position if we have more than the required args
 	var isPosition bool
-	if len(args) > 0 {
+	if len(args) > requiresArgs && len(args) > 0 {
 		lastArg := args[len(args)-1]
 		pos, isPos := ParsePosition(lastArg)
 		if isPos {
@@ -116,7 +118,8 @@ func (bc *BaseCommand) ResolveCheckpointAndPosition(args []string, requiresArgs 
 	}
 
 	// Check if first argument looks like a checkpoint ID (legacy format)
-	if len(args) > 0 && (strings.HasPrefix(args[0], "cp_") || IsNumeric(args[0])) {
+	// Check even if we have a session checkpoint, as explicit checkpoint overrides session
+	if len(args) > 0 && !isURL(args[0]) && (strings.HasPrefix(args[0], "cp_") || IsNumeric(args[0])) {
 		bc.CheckpointID = args[0]
 		args = args[1:] // Remove checkpoint ID from args
 
@@ -166,6 +169,11 @@ func IsNumeric(s string) bool {
 		}
 	}
 	return len(s) > 0
+}
+
+// isURL checks if a string is a URL (starts with http:// or https://)
+func isURL(s string) bool {
+	return strings.HasPrefix(s, "http://") || strings.HasPrefix(s, "https://")
 }
 
 // FormatOutput formats the output based on the specified format

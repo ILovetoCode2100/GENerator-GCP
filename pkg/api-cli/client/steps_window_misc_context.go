@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"strconv"
 )
 
 // Response types for the context methods
@@ -56,7 +57,7 @@ func (c *Client) CreateStepResizeWindowWithContext(ctx context.Context, checkpoi
 		SetContext(ctx).
 		SetBody(payload).
 		SetResult(&result).
-		Post("/steps")
+		Post("/teststeps?envelope=false")
 
 	if err != nil {
 		if ctx.Err() != nil {
@@ -87,7 +88,7 @@ func (c *Client) CreateStepMaximizeWithContext(ctx context.Context, checkpointID
 		SetContext(ctx).
 		SetBody(payload).
 		SetResult(&result).
-		Post("/steps")
+		Post("/teststeps?envelope=false")
 
 	if err != nil {
 		if ctx.Err() != nil {
@@ -122,7 +123,7 @@ func (c *Client) CreateStepWindowSwitchWithContext(ctx context.Context, checkpoi
 		SetContext(ctx).
 		SetBody(payload).
 		SetResult(&result).
-		Post("/steps")
+		Post("/teststeps?envelope=false")
 
 	if err != nil {
 		if ctx.Err() != nil {
@@ -156,7 +157,7 @@ func (c *Client) CreateStepSwitchTabWithContext(ctx context.Context, checkpointI
 		SetContext(ctx).
 		SetBody(payload).
 		SetResult(&result).
-		Post("/steps")
+		Post("/teststeps?envelope=false")
 
 	if err != nil {
 		if ctx.Err() != nil {
@@ -190,7 +191,7 @@ func (c *Client) CreateStepSwitchIframeWithContext(ctx context.Context, checkpoi
 		SetContext(ctx).
 		SetBody(payload).
 		SetResult(&result).
-		Post("/steps")
+		Post("/teststeps?envelope=false")
 
 	if err != nil {
 		if ctx.Err() != nil {
@@ -208,20 +209,42 @@ func (c *Client) CreateStepSwitchIframeWithContext(ctx context.Context, checkpoi
 
 // CreateStepSwitchParentFrameWithContext creates a step to switch to parent frame with context support
 func (c *Client) CreateStepSwitchParentFrameWithContext(ctx context.Context, checkpointID string, position int) (*StepResponse, error) {
-	payload := map[string]interface{}{
-		"checkpoint_id": checkpointID,
-		"position":      position,
-		"extension": map[string]interface{}{
-			"name": "switchParentFrame",
+	// Convert checkpointID to int
+	checkpointIDInt, err := strconv.Atoi(checkpointID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid checkpoint ID: %w", err)
+	}
+
+	parsedStep := map[string]interface{}{
+		"action": "SWITCH",
+		"meta": map[string]interface{}{
+			"type": "PARENT_FRAME",
 		},
 	}
 
-	var result StepResponse
+	payload := map[string]interface{}{
+		"checkpointId": checkpointIDInt,
+		"stepIndex":    position,
+		"parsedStep":   parsedStep,
+	}
+
+	// Try multiple response formats as the API might return different structures
+	var response struct {
+		Item struct {
+			ID int `json:"id"`
+		} `json:"item"`
+		TestStep struct {
+			ID int `json:"id"`
+		} `json:"testStep"`
+		ID    int    `json:"id"` // Sometimes API returns ID directly
+		Error string `json:"error,omitempty"`
+	}
+
 	resp, err := c.restyClient.R().
 		SetContext(ctx).
 		SetBody(payload).
-		SetResult(&result).
-		Post("/steps")
+		SetResult(&response).
+		Post("/teststeps?envelope=false")
 
 	if err != nil {
 		if ctx.Err() != nil {
@@ -231,10 +254,30 @@ func (c *Client) CreateStepSwitchParentFrameWithContext(ctx context.Context, che
 	}
 
 	if resp.IsError() {
+		if response.Error != "" {
+			return nil, fmt.Errorf("API error: %s", response.Error)
+		}
 		return nil, fmt.Errorf("API error: %s", resp.String())
 	}
 
-	return &result, nil
+	// Check all possible response formats
+	stepID := 0
+	if response.Item.ID > 0 {
+		stepID = response.Item.ID
+	} else if response.TestStep.ID > 0 {
+		stepID = response.TestStep.ID
+	} else if response.ID > 0 {
+		stepID = response.ID
+	}
+
+	// Return a StepResponse with the retrieved ID
+	result := &StepResponse{
+		ID:           fmt.Sprintf("%d", stepID),
+		CheckpointID: checkpointID,
+		Position:     position,
+	}
+
+	return result, nil
 }
 
 // CreateStepSetViewportWithContext creates a step to set viewport size with context support
@@ -256,7 +299,7 @@ func (c *Client) CreateStepSetViewportWithContext(ctx context.Context, checkpoin
 		SetContext(ctx).
 		SetBody(payload).
 		SetResult(&result).
-		Post("/steps")
+		Post("/teststeps?envelope=false")
 
 	if err != nil {
 		if ctx.Err() != nil {
@@ -276,23 +319,41 @@ func (c *Client) CreateStepSetViewportWithContext(ctx context.Context, checkpoin
 
 // CreateStepCommentWithContext creates a comment step with context support
 func (c *Client) CreateStepCommentWithContext(ctx context.Context, checkpointID string, comment string, position int) (*StepResponse, error) {
-	payload := map[string]interface{}{
-		"checkpoint_id": checkpointID,
-		"position":      position,
-		"extension": map[string]interface{}{
-			"name": "comment",
-			"context": map[string]interface{}{
-				"text": comment,
-			},
-		},
+	// Convert checkpointID to int
+	checkpointIDInt, err := strconv.Atoi(checkpointID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid checkpoint ID: %w", err)
 	}
 
-	var result StepResponse
+	parsedStep := map[string]interface{}{
+		"action": "COMMENT",
+		"value":  comment,
+		"meta":   map[string]interface{}{},
+	}
+
+	payload := map[string]interface{}{
+		"checkpointId": checkpointIDInt,
+		"stepIndex":    position,
+		"parsedStep":   parsedStep,
+	}
+
+	// Try multiple response formats as the API might return different structures
+	var response struct {
+		Item struct {
+			ID int `json:"id"`
+		} `json:"item"`
+		TestStep struct {
+			ID int `json:"id"`
+		} `json:"testStep"`
+		ID    int    `json:"id"` // Sometimes API returns ID directly
+		Error string `json:"error,omitempty"`
+	}
+
 	resp, err := c.restyClient.R().
 		SetContext(ctx).
 		SetBody(payload).
-		SetResult(&result).
-		Post("/steps")
+		SetResult(&response).
+		Post("/teststeps?envelope=false")
 
 	if err != nil {
 		if ctx.Err() != nil {
@@ -302,31 +363,72 @@ func (c *Client) CreateStepCommentWithContext(ctx context.Context, checkpointID 
 	}
 
 	if resp.IsError() {
+		if response.Error != "" {
+			return nil, fmt.Errorf("API error: %s", response.Error)
+		}
 		return nil, fmt.Errorf("API error: %s", resp.String())
 	}
 
-	return &result, nil
+	// Check all possible response formats
+	stepID := 0
+	if response.Item.ID > 0 {
+		stepID = response.Item.ID
+	} else if response.TestStep.ID > 0 {
+		stepID = response.TestStep.ID
+	} else if response.ID > 0 {
+		stepID = response.ID
+	}
+
+	// Return a StepResponse with the retrieved ID
+	result := &StepResponse{
+		ID:           fmt.Sprintf("%d", stepID),
+		CheckpointID: checkpointID,
+		Position:     position,
+	}
+
+	return result, nil
 }
 
 // CreateStepExecuteScriptWithContext creates a step to execute JavaScript with context support
 func (c *Client) CreateStepExecuteScriptWithContext(ctx context.Context, checkpointID string, script string, position int) (*StepResponse, error) {
-	payload := map[string]interface{}{
-		"checkpoint_id": checkpointID,
-		"position":      position,
-		"extension": map[string]interface{}{
-			"name": "executeScript",
-			"context": map[string]interface{}{
-				"script": script,
-			},
+	// Convert checkpointID to int
+	checkpointIDInt, err := strconv.Atoi(checkpointID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid checkpoint ID: %w", err)
+	}
+
+	parsedStep := map[string]interface{}{
+		"action": "EXECUTE",
+		"value":  script,
+		"meta": map[string]interface{}{
+			"explicit": true,
+			"script":   script,
 		},
 	}
 
-	var result StepResponse
+	payload := map[string]interface{}{
+		"checkpointId": checkpointIDInt,
+		"stepIndex":    position,
+		"parsedStep":   parsedStep,
+	}
+
+	// Try multiple response formats as the API might return different structures
+	var response struct {
+		Item struct {
+			ID int `json:"id"`
+		} `json:"item"`
+		TestStep struct {
+			ID int `json:"id"`
+		} `json:"testStep"`
+		ID    int    `json:"id"` // Sometimes API returns ID directly
+		Error string `json:"error,omitempty"`
+	}
+
 	resp, err := c.restyClient.R().
 		SetContext(ctx).
 		SetBody(payload).
-		SetResult(&result).
-		Post("/steps")
+		SetResult(&response).
+		Post("/teststeps?envelope=false")
 
 	if err != nil {
 		if ctx.Err() != nil {
@@ -336,10 +438,30 @@ func (c *Client) CreateStepExecuteScriptWithContext(ctx context.Context, checkpo
 	}
 
 	if resp.IsError() {
+		if response.Error != "" {
+			return nil, fmt.Errorf("API error: %s", response.Error)
+		}
 		return nil, fmt.Errorf("API error: %s", resp.String())
 	}
 
-	return &result, nil
+	// Check all possible response formats
+	stepID := 0
+	if response.Item.ID > 0 {
+		stepID = response.Item.ID
+	} else if response.TestStep.ID > 0 {
+		stepID = response.TestStep.ID
+	} else if response.ID > 0 {
+		stepID = response.ID
+	}
+
+	// Return a StepResponse with the retrieved ID
+	result := &StepResponse{
+		ID:           fmt.Sprintf("%d", stepID),
+		CheckpointID: checkpointID,
+		Position:     position,
+	}
+
+	return result, nil
 }
 
 // CreateStepEnvironmentWithContext creates an environment configuration step with context support
@@ -358,7 +480,7 @@ func (c *Client) CreateStepEnvironmentWithContext(ctx context.Context, checkpoin
 		SetContext(ctx).
 		SetBody(payload).
 		SetResult(&result).
-		Post("/steps")
+		Post("/teststeps?envelope=false")
 
 	if err != nil {
 		if ctx.Err() != nil {
@@ -390,7 +512,7 @@ func (c *Client) CreateStepConfigureWithContext(ctx context.Context, checkpointI
 		SetContext(ctx).
 		SetBody(payload).
 		SetResult(&result).
-		Post("/steps")
+		Post("/teststeps?envelope=false")
 
 	if err != nil {
 		if ctx.Err() != nil {
