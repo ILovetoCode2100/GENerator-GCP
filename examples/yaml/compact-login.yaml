@@ -1,0 +1,11 @@
+test: User Login Test
+nav: https://example.com/login
+data:
+  email: test@example.com
+  password: SecurePass123!
+do:
+  - t: {"#email": "$email"}
+  - t: {"#password": "$password"}
+  - c: "Sign In"
+  - wait: .dashboard
+  - ch: Welcome

@@ -1,0 +1,71 @@
+name: User Registration Test
+description: Test new user registration flow with validation
+starting_url: https://app.example.com/register
+infrastructure:
+  organization_id: "2242"
+  project: "Registration Tests"
+variables:
+  - name: timestamp
+    value: "{{timestamp}}"
+  - name: testEmail
+    value: "test_{{timestamp}}@example.com"
+  - name: testUsername
+    value: "user_{{timestamp}}"
+config:
+  continue_on_error: false
+  timeout: 60000
+steps:
+  # Navigate to registration page
+  - navigate: "https://app.example.com/register"
+  - assert: "Create Account"
+  
+  # Fill registration form
+  - write:
+      selector: "input#username"
+      text: "{{testUsername}}"
+  - write:
+      selector: "input#email"
+      text: "{{testEmail}}"
+  - write:
+      selector: "input#password"
+      text: "SecurePass123!"
+  - write:
+      selector: "input#confirm-password"
+      text: "SecurePass123!"
+  
+  # Accept terms
+  - click: "input#terms-checkbox"
+  - assert:
+      selector: "input#terms-checkbox"
+      type: checked
+  
+  # Submit form
+  - click: "button.register-btn"
+  - wait:
+      element: "div.success-message"
+  
+  # Verify registration
+  - assert:
+      selector: "h1"
+      equals: "Welcome {{testUsername}}"
+  - assert:
+      not_exists: "div.error-message"
+  
+  # Store user ID
+  - store:
+      selector: "span.user-id"
+      variable: "userId"
+      attribute: "data-id"
+  
+  # Test navigation
+  - click: "a.profile-link"
+  - wait: "2000"
+  - assert:
+      selector: "span.username"
+      equals: "{{testUsername}}"
+  
+  # Cleanup
+  - cookie:
+      action: delete
+      name: "session"
+  - execute: "console.log('Test completed for user:', '{{userId}}')"

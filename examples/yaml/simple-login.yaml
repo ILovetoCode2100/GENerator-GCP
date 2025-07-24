@@ -1,0 +1,14 @@
+name: User Login Test
+description: Test user login functionality
+starting_url: https://example.com/login
+steps:
+  - write:
+      selector: "#email"
+      text: test@example.com
+  - write:
+      selector: "#password"
+      text: SecurePass123!
+  - click: "Sign In"
+  - wait:
+      element: ".dashboard"
+  - assert: Welcome

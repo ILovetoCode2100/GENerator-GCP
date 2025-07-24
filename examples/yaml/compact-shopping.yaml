@@ -1,0 +1,15 @@
+test: Shopping Cart Test
+nav: https://shop.example.com
+data:
+  product: Wireless Headphones
+  quantity: 2
+do:
+  - c: "#search"
+  - t: $product
+  - k: Enter
+  - wait: .products
+  - c: "Add to Cart"
+  - wait: 1000
+  - c: "View Cart"
+  - ch: $product
+  - ch: "Total"

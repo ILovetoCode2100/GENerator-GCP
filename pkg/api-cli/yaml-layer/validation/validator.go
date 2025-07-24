@@ -79,6 +79,24 @@ func (v *Validator) GetWarnings() []core.ValidationError {
 	return v.warnings
 }
 
+// ValidateTest validates a parsed YAMLTest structure
+func (v *Validator) ValidateTest(test *core.YAMLTest) (bool, []core.ValidationError) {
+	v.errors = []core.ValidationError{}
+	v.warnings = []core.ValidationError{}
+
+	// Run all validation rules with nil node (structure-based validation only)
+	for _, rule := range v.rules {
+		errors := rule.Check(test, nil)
+		if rule.Level == "error" {
+			v.errors = append(v.errors, errors...)
+		} else {
+			v.warnings = append(v.warnings, errors...)
+		}
+	}
+
+	return len(v.errors) == 0, v.errors
+}
+
 // initializeRules sets up all validation rules
 func (v *Validator) initializeRules() {
 	v.rules = []ValidationRule{
@@ -245,6 +263,15 @@ func (v *Validator) validateActionFormat(action *core.Action, path string, error
 					Example: "t: {'#email': 'user@example.com'}",
 				})
 			}
+		case map[string]interface{}:
+			if len(t) != 1 {
+				*errors = append(*errors, core.ValidationError{
+					Field:   path + ".t",
+					Message: "Type action map must have exactly one selector:value pair",
+					Fix:     "Use format: t: {selector: value}",
+					Example: "t: {'#email': 'user@example.com'}",
+				})
+			}
 		default:
 			*errors = append(*errors, core.ValidationError{
 				Field:   path + ".t",
@@ -365,6 +392,10 @@ func (v *Validator) checkSelectorFormat(test *core.YAMLTest, node *yaml.Node) []
 			if m, ok := action.T.(map[interface{}]interface{}); ok {
 				for k := range m {
 					checkSelector(fmt.Sprintf("%v", k), basePath+".t")
+				}
+			} else if m, ok := action.T.(map[string]interface{}); ok {
+				for k := range m {
+					checkSelector(k, basePath+".t")
 				}
 			}
 		}

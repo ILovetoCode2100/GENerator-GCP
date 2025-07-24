@@ -23,11 +23,13 @@ Both command types successfully parse YAML files and generate appropriate CLI co
 ### 2. Execution Issues
 
 #### Compact Format (`yaml run`)
+
 - **Issue**: Creates dynamic checkpoint IDs (e.g., cp_1753339083957415000) that don't exist in the API
 - **Error**: "Checkpoint not found" (404 error)
 - **Root Cause**: The yaml runner appears to generate temporary checkpoint IDs rather than using existing ones
 
 #### Simplified Format (`run-test`)
+
 - **Issue 1**: Step parsing errors - "write requires object with selector and text"
 - **Issue 2**: When steps are simplified, API returns "Invalid test step command" (error 2605)
 - **Root Cause**: Mismatch between the expected step format and what the API accepts
@@ -35,6 +37,7 @@ Both command types successfully parse YAML files and generate appropriate CLI co
 ### 3. Direct Commands Work
 
 When using direct CLI commands with session context, everything works correctly:
+
 ```bash
 export VIRTUOSO_SESSION_ID=1682383
 ./bin/api-cli step-navigate to "https://example.com"  # ✓ Success
@@ -45,14 +48,17 @@ export VIRTUOSO_SESSION_ID=1682383
 ### Files Tested
 
 1. **newsletter.yaml** (Compact format)
+
    - Status: ❌ Failed - Checkpoint not found
    - Commands generated correctly
 
 2. **registration-simple-demo.yaml** (Compact format)
+
    - Status: ❌ Failed - Checkpoint not found + unrecognized action
    - Commands generated correctly
 
 3. **minimal-test.yaml** (Simplified format)
+
    - Status: ❌ Failed - Step parsing errors
    - Infrastructure created successfully
 
@@ -65,10 +71,12 @@ export VIRTUOSO_SESSION_ID=1682383
 ### Common Errors
 
 1. **404 Checkpoint Not Found**
+
    - Occurs with all compact format files
    - The YAML runner creates ephemeral checkpoint IDs
 
 2. **400 Bad Request - Invalid test step command**
+
    - Occurs when simplified format successfully parses
    - API rejects the generated commands
 
@@ -79,11 +87,13 @@ export VIRTUOSO_SESSION_ID=1682383
 ## Recommendations
 
 1. **For Compact Format (`yaml run`)**:
+
    - The command needs to support using existing checkpoint IDs
    - Should respect VIRTUOSO_SESSION_ID environment variable
    - Alternative: Add checkpoint field support in YAML files
 
 2. **For Simplified Format (`run-test`)**:
+
    - Fix step parser to generate correct API-compatible commands
    - Update documentation with working examples
    - Add validation before API calls

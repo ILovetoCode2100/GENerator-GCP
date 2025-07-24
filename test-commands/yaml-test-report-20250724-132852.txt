@@ -1,0 +1,82 @@
+YAML End-to-End Test Report
+Generated: Thu 24 Jul 2025 13:28:52 BST
+==========================
+
+Summary:
+  Total: 68
+  Passed: 9
+  Failed: 59
+  Skipped: 0
+
+Format Distribution:
+  unknown: 10
+
+Detailed Results:
+  test-yaml-suite/commands/step-data/positive/all-data-commands.yaml: FAILED
+  .github/workflows/dependabot.yml: FAILED
+  test-all-commands/05-comprehensive-test.yaml: FAILED
+  pkg/api-cli/yaml-layer/converter/examples/compact-example.yaml: FAILED
+  test-yaml-suite/commands/step-interact/positive/all-interact-commands.yaml: FAILED
+  examples/yaml/compact-shopping.yaml: PASSED
+  test-yaml-files/test-yaml-validation.yaml: FAILED
+  test-all-commands/01-assert-commands.yaml: FAILED
+  demo-test.yaml: FAILED
+  test-yaml-suite/commands/step-assert/negative/invalid-args.yaml: FAILED
+  test-yaml-suite/commands/step-file/positive/all-file-commands.yaml: FAILED
+  test-yaml-suite/commands/step-assert/positive/exists.yaml: FAILED
+  pkg/api-cli/yaml-layer/examples/conditional-flow.yaml: FAILED
+  test-yaml-suite/commands/step-wait/positive/all-wait-commands.yaml: FAILED
+  .github/workflows/debug.yml: FAILED
+  test-all-commands/02-interact-commands.yaml: FAILED
+  .goreleaser.yml: FAILED
+  examples/yaml/extended-form.yaml: PASSED
+  .github/workflows/release.yml: FAILED
+  examples/yaml/simple-login.yaml: PASSED
+  test-yaml-files/test-negative-cases.yaml: FAILED
+  examples/advanced_test.yaml: FAILED
+  examples/simple-login-test.yaml: PASSED
+  .github/workflows/test-with-report.yml: FAILED
+  pkg/api-cli/yaml-layer/examples/data-driven-test.yaml: FAILED
+  .pre-commit-config.yaml: FAILED
+  test-yaml-files/test-enhanced-simple.yaml: FAILED
+  .github/workflows/quick.yml: FAILED
+  .github/workflows/code-quality.yml: FAILED
+  test-yaml-suite/commands/step-assert/positive/all-assert-commands.yaml: PASSED
+  .github/workflows/test.yml: FAILED
+  test-all-commands/04-window-dialog-misc.yaml: FAILED
+  test-yaml-suite/commands/step-dialog/positive/all-dialog-commands.yaml: FAILED
+  pkg/api-cli/yaml-layer/examples/admin-test.yaml: FAILED
+  pkg/api-cli/yaml-layer/converter/examples/extended-example.yaml: FAILED
+  test-all-commands/03-navigate-data-commands.yaml: FAILED
+  test-yaml-suite/yaml-features/anchors-aliases/basic-anchors.yaml: FAILED
+  test-yaml-suite/workflows/e2e-scenarios/login-flow.yaml: FAILED
+  pkg/api-cli/yaml-layer/examples/common/auth.yaml: FAILED
+  test-yaml-files/test-parse-check.yaml: PASSED
+  test-yaml-suite/commands/step-interact/edge-cases/special-characters.yaml: FAILED
+  .github/workflows/simple-test.yml: FAILED
+  test-yaml-files/test-negative-individual.yaml: PASSED
+  pkg/api-cli/yaml-layer/examples/e2e-purchase.yaml: FAILED
+  examples/simple_login_test.yaml: FAILED
+  pkg/api-cli/yaml-layer/converter/examples/simplified-example.yaml: FAILED
+  test-yaml-suite/commands/step-window/positive/all-window-commands.yaml: FAILED
+  test-all-commands/07-simple-working-test.yaml: FAILED
+  examples/minimal-test.yaml: PASSED
+  .golangci.yml: FAILED
+  .github/workflows/test-api.yml: FAILED
+  test-yaml-suite/commands/step-navigate/edge-cases/boundary-values.yaml: FAILED
+  test-yaml-files/test-all-commands-positive.yaml: FAILED
+  test-yaml-suite/config/test-config.yaml: FAILED
+  test-yaml-files/test-edge-cases.yaml: FAILED
+  test-yaml-suite/config/test-data.yaml: FAILED
+  .github/workflows/ci.yml: FAILED
+  test-yaml-suite/workflows/e2e-scenarios/login-flow-with-validation.yaml: FAILED
+  test-yaml-files/test-run-command-all-69.yaml: FAILED
+  pkg/api-cli/yaml-layer/examples/login-test.yaml: FAILED
+  test-yaml-suite/commands/step-misc/positive/all-misc-commands.yaml: FAILED
+  test-yaml-suite/commands/step-interact/positive/click-variations.yaml: FAILED
+  test-yaml-suite/workflows/e2e-scenarios/shopping-cart-flow.yaml: FAILED
+  test-yaml-suite/commands/step-navigate/positive/all-navigate-commands.yaml: FAILED
+  test-all-commands/06-all-step-commands-direct.yaml: FAILED
+  examples/yaml/compact-login.yaml: PASSED
+  test-yaml-suite/commands/step-assert/edge-cases/special-characters.yaml: FAILED
+  .github/dependabot.yml: FAILED

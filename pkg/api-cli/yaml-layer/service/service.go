@@ -15,6 +15,7 @@ import (
 
 	"github.com/marklovelady/api-cli-generator/pkg/api-cli/client"
 	"github.com/marklovelady/api-cli-generator/pkg/api-cli/yaml-layer/compiler"
+	"github.com/marklovelady/api-cli-generator/pkg/api-cli/yaml-layer/converter"
 	"github.com/marklovelady/api-cli-generator/pkg/api-cli/yaml-layer/core"
 	"github.com/marklovelady/api-cli-generator/pkg/api-cli/yaml-layer/validation"
 	"gopkg.in/yaml.v3"
@@ -25,6 +26,7 @@ type Service struct {
 	config    *Config
 	validator *validation.Validator
 	compiler  *compiler.Compiler
+	converter *converter.FormatConverter
 	apiClient *client.Client
 	metrics   *Metrics
 }
@@ -84,6 +86,7 @@ func NewService(config *Config) *Service {
 		config:    config,
 		validator: validation.NewValidator(),
 		compiler:  compiler.NewCompiler(config.API.BaseURL),
+		converter: converter.NewFormatConverter(),
 		metrics:   &Metrics{StepTimes: make(map[string]time.Duration)},
 	}
 }
@@ -114,23 +117,34 @@ func (s *Service) ProcessYAML(ctx context.Context, reader io.Reader) (*ProcessRe
 		return result, fmt.Errorf("failed to read YAML: %w", err)
 	}
 
-	// Parse YAML
+	// Detect and convert format if needed
 	parseStart := time.Now()
-	var test core.YAMLTest
-	if err := yaml.Unmarshal(content, &test); err != nil {
-		result.Errors = append(result.Errors, core.ValidationError{
-			Line:    1,
-			Message: fmt.Sprintf("YAML parse error: %v", err),
-			Fix:     "Check YAML syntax and formatting",
-		})
-		return result, nil
+	var test *core.YAMLTest
+	
+	// Try to convert to compact format (core.YAMLTest)
+	yamlTest, err := s.converter.ConvertToYAMLTest(content)
+	if err != nil {
+		// If conversion fails, try direct unmarshal (for already compact format)
+		var directTest core.YAMLTest
+		if err := yaml.Unmarshal(content, &directTest); err != nil {
+			result.Errors = append(result.Errors, core.ValidationError{
+				Line:    1,
+				Message: fmt.Sprintf("YAML parse error: %v", err),
+				Fix:     "Check YAML syntax and formatting",
+			})
+			return result, nil
+		}
+		test = &directTest
+	} else {
+		test = yamlTest
 	}
+	
 	s.metrics.ParseTime = time.Since(parseStart)
 	result.TestName = test.Test
 
-	// Validate
+	// Validate the test structure directly
 	validateStart := time.Now()
-	valid, errors := s.validator.Validate(content)
+	valid, errors := s.validator.ValidateTest(test)
 	s.metrics.ValidateTime = time.Since(validateStart)
 
 	if !valid {
@@ -145,7 +159,7 @@ func (s *Service) ProcessYAML(ctx context.Context, reader io.Reader) (*ProcessRe
 
 	// Compile
 	compileStart := time.Now()
-	compiled, err := s.compiler.Compile(&test)
+	compiled, err := s.compiler.Compile(test)
 	if err != nil {
 		result.Errors = append(result.Errors, core.ValidationError{
 			Message: fmt.Sprintf("Compilation error: %v", err),
@@ -158,7 +172,7 @@ func (s *Service) ProcessYAML(ctx context.Context, reader io.Reader) (*ProcessRe
 	// Execute if API client is configured
 	if s.apiClient != nil {
 		execStart := time.Now()
-		execID, err := s.execute(ctx, &test, compiled)
+		execID, err := s.execute(ctx, test, compiled)
 		s.metrics.ExecuteTime = time.Since(execStart)
 
 		if err != nil {
@@ -201,12 +215,18 @@ func (s *Service) CompileFile(filePath string) (*core.CompileResult, error) {
 		return nil, err
 	}
 
-	var test core.YAMLTest
-	if err := yaml.Unmarshal(content, &test); err != nil {
-		return nil, fmt.Errorf("YAML parse error: %w", err)
+	// Try to convert to compact format (core.YAMLTest)
+	yamlTest, err := s.converter.ConvertToYAMLTest(content)
+	if err != nil {
+		// If conversion fails, try direct unmarshal (for already compact format)
+		var test core.YAMLTest
+		if err := yaml.Unmarshal(content, &test); err != nil {
+			return nil, fmt.Errorf("YAML parse error: %w", err)
+		}
+		return s.compiler.Compile(&test)
 	}
 
-	return s.compiler.Compile(&test)
+	return s.compiler.Compile(yamlTest)
 }
 
 // RunFile runs a YAML test file
@@ -323,7 +343,7 @@ func (s *Service) ensureTestInfrastructure(ctx context.Context, testName string)
 	checkpointID := "cp_" + generateID()
 
 	log.Printf("Warning: Creating ephemeral checkpoint IDs. Set VIRTUOSO_SESSION_ID to use existing checkpoint.")
-	
+
 	return projectID, goalID, journeyID, checkpointID, nil
 }
 
@@ -655,7 +675,7 @@ func generateID() string {
 func parseCheckpointID(s string) (int, bool) {
 	// Remove cp_ prefix if present
 	s = strings.TrimPrefix(s, "cp_")
-	
+
 	var id int
 	_, err := fmt.Sscanf(s, "%d", &id)
 	return id, err == nil
@@ -677,18 +697,18 @@ func parseCoordinates(s string) (int, int, error) {
 	if len(parts) != 2 {
 		return 0, 0, fmt.Errorf("invalid coordinates format: %s (expected x,y)", s)
 	}
-	
+
 	var x, y int
 	_, err := fmt.Sscanf(parts[0], "%d", &x)
 	if err != nil {
 		return 0, 0, fmt.Errorf("invalid x coordinate: %s", parts[0])
 	}
-	
+
 	_, err = fmt.Sscanf(parts[1], "%d", &y)
 	if err != nil {
 		return 0, 0, fmt.Errorf("invalid y coordinate: %s", parts[1])
 	}
-	
+
 	return x, y, nil
 }
 

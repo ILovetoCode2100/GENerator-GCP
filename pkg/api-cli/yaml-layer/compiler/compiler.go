@@ -1,6 +1,7 @@
 package compiler
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -305,6 +306,13 @@ func (c *Compiler) compileAction(action *core.Action, section string, lineNum in
 		steps = append(steps, loopSteps...)
 	}
 
+	// Check if any actions were compiled
+	if len(steps) == 0 {
+		// Try to provide helpful error message
+		actionJSON, _ := json.Marshal(action)
+		return nil, fmt.Errorf("no recognized action in: %s. Valid actions include: nav, c (click), t (type), ch (check), wait, etc.", string(actionJSON))
+	}
+
 	// Update position for each step
 	for i := range steps {
 		if steps[i].Options == nil {
@@ -402,6 +410,38 @@ func (c *Compiler) compileClick(click interface{}, lineNum int) (core.CompiledSt
 
 			return step, nil
 		}
+		
+	case map[string]interface{}:
+		// Extract selector and options (string keys)
+		for k, opts := range v {
+			selector := c.expandVariables(k)
+			step := core.CompiledStep{
+				Command:     "step-interact",
+				Args:        []string{"click", selector},
+				Description: fmt.Sprintf("Click %s", selector),
+				LineNumber:  lineNum,
+				Options:     make(map[string]interface{}),
+			}
+
+			// Process options
+			if optsMap, ok := opts.(map[string]interface{}); ok {
+				if pos, hasPos := optsMap["pos"]; hasPos {
+					step.Options["position_type"] = fmt.Sprintf("%v", pos)
+				}
+				if varName, hasVar := optsMap["var"]; hasVar {
+					c.variables[fmt.Sprintf("%v", varName)] = selector
+				}
+			} else if optsMap, ok := opts.(map[interface{}]interface{}); ok {
+				if pos, hasPos := optsMap["pos"]; hasPos {
+					step.Options["position_type"] = fmt.Sprintf("%v", pos)
+				}
+				if varName, hasVar := optsMap["var"]; hasVar {
+					c.variables[fmt.Sprintf("%v", varName)] = selector
+				}
+			}
+
+			return step, nil
+		}
 	}
 
 	return core.CompiledStep{}, fmt.Errorf("invalid click format: %T", click)
@@ -426,6 +466,30 @@ func (c *Compiler) compileType(t interface{}, lineNum int) ([]core.CompiledStep,
 		// Map of selector: value
 		for k, val := range v {
 			selector := c.expandVariables(fmt.Sprintf("%v", k))
+			value := c.expandVariables(fmt.Sprintf("%v", val))
+
+			// Clear existing text first
+			steps = append(steps, core.CompiledStep{
+				Command:     "step-interact",
+				Args:        []string{"write", selector, ""},
+				Description: fmt.Sprintf("Clear %s", selector),
+				LineNumber:  lineNum,
+			})
+
+			// Type new value
+			steps = append(steps, core.CompiledStep{
+				Command:     "step-interact",
+				Args:        []string{"write", selector, value},
+				Description: fmt.Sprintf("Type '%s' into %s", value, selector),
+				LineNumber:  lineNum,
+			})
+		}
+		return steps, nil
+		
+	case map[string]interface{}:
+		// Map of selector: value (string keys)
+		for k, val := range v {
+			selector := c.expandVariables(k)
 			value := c.expandVariables(fmt.Sprintf("%v", val))
 
 			// Clear existing text first
@@ -526,6 +590,19 @@ func (c *Compiler) compileEquals(eq interface{}, isNot bool, lineNum int) (core.
 				LineNumber:  lineNum,
 			}, nil
 		}
+		
+	case map[string]interface{}:
+		for k, val := range v {
+			selector := c.expandVariables(k)
+			expected := c.expandVariables(fmt.Sprintf("%v", val))
+
+			return core.CompiledStep{
+				Command:     "step-assert",
+				Args:        []string{cmdType, selector, expected},
+				Description: fmt.Sprintf("Assert %s %s: %s", selector, cmdType, expected),
+				LineNumber:  lineNum,
+			}, nil
+		}
 	}
 
 	return core.CompiledStep{}, fmt.Errorf("invalid equals format: %T", eq)
@@ -537,6 +614,22 @@ func (c *Compiler) compileStore(store interface{}, lineNum int) (core.CompiledSt
 	case map[interface{}]interface{}:
 		for k, val := range v {
 			selector := c.expandVariables(fmt.Sprintf("%v", k))
+			varName := fmt.Sprintf("%v", val)
+
+			// Store in compiler variables
+			c.variables[varName] = ""
+
+			return core.CompiledStep{
+				Command:     "step-data",
+				Args:        []string{"store", "element-text", selector, varName},
+				Description: fmt.Sprintf("Store text from %s as %s", selector, varName),
+				LineNumber:  lineNum,
+			}, nil
+		}
+		
+	case map[string]interface{}:
+		for k, val := range v {
+			selector := c.expandVariables(k)
 			varName := fmt.Sprintf("%v", val)
 
 			// Store in compiler variables

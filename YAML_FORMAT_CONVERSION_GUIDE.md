@@ -13,6 +13,7 @@ This guide shows how to convert between the different YAML formats supported by 
 ### Example 1: Basic Navigation and Assertion
 
 #### Compact Format (for `yaml` commands)
+
 ```yaml
 test: Basic Navigation Test
 nav: https://example.com
@@ -23,6 +24,7 @@ do:
 ```
 
 #### Simplified Format (for `run-test` command)
+
 ```yaml
 name: "Basic Navigation Test"
 steps:
@@ -33,6 +35,7 @@ steps:
 ```
 
 #### CLI Commands (generated from either format)
+
 ```bash
 step-navigate to cp_12345 "https://example.com" 1
 step-wait element cp_12345 "body" 2
@@ -43,6 +46,7 @@ step-misc comment cp_12345 "Page loaded successfully" 4
 ### Example 2: Form Interaction
 
 #### Compact Format
+
 ```yaml
 test: Login Form Test
 nav: https://example.com/login
@@ -60,6 +64,7 @@ do:
 ```
 
 #### Simplified Format
+
 ```yaml
 name: "Login Form Test"
 steps:
@@ -80,12 +85,13 @@ steps:
 ### Example 3: Data Storage and Variables
 
 #### Compact Format
+
 ```yaml
 test: Data Storage Test
 nav: https://example.com
 do:
   - wait: body
-  - store: 
+  - store:
       element-text: ".user-name"
       variable: userName
   - note: "Logged in as: {{userName}}"
@@ -93,6 +99,7 @@ do:
 ```
 
 #### Simplified Format
+
 ```yaml
 name: "Data Storage Test"
 steps:
@@ -108,29 +115,31 @@ steps:
 
 ## Conversion Mapping Table
 
-| Compact | Simplified | Description |
-|---------|------------|-------------|
-| `nav: URL` | `navigate: URL` | Navigate to URL |
-| `c: selector` | `click: selector` | Click element |
-| `t: text` | `write: {text: "..."}` | Type text (current field) |
-| `t: {selector: text}` | `write: {selector: "...", text: "..."}` | Type in specific field |
-| `ch: text` | `assert: text` | Check text exists |
-| `wait: selector` | `wait: selector` | Wait for element |
-| `wait: 1000` | `wait: 1000` | Wait milliseconds |
-| `note: text` | `comment: text` | Add comment |
-| `store: {...}` | `store: {...}` | Store data |
-| `k: Enter` | `key: Enter` | Press key |
-| `h: selector` | `hover: selector` | Hover over element |
-| `select: {selector: option}` | `select: {selector: "...", option: "..."}` | Select dropdown option |
+| Compact                      | Simplified                                 | Description               |
+| ---------------------------- | ------------------------------------------ | ------------------------- |
+| `nav: URL`                   | `navigate: URL`                            | Navigate to URL           |
+| `c: selector`                | `click: selector`                          | Click element             |
+| `t: text`                    | `write: {text: "..."}`                     | Type text (current field) |
+| `t: {selector: text}`        | `write: {selector: "...", text: "..."}`    | Type in specific field    |
+| `ch: text`                   | `assert: text`                             | Check text exists         |
+| `wait: selector`             | `wait: selector`                           | Wait for element          |
+| `wait: 1000`                 | `wait: 1000`                               | Wait milliseconds         |
+| `note: text`                 | `comment: text`                            | Add comment               |
+| `store: {...}`               | `store: {...}`                             | Store data                |
+| `k: Enter`                   | `key: Enter`                               | Press key                 |
+| `h: selector`                | `hover: selector`                          | Hover over element        |
+| `select: {selector: option}` | `select: {selector: "...", option: "..."}` | Select dropdown option    |
 
 ## Variable Usage
 
 ### Compact Format
+
 - Define in `data:` section
 - Reference with `$varName` in actions
 - Use `{{varName}}` in strings for interpolation
 
 ### Simplified Format
+
 - No separate data section
 - Store variables with `store:` action
 - Use `{{varName}}` for interpolation
@@ -138,6 +147,7 @@ steps:
 ## When to Use Each Format
 
 ### Use Compact Format When:
+
 - You need AI-friendly test generation (`yaml generate`)
 - You want to validate syntax before execution (`yaml validate`)
 - You need to see CLI commands (`yaml compile`)
@@ -145,6 +155,7 @@ steps:
 - You're using advanced features (loops, conditionals)
 
 ### Use Simplified Format When:
+
 - You want quick test execution (`run-test`)
 - You need automatic infrastructure creation
 - You prefer more readable syntax

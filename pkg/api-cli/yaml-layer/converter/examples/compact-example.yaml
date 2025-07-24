@@ -1,0 +1,65 @@
+test: E-Commerce Purchase Flow
+desc: Complete purchase flow with user authentication
+base: https://shop.example.com
+nav: /
+config:
+  retry: 3
+  timeout: 30000
+  on_error: screenshot
+  viewport: 1920x1080
+data:
+  testEmail: test@example.com
+  testPassword: SecurePass123!
+  productName: Wireless Headphones
+setup:
+  - c: "button.accept-cookies"
+  - wait: 1000
+do:
+  # Login flow
+  - c: "a.login"
+  - wait: "form.login-form"
+  - t: {input#email: "$testEmail"}
+  - t: {input#password: "$testPassword"}
+  - c: "button[type=submit]"
+  - ch: "Welcome back"
+  
+  # Search for product
+  - t: {input.search: "$productName"}
+  - k: "Enter"
+  - wait: "div.search-results"
+  - ch: "$productName"
+  
+  # Add to cart
+  - c: "button.add-to-cart:first"
+  - wait: 2000
+  - c: "a.view-cart"
+  
+  # Checkout
+  - ch: "Shopping Cart"
+  - eq: {span.item-count: "1"}
+  - c: "button.checkout"
+  
+  # Fill shipping info
+  - wait: "form.shipping"
+  - select: {selector: "select#country", option: "United States"}
+  - t: {input#address: "123 Test St"}
+  - t: {input#city: "Test City"}
+  - t: {input#zip: "12345"}
+  
+  # Complete order
+  - c: "button.place-order"
+  - wait: "div.order-confirmation"
+  - ch: "Order Complete"
+  - store: {selector: "span.order-number", variable: "orderNumber"}
+  - note: "Order number: $orderNumber"
+  
+  # Conditional check
+  - if:
+      cond: "$orderNumber"
+      then:
+        - ch: "Thank you for your order"
+      else:
+        - ch: "Order processing"
+teardown:
+  - c: "button.logout"
+  - cookie: {action: "wipe-all"}

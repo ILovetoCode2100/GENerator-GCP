@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/marklovelady/api-cli-generator/pkg/api-cli/client"
+	"github.com/marklovelady/api-cli-generator/pkg/api-cli/yaml-layer/converter"
+	"github.com/marklovelady/api-cli-generator/pkg/api-cli/yaml-layer/detector"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -88,6 +90,16 @@ The command accepts input from:
 			// Parse test definition
 			var testDef TestDefinition
 
+			// First try format detection and conversion
+			formatConverter := converter.NewFormatConverter()
+			
+			// Convert to simplified format if needed
+			convertedInput, detectedFormat, err := formatConverter.DetectAndConvert(input, detector.FormatSimplified)
+			if err == nil && detectedFormat != detector.FormatUnknown {
+				// Use converted input
+				input = convertedInput
+			}
+
 			// Try YAML first
 			if err := yaml.Unmarshal(input, &testDef); err != nil {
 				// Try JSON
@@ -125,7 +137,7 @@ The command accepts input from:
 			var journey *client.Journey
 			var snapshotIDInt int
 			var projectID string
-			
+
 			// Check for session checkpoint first
 			if cfg.Session.CurrentCheckpointID != nil && *cfg.Session.CurrentCheckpointID > 0 {
 				checkpointID = *cfg.Session.CurrentCheckpointID
@@ -733,15 +745,59 @@ func parseSimpleInteraction(action string, value interface{}) (string, []string,
 
 // parseWriteCommand parses write/type commands
 func parseWriteCommand(value interface{}) (string, []string, error) {
-	if writeMap, ok := value.(map[string]interface{}); ok {
-		selector := getString(writeMap, "selector", "element", "into")
-		text := getString(writeMap, "text", "value")
-		if selector == "" || text == "" {
-			return "", nil, fmt.Errorf("write requires selector and text")
+	switch v := value.(type) {
+	case string:
+		// Simple format: write into currently focused element
+		return "step-interact", []string{"write", "[focused]", v}, nil
+	case map[string]interface{}:
+		selector := getString(v, "selector", "element", "into", "target")
+		text := getString(v, "text", "value", "content")
+		
+		// Handle different formats
+		if selector == "" {
+			// If no selector, assume focused element
+			selector = "[focused]"
+		}
+		if text == "" {
+			// Check if the value is a simple string in the map
+			if val, ok := v["value"].(string); ok {
+				text = val
+			} else {
+				return "", nil, fmt.Errorf("write requires text content")
+			}
+		}
+		return "step-interact", []string{"write", selector, text}, nil
+	case map[interface{}]interface{}:
+		// Handle YAML parser returning map[interface{}]interface{}
+		selector := ""
+		text := ""
+		
+		for k, val := range v {
+			key, ok := k.(string)
+			if !ok {
+				continue
+			}
+			switch key {
+			case "selector", "element", "into", "target":
+				if s, ok := val.(string); ok {
+					selector = s
+				}
+			case "text", "value", "content":
+				if t, ok := val.(string); ok {
+					text = t
+				}
+			}
+		}
+		
+		if selector == "" {
+			selector = "[focused]"
+		}
+		if text == "" {
+			return "", nil, fmt.Errorf("write requires text content")
 		}
 		return "step-interact", []string{"write", selector, text}, nil
 	}
-	return "", nil, fmt.Errorf("write requires object with selector and text")
+	return "", nil, fmt.Errorf("write requires string or object with text"  )
 }
 
 // parseKeyCommand parses key/press commands

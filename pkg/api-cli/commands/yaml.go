@@ -380,21 +380,21 @@ var yamlDetectCmd = &cobra.Command{
 			fmt.Printf("File: %s\n", args[0])
 			fmt.Printf("Format: %s\n", yamlDetector.GetFormatDescription(result.Format))
 			fmt.Printf("Confidence: %.2f\n", result.Confidence)
-			
+
 			if result.Format != yamlDetector.FormatUnknown {
 				fmt.Printf("Supported: %v\n", yamlDetector.IsFormatSupported(result.Format))
 				if cmd := yamlDetector.GetSupportedCommand(result.Format); cmd != "" {
 					fmt.Printf("Command: api-cli %s\n", cmd)
 				}
 			}
-			
+
 			if len(result.Warnings) > 0 {
 				fmt.Printf("\nWarnings:\n")
 				for _, warn := range result.Warnings {
 					fmt.Printf("  - %s\n", warn)
 				}
 			}
-			
+
 			if yamlVerbose {
 				fmt.Printf("\nFeatures detected:\n")
 				for feature, present := range result.Features {
@@ -447,7 +447,7 @@ func NewYAMLCmd() *cobra.Command {
 func createYAMLService() *service.Service {
 	// Initialize session config
 	sessionConfig := service.SessionConfig{}
-	
+
 	// Use checkpoint ID from config if available
 	if cfg.Session.CurrentCheckpointID != nil {
 		sessionConfig.CheckpointID = *cfg.Session.CurrentCheckpointID
@@ -464,7 +464,7 @@ func createYAMLService() *service.Service {
 	if cfg.Session.CurrentJourneyID != nil {
 		sessionConfig.JourneyID = *cfg.Session.CurrentJourneyID
 	}
-	
+
 	// Check VIRTUOSO_SESSION_ID env var if checkpoint not set
 	if sessionConfig.CheckpointID == 0 {
 		if sessionID := os.Getenv("VIRTUOSO_SESSION_ID"); sessionID != "" {

@@ -1,0 +1,24 @@
+name: Extended Format Test
+description: Test form submission with extended format
+infrastructure:
+  starting_url: https://example.com/contact
+steps:
+  - type: navigate
+    target: https://example.com/contact
+  - type: interact
+    command: write
+    target: "#name"
+    value: John Doe
+  - type: interact
+    command: write
+    target: "#email"
+    value: john@example.com
+  - type: interact
+    command: click
+    target: "Submit"
+  - type: wait
+    command: element
+    target: ".success"
+  - type: assert
+    command: exists
+    target: "Thank you"

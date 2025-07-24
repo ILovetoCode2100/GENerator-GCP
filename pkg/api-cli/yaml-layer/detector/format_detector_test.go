@@ -6,7 +6,7 @@ import (
 
 func TestDetectFormat(t *testing.T) {
 	detector := NewFormatDetector()
-	
+
 	tests := []struct {
 		name           string
 		yaml           string
@@ -53,8 +53,8 @@ steps:
 			minConfidence:  0.7,
 		},
 		{
-			name: "Empty YAML",
-			yaml: ``,
+			name:           "Empty YAML",
+			yaml:           ``,
 			expectedFormat: FormatUnknown,
 			minConfidence:  0,
 		},
@@ -70,22 +70,22 @@ steps:
 			minConfidence:  0,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := detector.DetectFormat([]byte(tt.yaml))
 			if err != nil {
 				t.Fatalf("DetectFormat failed: %v", err)
 			}
-			
+
 			if result.Format != tt.expectedFormat {
 				t.Errorf("Expected format %s, got %s", tt.expectedFormat, result.Format)
 			}
-			
+
 			if result.Confidence < tt.minConfidence {
 				t.Errorf("Expected confidence >= %.2f, got %.2f", tt.minConfidence, result.Confidence)
 			}
-			
+
 			// Check for warnings on mixed format
 			if tt.name == "Mixed format indicators" && len(result.Warnings) == 0 {
 				t.Error("Expected warnings for mixed format indicators")
@@ -96,17 +96,17 @@ steps:
 
 func TestValidateFormat(t *testing.T) {
 	detector := NewFormatDetector()
-	
+
 	compactYAML := []byte(`test: Test
 do:
   - c: "button"`)
-	
+
 	// Should pass validation for compact format
 	err := detector.ValidateFormat(compactYAML, FormatCompact)
 	if err != nil {
 		t.Errorf("ValidateFormat failed for correct format: %v", err)
 	}
-	
+
 	// Should fail validation for wrong format
 	err = detector.ValidateFormat(compactYAML, FormatSimplified)
 	if err == nil {
@@ -119,21 +119,21 @@ func TestFormatHelpers(t *testing.T) {
 	if desc := GetFormatDescription(FormatCompact); desc == "" {
 		t.Error("GetFormatDescription returned empty for compact format")
 	}
-	
+
 	// Test format examples
 	if example := GetFormatExample(FormatCompact); example == "" {
 		t.Error("GetFormatExample returned empty for compact format")
 	}
-	
+
 	// Test format support
 	if !IsFormatSupported(FormatCompact) {
 		t.Error("IsFormatSupported returned false for compact format")
 	}
-	
+
 	if IsFormatSupported(FormatExtended) {
 		t.Error("IsFormatSupported returned true for extended format")
 	}
-	
+
 	// Test supported commands
 	if cmd := GetSupportedCommand(FormatCompact); cmd != "yaml" {
 		t.Errorf("GetSupportedCommand returned %s for compact format, expected yaml", cmd)
