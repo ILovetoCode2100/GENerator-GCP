@@ -455,20 +455,15 @@ Examples:
 // mouseUpSubCmd - release mouse button
 func mouseUpSubCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "up [checkpoint-id] <selector> [position]",
-		Short: "Release mouse button",
-		Long: `Release the mouse button on an element.
+		Use:   "up [checkpoint-id] [position]",
+		Short: "Release mouse button at current position",
+		Long: `Release the mouse button at the current mouse position.
 
 Examples:
-  api-cli step-interact mouse up "#drop-zone"
-  api-cli step-interact mouse up cp_12345 "button" 1`,
+  api-cli step-interact mouse up
+  api-cli step-interact mouse up cp_12345 1`,
 		Args: func(cmd *cobra.Command, args []string) error {
-			if len(args) < 1 {
-				return fmt.Errorf("selector is required\n\nExamples:\n  api-cli step-interact mouse up \"#drop-zone\"\n  api-cli step-interact mouse up cp_12345 \"button\" 1")
-			}
-			if args[0] == "" {
-				return fmt.Errorf("selector cannot be empty")
-			}
+			// No required arguments for mouse up
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -709,8 +704,8 @@ func runMouseAction(cmd *cobra.Command, args []string, action string) error {
 
 	// Determine required args based on action
 	requiredArgs := 1
-	// Mouse down doesn't require a selector
-	if action == "down" {
+	// Mouse down and up don't require a selector
+	if action == "down" || action == "up" {
 		requiredArgs = 0
 	}
 
@@ -735,7 +730,7 @@ func runMouseAction(cmd *cobra.Command, args []string, action string) error {
 			if _, err := strconv.Atoi(strings.TrimSpace(coords[1])); err != nil {
 				return fmt.Errorf("Y coordinate must be a number")
 			}
-		case "move-to", "up", "enter":
+		case "move-to", "enter":
 			if args[0] == "" {
 				return fmt.Errorf("selector cannot be empty")
 			}
@@ -763,7 +758,12 @@ func runMouseAction(cmd *cobra.Command, args []string, action string) error {
 		// Mouse down doesn't require a selector - pass empty string
 		stepID, err = base.Client.CreateStepMouseDown(checkpointID, "", base.Position)
 	case "up":
-		stepID, err = base.Client.CreateStepMouseUp(checkpointID, args[0], base.Position)
+		// Mouse up doesn't require a selector - pass empty string
+		selector := ""
+		if len(args) > 0 {
+			selector = args[0]
+		}
+		stepID, err = base.Client.CreateStepMouseUp(checkpointID, selector, base.Position)
 	case "enter":
 		stepID, err = base.Client.CreateStepMouseEnter(checkpointID, args[0], base.Position)
 	default:
@@ -1160,7 +1160,10 @@ func buildMouseDescription(action string, args []string) string {
 		}
 		return fmt.Sprintf("Press mouse button on '%s'", args[0])
 	case "up":
-		return fmt.Sprintf("Release mouse button on '%s'", args[0])
+		if len(args) > 0 && args[0] != "" {
+			return fmt.Sprintf("Release mouse button on '%s'", args[0])
+		}
+		return "Release mouse button at current position"
 	case "enter":
 		return fmt.Sprintf("Move mouse into '%s'", args[0])
 	default:

@@ -92,7 +92,7 @@ The command accepts input from:
 
 			// First try format detection and conversion
 			formatConverter := converter.NewFormatConverter()
-			
+
 			// Convert to simplified format if needed
 			convertedInput, detectedFormat, err := formatConverter.DetectAndConvert(input, detector.FormatSimplified)
 			if err == nil && detectedFormat != detector.FormatUnknown {
@@ -752,7 +752,7 @@ func parseWriteCommand(value interface{}) (string, []string, error) {
 	case map[string]interface{}:
 		selector := getString(v, "selector", "element", "into", "target")
 		text := getString(v, "text", "value", "content")
-		
+
 		// Handle different formats
 		if selector == "" {
 			// If no selector, assume focused element
@@ -771,7 +771,7 @@ func parseWriteCommand(value interface{}) (string, []string, error) {
 		// Handle YAML parser returning map[interface{}]interface{}
 		selector := ""
 		text := ""
-		
+
 		for k, val := range v {
 			key, ok := k.(string)
 			if !ok {
@@ -788,7 +788,7 @@ func parseWriteCommand(value interface{}) (string, []string, error) {
 				}
 			}
 		}
-		
+
 		if selector == "" {
 			selector = "[focused]"
 		}
@@ -797,7 +797,7 @@ func parseWriteCommand(value interface{}) (string, []string, error) {
 		}
 		return "step-interact", []string{"write", selector, text}, nil
 	}
-	return "", nil, fmt.Errorf("write requires string or object with text"  )
+	return "", nil, fmt.Errorf("write requires string or object with text")
 }
 
 // parseKeyCommand parses key/press commands

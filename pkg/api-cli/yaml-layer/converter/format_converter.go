@@ -24,12 +24,12 @@ func NewFormatConverter() *FormatConverter {
 
 // ConversionResult contains the result of a format conversion
 type ConversionResult struct {
-	Success       bool                   `json:"success"`
-	SourceFormat  detector.YAMLFormat    `json:"source_format"`
-	TargetFormat  detector.YAMLFormat    `json:"target_format"`
-	Output        []byte                 `json:"output,omitempty"`
-	Warnings      []string               `json:"warnings,omitempty"`
-	OriginalData  map[string]interface{} `json:"original_data,omitempty"`
+	Success      bool                   `json:"success"`
+	SourceFormat detector.YAMLFormat    `json:"source_format"`
+	TargetFormat detector.YAMLFormat    `json:"target_format"`
+	Output       []byte                 `json:"output,omitempty"`
+	Warnings     []string               `json:"warnings,omitempty"`
+	OriginalData map[string]interface{} `json:"original_data,omitempty"`
 }
 
 // UnifiedTest represents a test in a unified intermediate format
@@ -48,11 +48,11 @@ type UnifiedTest struct {
 
 // TestStep represents a single test step in unified format
 type TestStep struct {
-	Action     string                 `json:"action"`
-	Target     string                 `json:"target,omitempty"`
-	Value      string                 `json:"value,omitempty"`
-	Options    map[string]interface{} `json:"options,omitempty"`
-	Original   map[string]interface{} `json:"original,omitempty"`
+	Action   string                 `json:"action"`
+	Target   string                 `json:"target,omitempty"`
+	Value    string                 `json:"value,omitempty"`
+	Options  map[string]interface{} `json:"options,omitempty"`
+	Original map[string]interface{} `json:"original,omitempty"`
 }
 
 // Infrastructure represents test infrastructure configuration
@@ -193,8 +193,8 @@ func (c *FormatConverter) parseCompactSteps(steps []interface{}) ([]TestStep, er
 		case string:
 			// Simple wait format
 			result = append(result, TestStep{
-				Action: "wait",
-				Value:  v,
+				Action:   "wait",
+				Value:    v,
 				Original: map[string]interface{}{"wait": v},
 			})
 
@@ -377,7 +377,7 @@ func (c *FormatConverter) parseSimplifiedSteps(steps []interface{}) ([]TestStep,
 func (c *FormatConverter) parseSimplifiedStepMap(step map[string]interface{}) *TestStep {
 	// Check each possible action
 	actions := []string{"navigate", "click", "write", "assert", "wait", "comment", "store", "select", "hover", "key"}
-	
+
 	for _, action := range actions {
 		if val, ok := step[action]; ok {
 			testStep := &TestStep{
@@ -461,13 +461,13 @@ func (c *FormatConverter) parseExtendedStepMap(step map[string]interface{}) *Tes
 	// Get type and command
 	stepType := c.getStringValue(step["type"])
 	command := c.getStringValue(step["command"])
-	
+
 	// Map extended format to unified action
 	switch stepType {
 	case "navigate":
 		testStep.Action = "navigate"
 		testStep.Target = c.getStringValue(step["target"])
-		
+
 	case "interact":
 		switch command {
 		case "click":
@@ -481,7 +481,7 @@ func (c *FormatConverter) parseExtendedStepMap(step map[string]interface{}) *Tes
 		}
 		testStep.Target = c.getStringValue(step["target"])
 		testStep.Value = c.getStringValue(step["value"])
-		
+
 	case "assert":
 		testStep.Action = "assert"
 		testStep.Target = c.getStringValue(step["target"])
@@ -491,7 +491,7 @@ func (c *FormatConverter) parseExtendedStepMap(step map[string]interface{}) *Tes
 			}
 			testStep.Options["type"] = command
 		}
-		
+
 	case "wait":
 		testStep.Action = "wait"
 		if command == "time" {
@@ -499,11 +499,11 @@ func (c *FormatConverter) parseExtendedStepMap(step map[string]interface{}) *Tes
 		} else {
 			testStep.Target = c.getStringValue(step["target"])
 		}
-		
+
 	case "data":
 		testStep.Action = "store"
 		testStep.Options = step
-		
+
 	default:
 		// Preserve original for unrecognized types
 		testStep.Action = stepType
@@ -550,7 +550,7 @@ func (c *FormatConverter) convertToCompact(unified *UnifiedTest) (map[string]int
 
 	// Convert basic fields
 	result["test"] = unified.Name
-	
+
 	if unified.StartingURL != "" {
 		result["nav"] = unified.StartingURL
 	}
@@ -623,7 +623,7 @@ func (c *FormatConverter) convertStepToCompact(step TestStep) interface{} {
 	switch step.Action {
 	case "click":
 		return map[string]interface{}{"c": step.Target}
-		
+
 	case "write":
 		if step.Target != "" && step.Target != "[focused]" {
 			// Format: t: {selector: text}
@@ -635,10 +635,10 @@ func (c *FormatConverter) convertStepToCompact(step TestStep) interface{} {
 		}
 		// Simple format: t: text
 		return map[string]interface{}{"t": step.Value}
-		
+
 	case "assert":
 		return map[string]interface{}{"ch": step.Target}
-		
+
 	case "wait":
 		if step.Value != "" {
 			// Time wait
@@ -646,24 +646,24 @@ func (c *FormatConverter) convertStepToCompact(step TestStep) interface{} {
 		}
 		// Element wait
 		return map[string]interface{}{"wait": step.Target}
-		
+
 	case "comment":
 		return map[string]interface{}{"note": step.Value}
-		
+
 	case "navigate":
 		return map[string]interface{}{"nav": step.Target}
-		
+
 	case "store":
 		if step.Options != nil {
 			return map[string]interface{}{"store": step.Options}
 		}
-		
+
 	case "hover":
 		return map[string]interface{}{"h": step.Target}
-		
+
 	case "key":
 		return map[string]interface{}{"k": step.Value}
-		
+
 	case "select":
 		if step.Options != nil {
 			return map[string]interface{}{"select": step.Options}
@@ -681,7 +681,7 @@ func (c *FormatConverter) convertToSimplified(unified *UnifiedTest) (map[string]
 
 	// Convert basic fields
 	result["name"] = unified.Name
-	
+
 	if unified.Description != "" {
 		result["description"] = unified.Description
 	}
@@ -751,7 +751,7 @@ func (c *FormatConverter) convertStepToSimplified(step TestStep) map[string]inte
 		if step.Target == "" && step.Value != "" {
 			result[step.Action] = step.Value
 		}
-		
+
 	case "write":
 		if step.Target != "" && step.Target != "[focused]" {
 			// Object format
@@ -763,10 +763,10 @@ func (c *FormatConverter) convertStepToSimplified(step TestStep) map[string]inte
 			// Simple format
 			result["write"] = step.Value
 		}
-		
+
 	case "assert":
 		result["assert"] = step.Target
-		
+
 	case "wait":
 		if step.Value != "" {
 			// Time wait - convert to number if possible
@@ -779,20 +779,20 @@ func (c *FormatConverter) convertStepToSimplified(step TestStep) map[string]inte
 			// Element wait
 			result["wait"] = step.Target
 		}
-		
+
 	case "comment":
 		result["comment"] = step.Value
-		
+
 	case "store":
 		if step.Options != nil {
 			result["store"] = step.Options
 		}
-		
+
 	case "select":
 		if step.Options != nil {
 			result["select"] = step.Options
 		}
-		
+
 	default:
 		// Preserve original or create generic structure
 		if step.Original != nil {
@@ -846,7 +846,7 @@ func (c *FormatConverter) convertStepToExtended(step TestStep) map[string]interf
 	case "navigate":
 		result["type"] = "navigate"
 		result["target"] = step.Target
-		
+
 	case "click", "write", "hover":
 		result["type"] = "interact"
 		result["command"] = step.Action
@@ -854,7 +854,7 @@ func (c *FormatConverter) convertStepToExtended(step TestStep) map[string]interf
 		if step.Value != "" {
 			result["value"] = step.Value
 		}
-		
+
 	case "assert":
 		result["type"] = "assert"
 		result["command"] = "exists"
@@ -864,7 +864,7 @@ func (c *FormatConverter) convertStepToExtended(step TestStep) map[string]interf
 				result["command"] = cmdType
 			}
 		}
-		
+
 	case "wait":
 		result["type"] = "wait"
 		if step.Value != "" {
@@ -874,12 +874,12 @@ func (c *FormatConverter) convertStepToExtended(step TestStep) map[string]interf
 			result["command"] = "element"
 			result["target"] = step.Target
 		}
-		
+
 	case "comment":
 		result["type"] = "misc"
 		result["command"] = "comment"
 		result["value"] = step.Value
-		
+
 	case "store":
 		result["type"] = "data"
 		result["command"] = "store"
@@ -890,12 +890,12 @@ func (c *FormatConverter) convertStepToExtended(step TestStep) map[string]interf
 				}
 			}
 		}
-		
+
 	case "key":
 		result["type"] = "interact"
 		result["command"] = "key"
 		result["value"] = step.Value
-		
+
 	case "select":
 		result["type"] = "interact"
 		result["command"] = "select"
@@ -906,7 +906,7 @@ func (c *FormatConverter) convertStepToExtended(step TestStep) map[string]interf
 				}
 			}
 		}
-		
+
 	default:
 		// Generic extended format
 		result["type"] = step.Action
@@ -925,7 +925,7 @@ func (c *FormatConverter) convertStepToExtended(step TestStep) map[string]interf
 
 func (c *FormatConverter) parseInfrastructure(data map[string]interface{}) *Infrastructure {
 	infra := &Infrastructure{}
-	
+
 	if orgID, ok := data["organization_id"].(string); ok {
 		infra.OrganizationID = orgID
 	}
@@ -938,13 +938,13 @@ func (c *FormatConverter) parseInfrastructure(data map[string]interface{}) *Infr
 	if journey, ok := data["journey"].(map[string]interface{}); ok {
 		infra.Journey = journey
 	}
-	
+
 	return infra
 }
 
 func (c *FormatConverter) parseConfig(data map[string]interface{}) *TestConfig {
 	cfg := &TestConfig{}
-	
+
 	if continueOnError, ok := data["continue_on_error"].(bool); ok {
 		cfg.ContinueOnError = continueOnError
 	}
@@ -957,13 +957,13 @@ func (c *FormatConverter) parseConfig(data map[string]interface{}) *TestConfig {
 	if format, ok := data["output_format"].(string); ok {
 		cfg.OutputFormat = format
 	}
-	
+
 	return cfg
 }
 
 func (c *FormatConverter) convertInfrastructure(infra *Infrastructure) map[string]interface{} {
 	result := make(map[string]interface{})
-	
+
 	if infra.OrganizationID != "" {
 		result["organization_id"] = infra.OrganizationID
 	}
@@ -976,13 +976,13 @@ func (c *FormatConverter) convertInfrastructure(infra *Infrastructure) map[strin
 	if infra.Journey != nil {
 		result["journey"] = infra.Journey
 	}
-	
+
 	return result
 }
 
 func (c *FormatConverter) convertConfig(cfg *TestConfig) map[string]interface{} {
 	result := make(map[string]interface{})
-	
+
 	if cfg.ContinueOnError {
 		result["continue_on_error"] = cfg.ContinueOnError
 	}
@@ -995,7 +995,7 @@ func (c *FormatConverter) convertConfig(cfg *TestConfig) map[string]interface{} 
 	if cfg.OutputFormat != "" {
 		result["output_format"] = cfg.OutputFormat
 	}
-	
+
 	return result
 }
 
@@ -1086,14 +1086,14 @@ func (c *FormatConverter) ConvertToYAMLTest(content []byte) (*core.YAMLTest, err
 // convertUnifiedStepsToActions converts unified steps directly to core.Action
 func (c *FormatConverter) convertUnifiedStepsToActions(steps []TestStep) []core.Action {
 	var actions []core.Action
-	
+
 	for _, step := range steps {
 		action := core.Action{}
-		
+
 		switch step.Action {
 		case "click":
 			action.C = step.Target
-			
+
 		case "write":
 			if step.Target != "" && step.Target != "[focused]" {
 				// Create map with interface{} values to match expected type
@@ -1103,10 +1103,10 @@ func (c *FormatConverter) convertUnifiedStepsToActions(steps []TestStep) []core.
 			} else {
 				action.T = step.Value
 			}
-			
+
 		case "assert":
 			action.Ch = step.Target
-			
+
 		case "wait":
 			if step.Value != "" {
 				// Time wait - convert to int if possible
@@ -1119,28 +1119,28 @@ func (c *FormatConverter) convertUnifiedStepsToActions(steps []TestStep) []core.
 				// Element wait
 				action.Wait = step.Target
 			}
-			
+
 		case "comment":
 			action.Note = step.Value
-			
+
 		case "navigate":
 			action.Nav = step.Target
-			
+
 		case "store":
 			action.Store = step.Options
-			
+
 		case "hover":
 			action.H = step.Target
-			
+
 		case "key":
 			action.K = step.Value
-			
+
 		case "select":
 			action.Select = step.Options
 		}
-		
+
 		actions = append(actions, action)
 	}
-	
+
 	return actions
 }

@@ -120,7 +120,7 @@ func (s *Service) ProcessYAML(ctx context.Context, reader io.Reader) (*ProcessRe
 	// Detect and convert format if needed
 	parseStart := time.Now()
 	var test *core.YAMLTest
-	
+
 	// Try to convert to compact format (core.YAMLTest)
 	yamlTest, err := s.converter.ConvertToYAMLTest(content)
 	if err != nil {
@@ -138,7 +138,7 @@ func (s *Service) ProcessYAML(ctx context.Context, reader io.Reader) (*ProcessRe
 	} else {
 		test = yamlTest
 	}
-	
+
 	s.metrics.ParseTime = time.Since(parseStart)
 	result.TestName = test.Test
 

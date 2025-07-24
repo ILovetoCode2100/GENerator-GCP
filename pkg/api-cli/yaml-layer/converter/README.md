@@ -3,7 +3,7 @@
 The YAML Format Converter provides bidirectional conversion between the three Virtuoso test formats:
 
 1. **Compact Format** - AI-optimized, concise syntax
-2. **Simplified Format** - Human-readable, clear structure  
+2. **Simplified Format** - Human-readable, clear structure
 3. **Extended Format** - Verbose, detailed metadata
 
 ## Features
@@ -63,17 +63,19 @@ cli.ShowFormats()
 ## Format Examples
 
 ### Compact Format
+
 ```yaml
 test: Login Test
 nav: https://example.com
 do:
   - c: "button.login"
-  - t: {input#email: "test@example.com"}
+  - t: { input#email: "test@example.com" }
   - k: "Enter"
   - ch: "Welcome"
 ```
 
 ### Simplified Format
+
 ```yaml
 name: Login Test
 starting_url: https://example.com
@@ -87,6 +89,7 @@ steps:
 ```
 
 ### Extended Format
+
 ```yaml
 name: Login Test
 infrastructure:
@@ -107,7 +110,7 @@ steps:
 ## Conversion Matrix
 
 | From Format | To Compact | To Simplified | To Extended |
-|-------------|------------|---------------|-------------|
+| ----------- | ---------- | ------------- | ----------- |
 | Compact     | -          | ✓             | ✓           |
 | Simplified  | ✓          | -             | ✓           |
 | Extended    | ✓          | ✓             | -           |
@@ -115,6 +118,7 @@ steps:
 ## Feature Support
 
 ### Compact Format
+
 - Concise syntax (c:, t:, ch:, etc.)
 - AI-optimized structure
 - Full CLI support (`yaml` command)
@@ -122,7 +126,8 @@ steps:
 - Setup/teardown sections
 - Data variables
 
-### Simplified Format  
+### Simplified Format
+
 - Readable syntax
 - Full CLI support (`run-test` command)
 - Infrastructure configuration
@@ -130,6 +135,7 @@ steps:
 - Config options
 
 ### Extended Format
+
 - Verbose syntax
 - No CLI support
 - Full metadata
@@ -139,6 +145,7 @@ steps:
 ## Conversion Warnings
 
 The converter provides warnings when:
+
 - Features are not supported in the target format
 - Mixed format indicators are detected
 - Low confidence format detection
@@ -193,6 +200,7 @@ type UnifiedStep struct {
 ### Lossless Conversion
 
 The converter preserves original data where possible:
+
 - Original step data is stored in the `Original` field
 - Complex structures are maintained through `Options`
 - Format-specific features generate warnings when lost
@@ -206,6 +214,7 @@ go test ./pkg/api-cli/yaml-layer/converter/...
 ```
 
 Tests include:
+
 - Format detection accuracy
 - Bidirectional conversions
 - Round-trip conversions
@@ -215,6 +224,7 @@ Tests include:
 ## Examples
 
 ### Convert Compact to Simplified
+
 ```go
 compact := `test: My Test
 do:
@@ -230,13 +240,15 @@ result, _ := converter.Convert([]byte(compact), detector.FormatSimplified)
 ```
 
 ### Detect Format with Confidence
+
 ```go
 detection, _ := detector.DetectFormat(yamlContent)
-fmt.Printf("Format: %s (%.0f%% confidence)\n", 
+fmt.Printf("Format: %s (%.0f%% confidence)\n",
     detection.Format, detection.Confidence * 100)
 ```
 
 ### Batch Conversion
+
 ```go
 cli := NewCLI()
 files := []string{"test1.yaml", "test2.yaml", "test3.yaml"}
@@ -246,6 +258,7 @@ err := cli.ConvertBatch(files, "output/", detector.FormatCompact)
 ## Error Handling
 
 The converter returns errors for:
+
 - Invalid YAML syntax
 - Unknown source format
 - Unsupported target format
@@ -253,6 +266,7 @@ The converter returns errors for:
 - Validation failures
 
 Warnings are provided for:
+
 - Feature incompatibilities
 - Mixed format indicators
 - Low confidence detection

@@ -162,9 +162,7 @@ func (c *Client) CreateStepStoreValueWithContext(ctx context.Context, checkpoint
 		},
 		"value":    "",
 		"variable": variableName,
-		"meta": map[string]interface{}{
-			"type": "VALUE",
-		},
+		"meta":     map[string]interface{}{},
 	}
 
 	return c.createStepWithCustomBodyContext(ctx, checkpointID, parsedStep, position)

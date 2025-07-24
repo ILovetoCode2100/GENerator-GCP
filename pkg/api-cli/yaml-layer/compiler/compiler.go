@@ -410,7 +410,7 @@ func (c *Compiler) compileClick(click interface{}, lineNum int) (core.CompiledSt
 
 			return step, nil
 		}
-		
+
 	case map[string]interface{}:
 		// Extract selector and options (string keys)
 		for k, opts := range v {
@@ -485,7 +485,7 @@ func (c *Compiler) compileType(t interface{}, lineNum int) ([]core.CompiledStep,
 			})
 		}
 		return steps, nil
-		
+
 	case map[string]interface{}:
 		// Map of selector: value (string keys)
 		for k, val := range v {
@@ -590,7 +590,7 @@ func (c *Compiler) compileEquals(eq interface{}, isNot bool, lineNum int) (core.
 				LineNumber:  lineNum,
 			}, nil
 		}
-		
+
 	case map[string]interface{}:
 		for k, val := range v {
 			selector := c.expandVariables(k)
@@ -626,7 +626,7 @@ func (c *Compiler) compileStore(store interface{}, lineNum int) (core.CompiledSt
 				LineNumber:  lineNum,
 			}, nil
 		}
-		
+
 	case map[string]interface{}:
 		for k, val := range v {
 			selector := c.expandVariables(k)

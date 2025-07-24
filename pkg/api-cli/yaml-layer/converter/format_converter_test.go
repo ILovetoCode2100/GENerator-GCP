@@ -233,20 +233,20 @@ teardown:
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := converter.Convert([]byte(tt.input), tt.targetFormat)
-			
+
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Convert() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			
+
 			if tt.wantErr {
 				return
 			}
-			
+
 			if result == nil {
 				t.Fatal("Convert() returned nil result")
 			}
-			
+
 			// Check output contains expected strings
 			output := string(result.Output)
 			for _, want := range tt.wantContains {
@@ -254,7 +254,7 @@ teardown:
 					t.Errorf("Convert() output missing expected content:\nwant: %s\ngot:\n%s", want, output)
 				}
 			}
-			
+
 			// Check warnings
 			if len(tt.wantWarnings) > 0 {
 				for _, wantWarn := range tt.wantWarnings {
@@ -270,13 +270,13 @@ teardown:
 					}
 				}
 			}
-			
+
 			// Validate output is valid YAML
 			var parsed interface{}
 			if err := yaml.Unmarshal(result.Output, &parsed); err != nil {
 				t.Errorf("Convert() produced invalid YAML: %v\noutput:\n%s", err, output)
 			}
-			
+
 			// Validate format detection
 			if err := converter.ValidateConversion([]byte(tt.input), result.Output, tt.targetFormat); err != nil {
 				t.Errorf("ValidateConversion() failed: %v", err)
@@ -287,7 +287,7 @@ teardown:
 
 func TestFormatConverter_RoundTrip(t *testing.T) {
 	converter := NewFormatConverter()
-	
+
 	tests := []struct {
 		name   string
 		format detector.YAMLFormat
@@ -316,7 +316,7 @@ steps:
   - assert: "Success"`,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Convert to another format and back
@@ -326,19 +326,19 @@ steps:
 			} else {
 				intermediateFormat = detector.FormatCompact
 			}
-			
+
 			// First conversion
 			result1, err := converter.Convert([]byte(tt.input), intermediateFormat)
 			if err != nil {
 				t.Fatalf("First conversion failed: %v", err)
 			}
-			
+
 			// Second conversion back to original
 			result2, err := converter.Convert(result1.Output, tt.format)
 			if err != nil {
 				t.Fatalf("Second conversion failed: %v", err)
 			}
-			
+
 			// Parse both original and final to compare structure
 			var original, final interface{}
 			if err := yaml.Unmarshal([]byte(tt.input), &original); err != nil {
@@ -347,7 +347,7 @@ steps:
 			if err := yaml.Unmarshal(result2.Output, &final); err != nil {
 				t.Fatalf("Failed to parse final: %v", err)
 			}
-			
+
 			// Note: We don't expect exact equality due to format differences,
 			// but the structure should be similar
 			t.Logf("Original:\n%s\nFinal:\n%s", tt.input, string(result2.Output))
@@ -357,7 +357,7 @@ steps:
 
 func TestUnifiedStep_Conversions(t *testing.T) {
 	converter := NewFormatConverter()
-	
+
 	tests := []struct {
 		name    string
 		unified UnifiedStep
@@ -422,7 +422,7 @@ func TestUnifiedStep_Conversions(t *testing.T) {
 			simple:  "wait",
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Test unified to compact
@@ -431,7 +431,7 @@ func TestUnifiedStep_Conversions(t *testing.T) {
 			if !strings.Contains(string(compactYAML), tt.compact) {
 				t.Errorf("Compact conversion failed: expected to contain %s, got %s", tt.compact, string(compactYAML))
 			}
-			
+
 			// Test unified to simplified
 			simpleStep := converter.unifiedToSimplifiedStep(tt.unified)
 			simpleYAML, _ := yaml.Marshal(simpleStep)
@@ -444,7 +444,7 @@ func TestUnifiedStep_Conversions(t *testing.T) {
 
 func TestGetConversionCapabilities(t *testing.T) {
 	caps := GetConversionCapabilities()
-	
+
 	// Check all formats can convert to all other formats
 	formats := []string{"compact", "simplified", "extended"}
 	for _, from := range formats {
@@ -461,7 +461,7 @@ func TestGetConversionCapabilities(t *testing.T) {
 
 func TestGetFormatFeatures(t *testing.T) {
 	features := GetFormatFeatures()
-	
+
 	// Check each format has features defined
 	formats := []string{"compact", "simplified", "extended"}
 	for _, format := range formats {
@@ -469,7 +469,7 @@ func TestGetFormatFeatures(t *testing.T) {
 			t.Errorf("No features defined for format %s", format)
 		}
 	}
-	
+
 	// Check specific features
 	compactFeatures := features["compact"]
 	found := false

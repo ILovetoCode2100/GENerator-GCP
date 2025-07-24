@@ -27,7 +27,7 @@ steps:
     meta:
       description: "Navigate to advanced form page"
       step_number: 1
-  
+
   - type: assert
     command: exists
     target: "h1"
@@ -35,60 +35,60 @@ steps:
     meta:
       timeout: 5000
       critical: true
-  
+
   - type: write
     selector: "input#first-name"
     text: "John"
     meta:
       field_type: "text"
       validation: "required,alpha"
-  
+
   - type: write
     selector: "input#last-name"
     text: "Doe"
     meta:
       field_type: "text"
       validation: "required,alpha"
-  
+
   - type: write
     selector: "input#email"
     text: "john.doe@example.com"
     meta:
       field_type: "email"
       validation: "required,email"
-  
+
   - type: select
     selector: "select#country"
     value: "US"
     meta:
       field_type: "dropdown"
       options_count: 195
-  
+
   - type: click
     target: "input[type=radio][value=male]"
     meta:
       field_type: "radio"
       group_name: "gender"
-  
+
   - type: click
     target: "input#terms"
     meta:
       field_type: "checkbox"
       required: true
-  
+
   - type: assert
     command: checked
     target: "input#terms"
     meta:
       validation_type: "state"
-  
+
   - type: write
     selector: "textarea#comments"
     text: "This is a test comment for the extended format example"
     meta:
       field_type: "textarea"
       max_length: 500
-  
+
   - type: execute
     value: |
       // Custom validation check
@@ -97,48 +97,48 @@ steps:
     meta:
       returns: "boolean"
       description: "Validate form using browser API"
-  
+
   - type: store
     selector: "form"
     attribute: "data-form-id"
     variable: "formId"
     meta:
       data_type: "string"
-  
+
   - type: click
     target: "button[type=submit]"
     meta:
       action: "submit_form"
       expected_result: "success_page"
-  
+
   - type: wait
     command: element
     target: "div.success-message"
     meta:
       timeout: 10000
       poll_interval: 500
-  
+
   - type: assert
     command: contains
     target: "div.success-message"
     value: "Registration successful"
     meta:
       case_sensitive: false
-  
+
   - type: window
     command: resize
     meta:
       width: 1024
       height: 768
       animate: true
-  
+
   - type: scroll
     command: to_element
     target: "footer"
     meta:
       smooth: true
       offset_y: -50
-  
+
   - type: cookie
     command: create
     meta:

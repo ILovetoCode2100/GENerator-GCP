@@ -18,7 +18,7 @@ steps:
   # Navigate to registration page
   - navigate: "https://app.example.com/register"
   - assert: "Create Account"
-  
+
   # Fill registration form
   - write:
       selector: "input#username"
@@ -32,38 +32,38 @@ steps:
   - write:
       selector: "input#confirm-password"
       text: "SecurePass123!"
-  
+
   # Accept terms
   - click: "input#terms-checkbox"
   - assert:
       selector: "input#terms-checkbox"
       type: checked
-  
+
   # Submit form
   - click: "button.register-btn"
   - wait:
       element: "div.success-message"
-  
+
   # Verify registration
   - assert:
       selector: "h1"
       equals: "Welcome {{testUsername}}"
   - assert:
       not_exists: "div.error-message"
-  
+
   # Store user ID
   - store:
       selector: "span.user-id"
       variable: "userId"
       attribute: "data-id"
-  
+
   # Test navigation
   - click: "a.profile-link"
   - wait: "2000"
   - assert:
       selector: "span.username"
       equals: "{{testUsername}}"
-  
+
   # Cleanup
   - cookie:
       action: delete

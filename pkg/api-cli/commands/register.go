@@ -33,6 +33,7 @@ func RegisterCommands(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(NewListGoalsCmd())
 	rootCmd.AddCommand(NewListJourneysCmd())
 	rootCmd.AddCommand(NewListCheckpointsCmd())
+	rootCmd.AddCommand(NewListCheckpointStepsCmd())
 
 	// ========================================
 	// YAML COMMAND GROUP

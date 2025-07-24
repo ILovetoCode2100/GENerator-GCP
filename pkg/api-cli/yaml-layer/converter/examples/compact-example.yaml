@@ -22,37 +22,37 @@ do:
   - t: {input#password: "$testPassword"}
   - c: "button[type=submit]"
   - ch: "Welcome back"
-  
+
   # Search for product
   - t: {input.search: "$productName"}
   - k: "Enter"
   - wait: "div.search-results"
   - ch: "$productName"
-  
+
   # Add to cart
   - c: "button.add-to-cart:first"
   - wait: 2000
   - c: "a.view-cart"
-  
+
   # Checkout
   - ch: "Shopping Cart"
   - eq: {span.item-count: "1"}
   - c: "button.checkout"
-  
+
   # Fill shipping info
   - wait: "form.shipping"
   - select: {selector: "select#country", option: "United States"}
   - t: {input#address: "123 Test St"}
   - t: {input#city: "Test City"}
   - t: {input#zip: "12345"}
-  
+
   # Complete order
   - c: "button.place-order"
   - wait: "div.order-confirmation"
   - ch: "Order Complete"
   - store: {selector: "span.order-number", variable: "orderNumber"}
   - note: "Order number: $orderNumber"
-  
+
   # Conditional check
   - if:
       cond: "$orderNumber"

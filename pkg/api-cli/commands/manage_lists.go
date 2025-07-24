@@ -432,3 +432,71 @@ them in a table format by default.`,
 		},
 	})
 }
+
+func NewListCheckpointStepsCmd() *cobra.Command {
+	return newListCommand(ListConfig{
+		ResourceType: "checkpoint-step",
+		Description:  "List all steps in a checkpoint",
+		LongDesc: `List all steps in a specific checkpoint.
+
+This command retrieves all steps for a checkpoint and displays
+them in a table format by default, showing the step details and order.`,
+		Headers: []string{"ID", "POS", "ACTION", "SELECTOR/VALUE", "OPTIONAL", "SKIP"},
+		FormatFunc: func(item interface{}) []string {
+			s := item.(*client.Step)
+			value := s.Value
+			if value == "" {
+				value = "-"
+			}
+			// Truncate long values
+			if len(value) > 40 {
+				value = value[:37] + "..."
+			}
+			return []string{
+				fmt.Sprintf("%d", s.ID),
+				fmt.Sprintf("%d", s.StepIndex),
+				s.Action,
+				value,
+				fmt.Sprintf("%t", s.Optional),
+				fmt.Sprintf("%t", s.Skip),
+			}
+		},
+		ListFunc: func(ctx context.Context, c *client.Client, args []string, limit, offset int) ([]interface{}, error) {
+			if len(args) < 1 {
+				return nil, fmt.Errorf("checkpoint ID is required")
+			}
+
+			// Handle both numeric and cp_ prefixed IDs
+			checkpointIDStr := args[0]
+			if len(checkpointIDStr) > 3 && checkpointIDStr[:3] == "cp_" {
+				checkpointIDStr = checkpointIDStr[3:]
+			}
+
+			checkpointID, err := strconv.Atoi(checkpointIDStr)
+			if err != nil {
+				return nil, fmt.Errorf("invalid checkpoint ID: %w", err)
+			}
+
+			// Use the context-aware method
+			steps, err := c.ListCheckpointStepsWithContext(ctx, checkpointID)
+			if err != nil {
+				return nil, err
+			}
+
+			items := make([]interface{}, len(steps))
+			for i := range steps {
+				items[i] = &steps[i]
+			}
+			return items, nil
+		},
+		AIHelpFunc: func(items []interface{}) string {
+			if len(items) > 0 {
+				s := items[0].(*client.Step)
+				return fmt.Sprintf("\nCheckpoint has %d steps. You can:\n"+
+					"1. Add more steps: api-cli step-navigate to %d \"https://example.com\"\n"+
+					"2. Run the test: api-cli execute-goal <goal-id>\n", len(items), s.CheckpointID)
+			}
+			return "\nNo steps found in this checkpoint. Add steps using step commands."
+		},
+	})
+}
