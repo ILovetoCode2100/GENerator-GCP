@@ -153,7 +153,7 @@ func outputTemplateInfo(template *TestTemplate, format string) error {
 	bc := NewBaseCommand()
 	output, err := bc.FormatOutput(info, format)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to format template info output: %w", err)
 	}
 
 	fmt.Println(output)
@@ -433,7 +433,7 @@ var GetTestTemplatesCmd = &cobra.Command{
 		// Find all YAML files
 		matches, err := filepath.Glob(filepath.Join(dir, "*.yaml"))
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to scan directory '%s' for YAML files: %w", dir, err)
 		}
 
 		templates := make([]map[string]interface{}, 0)

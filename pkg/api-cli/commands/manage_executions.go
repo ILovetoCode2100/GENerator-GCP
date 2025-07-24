@@ -482,8 +482,8 @@ Examples:
 	}
 
 	cmd.Flags().BoolVar(&followFlag, "follow", false, "Follow execution with real-time updates")
-	cmd.Flags().IntVar(&intervalFlag, "interval", 5, "Update interval in seconds (default: 5)")
-	cmd.Flags().IntVar(&timeoutFlag, "timeout", 300, "Timeout in seconds when following (default: 300)")
+	cmd.Flags().IntVar(&intervalFlag, "interval", int(DefaultPollingInterval.Seconds()), "Update interval in seconds (default: 5)")
+	cmd.Flags().IntVar(&timeoutFlag, "timeout", int(DefaultFollowTimeout.Seconds()), "Timeout in seconds when following (default: 300)")
 
 	return cmd
 }
@@ -586,7 +586,7 @@ Examples:
 
 // waitForExecution waits for execution completion with timeout
 func waitForExecution(client *client.Client, executionID string, timeout int) (*client.Execution, error) {
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(DefaultPollingInterval)
 	defer ticker.Stop()
 
 	timeoutChan := time.After(time.Duration(timeout) * time.Second)
@@ -692,17 +692,6 @@ func displayExecutionStatus(execution *client.Execution) {
 	}
 
 	fmt.Print("                    ") // Clear any remaining characters
-}
-
-// formatDuration formats a duration in human-readable format
-func formatDuration(d time.Duration) string {
-	if d < time.Minute {
-		return fmt.Sprintf("%ds", int(d.Seconds()))
-	}
-	if d < time.Hour {
-		return fmt.Sprintf("%dm %ds", int(d.Minutes()), int(d.Seconds())%60)
-	}
-	return fmt.Sprintf("%dh %dm %ds", int(d.Hours()), int(d.Minutes())%60, int(d.Seconds())%60)
 }
 
 // parseVariablesString parses a comma-separated string of key=value pairs

@@ -235,7 +235,7 @@ func (wc *WaitCommand) Execute(cmd *cobra.Command, args []string, config waitCon
 	// Format and output the result
 	output, err := wc.FormatOutput(stepResult, wc.OutputFormat)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to format %s step output: %w", config.stepType, err)
 	}
 
 	fmt.Print(output)

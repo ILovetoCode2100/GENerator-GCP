@@ -72,7 +72,15 @@ Examples:
 
   # Using explicit checkpoint (legacy)
   api-cli step-interact click cp_12345 "button.submit" 1`,
-		Args: cobra.MinimumNArgs(1),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) < 1 {
+				return fmt.Errorf("selector is required\n\nExamples:\n  api-cli step-interact click \"button.submit\"\n  api-cli step-interact click \"#login-btn\" --position TOP_RIGHT")
+			}
+			if args[0] == "" {
+				return fmt.Errorf("selector cannot be empty")
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runInteraction(cmd, args, "click", map[string]interface{}{
 				"variable":    variable,
@@ -105,7 +113,15 @@ Examples:
 
   # Using explicit checkpoint
   api-cli step-interact double-click cp_12345 ".item-card" 1`,
-		Args: cobra.MinimumNArgs(1),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) < 1 {
+				return fmt.Errorf("selector is required\n\nExamples:\n  api-cli step-interact double-click \".item-card\"\n  api-cli step-interact double-click \"#file-icon\" --position CENTER")
+			}
+			if args[0] == "" {
+				return fmt.Errorf("selector cannot be empty")
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runInteraction(cmd, args, "double-click", map[string]interface{}{
 				"position": position,
@@ -134,7 +150,15 @@ Examples:
 
   # Using explicit checkpoint
   api-cli step-interact right-click cp_12345 ".data-row" 1`,
-		Args: cobra.MinimumNArgs(1),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) < 1 {
+				return fmt.Errorf("selector is required\n\nExamples:\n  api-cli step-interact right-click \".data-row\"\n  api-cli step-interact right-click \"#context-target\" --position TOP_LEFT")
+			}
+			if args[0] == "" {
+				return fmt.Errorf("selector cannot be empty")
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runInteraction(cmd, args, "right-click", map[string]interface{}{
 				"position": position,
@@ -172,7 +196,16 @@ Examples:
 
   # Using explicit checkpoint
   api-cli step-interact write cp_12345 "input#username" "john.doe@example.com" 1`,
-		Args: cobra.MinimumNArgs(2),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) < 2 {
+				return fmt.Errorf("requires selector and text\n\nExamples:\n  api-cli step-interact write \"input#username\" \"john.doe@example.com\"\n  api-cli step-interact write \"textarea.comment\" \"This is a comment\" --clear")
+			}
+			if args[0] == "" {
+				return fmt.Errorf("selector cannot be empty")
+			}
+			// Note: text can be empty (to clear a field)
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runInteraction(cmd, args, "write", map[string]interface{}{
 				"variable": variable,
@@ -211,8 +244,30 @@ Examples:
 
   # Using explicit checkpoint
   api-cli step-interact key cp_12345 "Enter" 1`,
-		Args: cobra.MinimumNArgs(1),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) < 1 {
+				return fmt.Errorf("key is required\n\nExamples:\n  api-cli step-interact key \"Enter\"\n  api-cli step-interact key \"a\" --modifiers ctrl\n  api-cli step-interact key \"Tab\" --target \"input#username\"")
+			}
+			if args[0] == "" {
+				return fmt.Errorf("key cannot be empty")
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Check shorthand modifier flags
+			if ctrl, _ := cmd.Flags().GetBool("ctrl"); ctrl {
+				modifiers = append(modifiers, "ctrl")
+			}
+			if shift, _ := cmd.Flags().GetBool("shift"); shift {
+				modifiers = append(modifiers, "shift")
+			}
+			if alt, _ := cmd.Flags().GetBool("alt"); alt {
+				modifiers = append(modifiers, "alt")
+			}
+			if meta, _ := cmd.Flags().GetBool("meta"); meta {
+				modifiers = append(modifiers, "meta")
+			}
+
 			return runInteraction(cmd, args, "key", map[string]interface{}{
 				"target":    target,
 				"modifiers": modifiers,
@@ -224,6 +279,12 @@ Examples:
 	cmd.Flags().StringVar(&target, "target", "", "Target element selector")
 	cmd.Flags().StringSliceVar(&modifiers, "modifiers", []string{}, "Key modifiers (ctrl, shift, alt, meta)")
 	cmd.Flags().IntVar(&repeat, "repeat", 1, "Number of times to press key")
+
+	// Add shorthand flags for common modifiers
+	cmd.Flags().Bool("ctrl", false, "Add Ctrl modifier (shorthand for --modifiers ctrl)")
+	cmd.Flags().Bool("shift", false, "Add Shift modifier (shorthand for --modifiers shift)")
+	cmd.Flags().Bool("alt", false, "Add Alt modifier (shorthand for --modifiers alt)")
+	cmd.Flags().Bool("meta", false, "Add Meta modifier (shorthand for --modifiers meta)")
 
 	return cmd
 }
@@ -251,7 +312,15 @@ Examples:
 
   # Using explicit checkpoint
   api-cli step-interact hover cp_12345 ".menu-item" 1`,
-		Args: cobra.MinimumNArgs(1),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) < 1 {
+				return fmt.Errorf("selector is required\n\nExamples:\n  api-cli step-interact hover \".menu-item\"\n  api-cli step-interact hover \"#tooltip-trigger\" --duration 2000")
+			}
+			if args[0] == "" {
+				return fmt.Errorf("selector cannot be empty")
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runInteraction(cmd, args, "hover", map[string]interface{}{
 				"position": position,
@@ -303,7 +372,15 @@ func mouseMoveToSubCmd() *cobra.Command {
 Examples:
   api-cli step-interact mouse move-to "button.submit"
   api-cli step-interact mouse move-to cp_12345 "#target" 1`,
-		Args: cobra.MinimumNArgs(1),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) < 1 {
+				return fmt.Errorf("selector is required\n\nExamples:\n  api-cli step-interact mouse move-to \"button.submit\"\n  api-cli step-interact mouse move-to cp_12345 \"#target\" 1")
+			}
+			if args[0] == "" {
+				return fmt.Errorf("selector cannot be empty")
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runMouseAction(cmd, args, "move-to")
 		},
@@ -322,7 +399,10 @@ Examples:
   api-cli step-interact mouse move-by "100,50"
   api-cli step-interact mouse move-by "-50,25"
   api-cli step-interact mouse move-by cp_12345 "100,-50" 1`,
-		Args: cobra.MinimumNArgs(1),
+		Args: func(cmd *cobra.Command, args []string) error {
+			// Don't validate here - let ResolveCheckpointAndPosition handle args first
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runMouseAction(cmd, args, "move-by")
 		},
@@ -340,7 +420,10 @@ func mouseMoveSubCmd() *cobra.Command {
 Examples:
   api-cli step-interact mouse move "500,300"
   api-cli step-interact mouse move cp_12345 "100,200" 1`,
-		Args: cobra.MinimumNArgs(1),
+		Args: func(cmd *cobra.Command, args []string) error {
+			// Don't validate here - let ResolveCheckpointAndPosition handle args first
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runMouseAction(cmd, args, "move")
 		},
@@ -351,14 +434,17 @@ Examples:
 // mouseDownSubCmd - press mouse button
 func mouseDownSubCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "down [checkpoint-id] <selector> [position]",
-		Short: "Press mouse button down",
-		Long: `Press and hold the mouse button on an element.
+		Use:   "down [checkpoint-id] [position]",
+		Short: "Press mouse button down at current position",
+		Long: `Press and hold the mouse button at the current mouse position.
 
 Examples:
-  api-cli step-interact mouse down "#drag-handle"
-  api-cli step-interact mouse down cp_12345 "button" 1`,
-		Args: cobra.MinimumNArgs(1),
+  api-cli step-interact mouse down
+  api-cli step-interact mouse down cp_12345 1`,
+		Args: func(cmd *cobra.Command, args []string) error {
+			// No required arguments for mouse down
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runMouseAction(cmd, args, "down")
 		},
@@ -376,7 +462,15 @@ func mouseUpSubCmd() *cobra.Command {
 Examples:
   api-cli step-interact mouse up "#drop-zone"
   api-cli step-interact mouse up cp_12345 "button" 1`,
-		Args: cobra.MinimumNArgs(1),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) < 1 {
+				return fmt.Errorf("selector is required\n\nExamples:\n  api-cli step-interact mouse up \"#drop-zone\"\n  api-cli step-interact mouse up cp_12345 \"button\" 1")
+			}
+			if args[0] == "" {
+				return fmt.Errorf("selector cannot be empty")
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runMouseAction(cmd, args, "up")
 		},
@@ -394,7 +488,15 @@ func mouseEnterSubCmd() *cobra.Command {
 Examples:
   api-cli step-interact mouse enter "#tooltip-target"
   api-cli step-interact mouse enter cp_12345 ".dropdown-trigger" 1`,
-		Args: cobra.MinimumNArgs(1),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) < 1 {
+				return fmt.Errorf("selector is required\n\nExamples:\n  api-cli step-interact mouse enter \"#tooltip-target\"\n  api-cli step-interact mouse enter cp_12345 \".dropdown-trigger\" 1")
+			}
+			if args[0] == "" {
+				return fmt.Errorf("selector cannot be empty")
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runMouseAction(cmd, args, "enter")
 		},
@@ -437,7 +539,18 @@ func selectOptionSubCmd() *cobra.Command {
 Examples:
   api-cli step-interact select option "#country" "United States"
   api-cli step-interact select option cp_12345 "select[name='country']" "US" 1`,
-		Args: cobra.MinimumNArgs(2),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) < 2 {
+				return fmt.Errorf("requires selector and value\n\nExamples:\n  api-cli step-interact select option \"#country\" \"United States\"\n  api-cli step-interact select option cp_12345 \"select[name='country']\" \"US\" 1")
+			}
+			if args[0] == "" {
+				return fmt.Errorf("selector cannot be empty")
+			}
+			if args[1] == "" {
+				return fmt.Errorf("value cannot be empty")
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runSelectAction(cmd, args, "option")
 		},
@@ -455,7 +568,10 @@ func selectIndexSubCmd() *cobra.Command {
 Examples:
   api-cli step-interact select index "#country" 0
   api-cli step-interact select index cp_12345 ".dropdown" 3 1`,
-		Args: cobra.MinimumNArgs(2),
+		Args: func(cmd *cobra.Command, args []string) error {
+			// Don't validate here - let ResolveCheckpointAndPosition handle args first
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runSelectAction(cmd, args, "index")
 		},
@@ -473,7 +589,15 @@ func selectLastSubCmd() *cobra.Command {
 Examples:
   api-cli step-interact select last "#country"
   api-cli step-interact select last cp_12345 ".dropdown" 1`,
-		Args: cobra.MinimumNArgs(1),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) < 1 {
+				return fmt.Errorf("selector is required\n\nExamples:\n  api-cli step-interact select last \"#country\"\n  api-cli step-interact select last cp_12345 \".dropdown\" 1")
+			}
+			if args[0] == "" {
+				return fmt.Errorf("selector cannot be empty")
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runSelectAction(cmd, args, "last")
 		},
@@ -585,6 +709,10 @@ func runMouseAction(cmd *cobra.Command, args []string, action string) error {
 
 	// Determine required args based on action
 	requiredArgs := 1
+	// Mouse down doesn't require a selector
+	if action == "down" {
+		requiredArgs = 0
+	}
 
 	// Resolve checkpoint and position
 	args, err := base.ResolveCheckpointAndPosition(args, requiredArgs)
@@ -592,9 +720,26 @@ func runMouseAction(cmd *cobra.Command, args []string, action string) error {
 		return fmt.Errorf("failed to resolve arguments: %w", err)
 	}
 
-	// Validate arguments
-	if err := validateMouseArgs(args, action); err != nil {
-		return err
+	// Validate arguments after resolution
+	if len(args) > 0 {
+		switch action {
+		case "move-by", "move":
+			// Validate coordinate format
+			coords := strings.Split(args[0], ",")
+			if len(coords) != 2 {
+				return fmt.Errorf("coordinates must be in format 'x,y' (e.g., \"100,50\")")
+			}
+			if _, err := strconv.Atoi(strings.TrimSpace(coords[0])); err != nil {
+				return fmt.Errorf("X coordinate must be a number")
+			}
+			if _, err := strconv.Atoi(strings.TrimSpace(coords[1])); err != nil {
+				return fmt.Errorf("Y coordinate must be a number")
+			}
+		case "move-to", "up", "enter":
+			if args[0] == "" {
+				return fmt.Errorf("selector cannot be empty")
+			}
+		}
 	}
 
 	// Convert checkpoint ID to int
@@ -615,7 +760,8 @@ func runMouseAction(cmd *cobra.Command, args []string, action string) error {
 		coords := parseCoordinates(args[0])
 		stepID, err = base.Client.CreateStepMouseMoveTo(checkpointID, coords[0], coords[1], base.Position)
 	case "down":
-		stepID, err = base.Client.CreateStepMouseDown(checkpointID, args[0], base.Position)
+		// Mouse down doesn't require a selector - pass empty string
+		stepID, err = base.Client.CreateStepMouseDown(checkpointID, "", base.Position)
 	case "up":
 		stepID, err = base.Client.CreateStepMouseUp(checkpointID, args[0], base.Position)
 	case "enter":
@@ -665,9 +811,19 @@ func runSelectAction(cmd *cobra.Command, args []string, selectType string) error
 		return fmt.Errorf("failed to resolve arguments: %w", err)
 	}
 
-	// Validate arguments
-	if err := validateSelectArgs(args, selectType); err != nil {
-		return err
+	// Validate arguments after resolution
+	if len(args) > 0 && args[0] == "" {
+		return fmt.Errorf("selector cannot be empty")
+	}
+	if selectType == "index" && len(args) >= 2 {
+		// Validate index is a non-negative integer
+		index, err := strconv.Atoi(args[1])
+		if err != nil {
+			return fmt.Errorf("index must be a valid integer: %w", err)
+		}
+		if index < 0 {
+			return fmt.Errorf("index must be 0 or greater (got %d)", index)
+		}
 	}
 
 	// Convert checkpoint ID to int
@@ -999,6 +1155,9 @@ func buildMouseDescription(action string, args []string) string {
 		coords := parseCoordinates(args[0])
 		return fmt.Sprintf("Move mouse to (%d, %d)", coords[0], coords[1])
 	case "down":
+		if len(args) == 0 {
+			return "Press mouse button at current position"
+		}
 		return fmt.Sprintf("Press mouse button on '%s'", args[0])
 	case "up":
 		return fmt.Sprintf("Release mouse button on '%s'", args[0])

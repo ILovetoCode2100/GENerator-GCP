@@ -72,6 +72,23 @@ var dataConfigs = map[string]dataConfig{
 			}
 		},
 	},
+	"store.element-value": {
+		stepType:    "STORE",
+		description: "Store element value in a variable",
+		usage:       "data store element-value [checkpoint-id] <selector> <variable-name> [position]",
+		examples: []string{
+			`api-cli data store element-value cp_12345 "input#username" "saved_username" 1`,
+			`api-cli data store element-value "textarea#comment" "user_comment"  # Uses session context`,
+		},
+		requiredArgs: 2,
+		buildMeta: func(args []string, flags map[string]interface{}) map[string]interface{} {
+			return map[string]interface{}{
+				"operation": "ELEMENT_VALUE",
+				"selector":  args[0],
+				"variable":  args[1],
+			}
+		},
+	},
 	"store.attribute": {
 		stepType:    "STORE",
 		description: "Store element attribute value in a variable",
@@ -204,6 +221,7 @@ Available operations:
 
 	// Add store subcommands
 	storeCmd.AddCommand(newDataV2SubCmd("element-text", "store.element-text", dataConfigs["store.element-text"]))
+	storeCmd.AddCommand(newDataV2SubCmd("element-value", "store.element-value", dataConfigs["store.element-value"]))
 	storeCmd.AddCommand(newDataV2SubCmd("literal", "store.literal", dataConfigs["store.literal"]))
 	storeCmd.AddCommand(newDataV2SubCmd("attribute", "store.attribute", dataConfigs["store.attribute"]))
 
@@ -217,7 +235,9 @@ Available operations:
 	// Add cookie subcommands
 	cookieCmd.AddCommand(newDataV2SubCmd("create", "cookie.create", dataConfigs["cookie.create"]))
 	cookieCmd.AddCommand(newDataV2SubCmd("delete", "cookie.delete", dataConfigs["cookie.delete"]))
-	cookieCmd.AddCommand(newDataV2SubCmd("clear-all", "cookie.clear-all", dataConfigs["cookie.clear-all"]))
+	clearCmd := newDataV2SubCmd("clear-all", "cookie.clear-all", dataConfigs["cookie.clear-all"])
+	clearCmd.Aliases = []string{"clear", "wipe", "clear-all"}
+	cookieCmd.AddCommand(clearCmd)
 
 	cmd.AddCommand(storeCmd)
 	cmd.AddCommand(cookieCmd)
@@ -318,7 +338,7 @@ func (dc *DataCommand) Execute(cmd *cobra.Command, args []string, config dataCon
 	// Format and output the result
 	output, err := dc.FormatOutput(stepResult, dc.OutputFormat)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to format %s step output: %w", config.stepType, err)
 	}
 
 	fmt.Print(output)
@@ -350,6 +370,11 @@ func (dc *DataCommand) createDataStep(stepType string, meta map[string]interface
 	case "LITERAL":
 		stepID, err = dc.Client.CreateStepStoreLiteralValueWithContext(ctx, checkpointID,
 			meta["value"].(string),
+			meta["variable"].(string),
+			dc.Position)
+	case "ELEMENT_VALUE":
+		stepID, err = dc.Client.CreateStepStoreValueWithContext(ctx, checkpointID,
+			meta["selector"].(string),
 			meta["variable"].(string),
 			dc.Position)
 	case "ATTRIBUTE":
@@ -469,6 +494,8 @@ func (dc *DataCommand) buildDescription(operation string, meta map[string]interf
 		return fmt.Sprintf("store text from \"%s\" in $%s", meta["selector"], meta["variable"])
 	case "LITERAL":
 		return fmt.Sprintf("store \"%s\" in $%s", meta["value"], meta["variable"])
+	case "ELEMENT_VALUE":
+		return fmt.Sprintf("store value from \"%s\" in $%s", meta["selector"], meta["variable"])
 	case "ATTRIBUTE":
 		return fmt.Sprintf("store attribute \"%s\" from \"%s\" in $%s", meta["attribute"], meta["selector"], meta["variable"])
 	case "COOKIE_CREATE":

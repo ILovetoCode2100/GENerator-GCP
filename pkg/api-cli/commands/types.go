@@ -211,3 +211,68 @@ const (
 	KeyEnd        = "End"
 	KeySpace      = " "
 )
+
+// ========================================
+// Test Execution Types
+// ========================================
+
+// TestDefinition represents a simplified test format
+type TestDefinition struct {
+	Name           string                   `yaml:"name" json:"name"`
+	Description    string                   `yaml:"description,omitempty" json:"description,omitempty"`
+	Project        interface{}              `yaml:"project,omitempty" json:"project,omitempty"` // Can be ID or name
+	StartingURL    string                   `yaml:"starting_url,omitempty" json:"starting_url,omitempty"`
+	Infrastructure *InfrastructureConfig    `yaml:"infrastructure,omitempty" json:"infrastructure,omitempty"`
+	Variables      []TestVariable           `yaml:"variables,omitempty" json:"variables,omitempty"`
+	Steps          []map[string]interface{} `yaml:"steps" json:"steps"`
+	Config         TestConfig               `yaml:"config,omitempty" json:"config,omitempty"`
+}
+
+// InfrastructureConfig represents infrastructure configuration
+type InfrastructureConfig struct {
+	OrganizationID string      `yaml:"organization_id,omitempty" json:"organization_id,omitempty"`
+	Project        interface{} `yaml:"project,omitempty" json:"project,omitempty"`
+	StartingURL    string      `yaml:"starting_url,omitempty" json:"starting_url,omitempty"`
+}
+
+// TestVariable represents a test variable
+type TestVariable struct {
+	Name  string `yaml:"name" json:"name"`
+	Value string `yaml:"value" json:"value"`
+}
+
+// TestConfig represents test configuration
+type TestConfig struct {
+	ContinueOnError bool `yaml:"continue_on_error,omitempty" json:"continue_on_error,omitempty"`
+	Timeout         int  `yaml:"timeout,omitempty" json:"timeout,omitempty"`
+}
+
+// TestResult represents the result of running a test
+type TestResult struct {
+	Success      bool             `json:"success"`
+	ProjectID    string           `json:"project_id"`
+	GoalID       string           `json:"goal_id"`
+	JourneyID    string           `json:"journey_id"`
+	CheckpointID string           `json:"checkpoint_id"`
+	Steps        []TestStepResult `json:"steps"`
+	Links        TestLinks        `json:"links"`
+	Error        string           `json:"error,omitempty"`
+}
+
+// TestStepResult represents the result of a single test step
+type TestStepResult struct {
+	Position    int    `json:"position"`
+	Command     string `json:"command"`
+	Success     bool   `json:"success"`
+	StepID      string `json:"step_id,omitempty"`
+	Error       string `json:"error,omitempty"`
+	Description string `json:"description,omitempty"`
+}
+
+// TestLinks provides URLs to view the test in Virtuoso UI
+type TestLinks struct {
+	Project    string `json:"project,omitempty"`
+	Goal       string `json:"goal,omitempty"`
+	Journey    string `json:"journey,omitempty"`
+	Checkpoint string `json:"checkpoint,omitempty"`
+}

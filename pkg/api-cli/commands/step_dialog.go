@@ -235,7 +235,7 @@ func (dc *DialogCommand) Execute(cmd *cobra.Command, args []string, config dialo
 	// Format and output the result
 	output, err := dc.FormatOutput(stepResult, dc.OutputFormat)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to format %s step output: %w", config.stepType, err)
 	}
 
 	fmt.Print(output)
@@ -285,7 +285,7 @@ func (dc *DialogCommand) createDialogStep(stepType string, meta map[string]inter
 	}
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create dialog step (type: %s, checkpoint: %d, position: %d): %w", stepType, checkpointID, dc.Position, err)
 	}
 
 	// Build the result

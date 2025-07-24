@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/marklovelady/api-cli-generator/pkg/api-cli/constants"
 	"github.com/spf13/viper"
 )
 
@@ -140,11 +141,11 @@ func LoadConfig(configFile string) (*VirtuosoConfig, error) {
 	}
 
 	// Set defaults for core configuration
-	viper.SetDefault("api.base_url", "https://api-app2.virtuoso.qa/api")
-	viper.SetDefault("organization.id", "2242")
-	viper.SetDefault("headers.X-Virtuoso-Client-ID", "api-cli-generator")
-	viper.SetDefault("headers.X-Virtuoso-Client-Name", "api-cli-generator")
-	viper.SetDefault("business_rules.initial_checkpoint_name", "INITIAL_CHECKPOINT")
+	viper.SetDefault("api.base_url", constants.DefaultBaseURL)
+	viper.SetDefault("organization.id", constants.DefaultOrganizationID)
+	viper.SetDefault("headers.X-Virtuoso-Client-ID", constants.DefaultClientID)
+	viper.SetDefault("headers.X-Virtuoso-Client-Name", constants.DefaultClientName)
+	viper.SetDefault("business_rules.initial_checkpoint_name", constants.DefaultInitialCheckpointName)
 	viper.SetDefault("business_rules.auto_attach_checkpoints", true)
 	viper.SetDefault("business_rules.create_initial_journey", true)
 	viper.SetDefault("output.default_format", "human")
@@ -154,15 +155,15 @@ func LoadConfig(configFile string) (*VirtuosoConfig, error) {
 	viper.SetDefault("session.next_position", 1)
 
 	// Set defaults for AI-specific test configuration
-	viper.SetDefault("test.batch_dir", "./test-batches")
+	viper.SetDefault("test.batch_dir", constants.DefaultBatchDir)
 	viper.SetDefault("test.output_format", "ai") // Default to AI format for test commands
-	viper.SetDefault("test.template_dir", "./examples")
+	viper.SetDefault("test.template_dir", constants.DefaultTemplateDir)
 	viper.SetDefault("test.auto_validate", true)
-	viper.SetDefault("test.max_steps_per_checkpoint", 20)
+	viper.SetDefault("test.max_steps_per_checkpoint", constants.DefaultMaxStepsPerCheckpoint)
 
 	// Set defaults for AI integration
 	viper.SetDefault("ai.enable_suggestions", true)
-	viper.SetDefault("ai.context_depth", 3) // Include 3 levels of context
+	viper.SetDefault("ai.context_depth", constants.DefaultContextDepth) // Include 3 levels of context
 	viper.SetDefault("ai.auto_generate_descriptions", true)
 	viper.SetDefault("ai.template_inference", true)
 
@@ -208,10 +209,10 @@ func LoadConfig(configFile string) (*VirtuosoConfig, error) {
 // GetHeaders returns all headers for API requests
 func (c *VirtuosoConfig) GetHeaders() map[string]string {
 	return map[string]string{
-		"Authorization":          fmt.Sprintf("Bearer %s", c.API.AuthToken),
-		"X-Virtuoso-Client-ID":   c.Headers.ClientID,
-		"X-Virtuoso-Client-Name": c.Headers.ClientName,
-		"Content-Type":           "application/json",
+		constants.HeaderAuthorization: fmt.Sprintf("%s%s", constants.AuthorizationHeaderPrefix, c.API.AuthToken),
+		"X-Virtuoso-Client-ID":        c.Headers.ClientID,
+		"X-Virtuoso-Client-Name":      c.Headers.ClientName,
+		constants.HeaderContentType:   constants.ContentTypeJSON,
 	}
 }
 

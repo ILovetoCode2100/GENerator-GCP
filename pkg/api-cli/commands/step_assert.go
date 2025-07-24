@@ -343,7 +343,7 @@ func (ac *AssertCommand) Execute(cmd *cobra.Command, args []string, config asser
 	// Format and output the result
 	output, err := ac.FormatOutput(stepResult, ac.OutputFormat)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to format %s step output: %w", config.stepType, err)
 	}
 
 	fmt.Print(output)

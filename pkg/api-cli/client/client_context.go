@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/marklovelady/api-cli-generator/pkg/api-cli/constants"
 )
 
 // CreateProjectWithContext creates a new project with context support
@@ -27,7 +28,7 @@ func (c *Client) CreateProjectWithContext(ctx context.Context, name, description
 	var result Project
 	resp, err := c.httpClient.R().
 		SetContext(ctx).
-		SetHeader("Authorization", "Bearer "+c.config.API.AuthToken).
+		SetHeader(constants.HeaderAuthorization, constants.AuthorizationHeaderPrefix+c.config.API.AuthToken).
 		SetBody(body).
 		SetResult(&result).
 		Post("/projects")
@@ -68,7 +69,7 @@ func (c *Client) CreateGoalWithContext(ctx context.Context, projectID int, name,
 
 	resp, err := c.httpClient.R().
 		SetContext(ctx).
-		SetHeader("Authorization", "Bearer "+c.config.API.AuthToken).
+		SetHeader(constants.HeaderAuthorization, constants.AuthorizationHeaderPrefix+c.config.API.AuthToken).
 		SetBody(body).
 		SetResult(&result).
 		Post("/goals")
@@ -105,7 +106,7 @@ func (c *Client) CreateJourneyWithContext(ctx context.Context, goalID, snapshotI
 	var result Journey
 	resp, err := c.httpClient.R().
 		SetContext(ctx).
-		SetHeader("Authorization", "Bearer "+c.config.API.AuthToken).
+		SetHeader(constants.HeaderAuthorization, constants.AuthorizationHeaderPrefix+c.config.API.AuthToken).
 		SetBody(body).
 		SetResult(&result).
 		Post("/journeys")
@@ -139,7 +140,7 @@ func (c *Client) CreateCheckpointWithContext(ctx context.Context, goalID, snapsh
 	var result Checkpoint
 	resp, err := c.httpClient.R().
 		SetContext(ctx).
-		SetHeader("Authorization", "Bearer "+c.config.API.AuthToken).
+		SetHeader(constants.HeaderAuthorization, constants.AuthorizationHeaderPrefix+c.config.API.AuthToken).
 		SetBody(body).
 		SetResult(&result).
 		Post("/checkpoints")
@@ -191,7 +192,7 @@ func (c *Client) CreateClickStepWithContext(ctx context.Context, checkpointID in
 
 	resp, err := c.httpClient.R().
 		SetContext(ctx).
-		SetHeader("Authorization", "Bearer "+c.config.API.AuthToken).
+		SetHeader(constants.HeaderAuthorization, constants.AuthorizationHeaderPrefix+c.config.API.AuthToken).
 		SetBody(body).
 		SetResult(&result).
 		Post("/steps")
@@ -224,7 +225,7 @@ func (c *Client) ExecuteGoalWithContext(ctx context.Context, goalID, snapshotID 
 	var result Execution
 	resp, err := c.httpClient.R().
 		SetContext(ctx).
-		SetHeader("Authorization", "Bearer "+c.config.API.AuthToken).
+		SetHeader(constants.HeaderAuthorization, constants.AuthorizationHeaderPrefix+c.config.API.AuthToken).
 		SetBody(body).
 		SetResult(&result).
 		Post("/executions")

@@ -264,7 +264,7 @@ and displays them in a table format by default.`,
 				fmt.Sprintf("%d", g.ID),
 				g.Name,
 				truncate(description, 30),
-				fmt.Sprintf("%d", g.SnapshotID),
+				g.SnapshotID,
 			}
 		},
 		ListFunc: func(ctx context.Context, c *client.Client, args []string, limit, offset int) ([]interface{}, error) {
@@ -307,8 +307,8 @@ and displays them in a table format by default.`,
 			if len(items) > 0 {
 				g := items[0].(*client.Goal)
 				return fmt.Sprintf("\nNext steps:\n"+
-					"1. List journeys for a goal: api-cli list-journeys %d %d\n"+
-					"2. Create a new journey: api-cli create-journey %d %d \"Journey Name\"\n", g.ID, g.SnapshotID, g.ID, g.SnapshotID)
+					"1. List journeys for a goal: api-cli list-journeys %d %s\n"+
+					"2. Create a new journey: api-cli create-journey %d %s \"Journey Name\"\n", g.ID, g.SnapshotID, g.ID, g.SnapshotID)
 			}
 			return ""
 		},
@@ -357,7 +357,7 @@ them in a table format by default.`,
 			}
 			journeys, err := c.ListJourneys(goalID, snapshotID)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to list journeys for goal %d and snapshot %d: %w", goalID, snapshotID, err)
 			}
 			items := make([]interface{}, len(journeys))
 			for i, j := range journeys {
@@ -409,7 +409,7 @@ them in a table format by default.`,
 			}
 			journeyWithCheckpoints, err := c.ListCheckpoints(journeyID)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to list checkpoints for journey %d: %w", journeyID, err)
 			}
 			// Extract checkpoints from the journey
 			if journeyWithCheckpoints == nil || journeyWithCheckpoints.Cases == nil {

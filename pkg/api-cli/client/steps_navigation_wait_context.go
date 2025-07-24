@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
+	"github.com/marklovelady/api-cli-generator/pkg/api-cli/constants"
 )
 
 // Navigation methods with context
@@ -76,7 +78,7 @@ func (c *Client) CreateStepWaitForElementNotVisibleWithContext(ctx context.Conte
 	clueJSON := fmt.Sprintf(`{"clue":"%s"}`, selector)
 	// Use default timeout if none specified
 	if timeoutMs <= 0 {
-		timeoutMs = 30000 // 30 seconds default
+		timeoutMs = constants.DefaultTimeoutMs
 	}
 	parsedStep := map[string]interface{}{
 		"action": "WAIT",
@@ -101,7 +103,7 @@ func (c *Client) CreateStepWaitForElementNotVisibleWithContext(ctx context.Conte
 func (c *Client) CreateWaitTimeStepWithContext(ctx context.Context, checkpointID int, seconds int, position int) (int, error) {
 	parsedStep := map[string]interface{}{
 		"action": "WAIT",
-		"value":  fmt.Sprintf("%d", seconds*1000), // Convert seconds to milliseconds
+		"value":  fmt.Sprintf("%d", seconds*constants.MillisecondsPerSecond), // Convert seconds to milliseconds
 		"meta": map[string]interface{}{
 			"type": "TIME",
 		},
@@ -111,7 +113,7 @@ func (c *Client) CreateWaitTimeStepWithContext(ctx context.Context, checkpointID
 
 // CreateStepWaitForElementWithContext creates a step to wait for element with default timeout and context support
 func (c *Client) CreateStepWaitForElementWithContext(ctx context.Context, checkpointID int, selector string, position int) (int, error) {
-	return c.CreateStepWaitForElementTimeoutWithContext(ctx, checkpointID, selector, 30000, position) // 30 seconds default
+	return c.CreateStepWaitForElementTimeoutWithContext(ctx, checkpointID, selector, constants.DefaultTimeoutMs, position)
 }
 
 // Scroll methods with context
@@ -320,9 +322,9 @@ func (c *Client) CreateStepScrollPositionWithContext(ctx context.Context, checkp
 		"action": "SCROLL",
 		"value":  "",
 		"meta": map[string]interface{}{
-			"type": "POSITION",
 			"x":    x,
 			"y":    y,
+			"type": "POSITION",
 		},
 	}
 	return c.createStepWithCustomBodyContext(ctx, checkpointID, parsedStep, position)

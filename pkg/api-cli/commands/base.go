@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/marklovelady/api-cli-generator/pkg/api-cli/client"
 	"github.com/spf13/cobra"
@@ -49,8 +48,8 @@ func NewBaseCommand() *BaseCommand {
 
 // CommandContext creates a context with timeout for API operations
 func (bc *BaseCommand) CommandContext() (context.Context, context.CancelFunc) {
-	// Default timeout of 30 seconds for API operations
-	return context.WithTimeout(context.Background(), 30*time.Second)
+	// Default timeout for API operations
+	return context.WithTimeout(context.Background(), DefaultAPITimeout)
 }
 
 // Init initializes the base command with client and config

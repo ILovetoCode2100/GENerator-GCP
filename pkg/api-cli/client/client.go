@@ -13,6 +13,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/marklovelady/api-cli-generator/pkg/api-cli/config"
+	"github.com/marklovelady/api-cli-generator/pkg/api-cli/constants"
 	"github.com/sirupsen/logrus"
 )
 
@@ -83,10 +84,10 @@ func NewClientDirect(baseURL, token string) *Client {
 
 	// Set up headers
 	headers := map[string]string{
-		"Authorization":          "Bearer " + token,
-		"Content-Type":           "application/json",
-		"X-Virtuoso-Client-ID":   "api-cli-generator",
-		"X-Virtuoso-Client-Name": "API CLI Generator",
+		constants.HeaderAuthorization: constants.AuthorizationHeaderPrefix + token,
+		constants.HeaderContentType:   constants.ContentTypeJSON,
+		"X-Virtuoso-Client-ID":        constants.DefaultClientID,
+		"X-Virtuoso-Client-Name":      constants.DefaultClientName,
 	}
 
 	logger := logrus.New()
@@ -94,9 +95,9 @@ func NewClientDirect(baseURL, token string) *Client {
 	// Create Resty client
 	httpClient := resty.New().
 		SetBaseURL(baseURL).
-		SetTimeout(30 * time.Second).
-		SetRetryCount(3).
-		SetRetryWaitTime(1 * time.Second).
+		SetTimeout(constants.DefaultHTTPTimeout).
+		SetRetryCount(constants.DefaultRetryCount).
+		SetRetryWaitTime(constants.DefaultRetryWait).
 		SetHeaders(headers).
 		OnBeforeRequest(func(c *resty.Client, req *resty.Request) error {
 			logger.WithFields(logrus.Fields{
@@ -2209,7 +2210,7 @@ func (c *Client) CreateStep(request interface{}) (interface{}, error) {
 	// Create the step
 	stepID, err := c.createStepWithCustomBody(checkpointID, parsedStep, position)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create step for checkpoint %d at position %d: %w", checkpointID, position, err)
 	}
 
 	// Return a response similar to StepResult

@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -48,7 +49,17 @@ Examples:
   # Add checkpoint to library
   api-cli library add 1680930
   api-cli library add cp_1680930`,
-		Args: cobra.ExactArgs(1),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 1 {
+				return fmt.Errorf("requires exactly 1 argument: CHECKPOINT_ID\n\nExample:\n  api-cli library add 1680930")
+			}
+			// Validate checkpoint ID format
+			checkpointIDStr := stripPrefix(args[0], "cp_")
+			if _, err := strconv.Atoi(checkpointIDStr); err != nil {
+				return fmt.Errorf("invalid checkpoint ID: must be a number (e.g., 1680930 or cp_1680930)")
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runLibraryAddCommand(cmd, args)
 		},
@@ -68,7 +79,17 @@ Examples:
   # Get library checkpoint details
   api-cli library get 7023
   api-cli library get lib_7023`,
-		Args: cobra.ExactArgs(1),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 1 {
+				return fmt.Errorf("requires exactly 1 argument: LIBRARY_CHECKPOINT_ID\n\nExample:\n  api-cli library get 7023")
+			}
+			// Validate library checkpoint ID format
+			libraryCheckpointIDStr := stripPrefix(args[0], "lib_")
+			if _, err := strconv.Atoi(libraryCheckpointIDStr); err != nil {
+				return fmt.Errorf("invalid library checkpoint ID: must be a number (e.g., 7023 or lib_7023)")
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runLibraryGetCommand(cmd, args)
 		},
@@ -90,7 +111,30 @@ Examples:
   # Attach library checkpoint to journey
   api-cli library attach 608926 7023 4
   api-cli library attach journey_608926 lib_7023 2`,
-		Args: cobra.ExactArgs(3),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 3 {
+				return fmt.Errorf("requires exactly 3 arguments: JOURNEY_ID LIBRARY_CHECKPOINT_ID POSITION\n\nExample:\n  api-cli library attach 608926 7023 4")
+			}
+			// Validate journey ID
+			journeyIDStr := stripPrefix(args[0], "journey_")
+			if _, err := strconv.Atoi(journeyIDStr); err != nil {
+				return fmt.Errorf("invalid journey ID: must be a number (e.g., 608926)")
+			}
+			// Validate library checkpoint ID
+			libraryCheckpointIDStr := stripPrefix(args[1], "lib_")
+			if _, err := strconv.Atoi(libraryCheckpointIDStr); err != nil {
+				return fmt.Errorf("invalid library checkpoint ID: must be a number (e.g., 7023)")
+			}
+			// Validate position
+			position, err := strconv.Atoi(args[2])
+			if err != nil {
+				return fmt.Errorf("invalid position: must be a number")
+			}
+			if position < 1 {
+				return fmt.Errorf("position must be 1 or greater (got %d)", position)
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runLibraryAttachCommand(cmd, args)
 		},
@@ -112,7 +156,30 @@ Examples:
   # Move step to position 2
   api-cli library move-step 7023 19660498 2
   api-cli library move-step lib_7023 step_19660498 1`,
-		Args: cobra.ExactArgs(3),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 3 {
+				return fmt.Errorf("requires exactly 3 arguments: LIBRARY_CHECKPOINT_ID TEST_STEP_ID POSITION\n\nExample:\n  api-cli library move-step 7023 19660498 2")
+			}
+			// Validate library checkpoint ID
+			libraryCheckpointIDStr := stripPrefix(args[0], "lib_")
+			if _, err := strconv.Atoi(libraryCheckpointIDStr); err != nil {
+				return fmt.Errorf("invalid library checkpoint ID: must be a number (e.g., 7023)")
+			}
+			// Validate test step ID
+			testStepIDStr := stripPrefix(args[1], "step_")
+			if _, err := strconv.Atoi(testStepIDStr); err != nil {
+				return fmt.Errorf("invalid test step ID: must be a number (e.g., 19660498)")
+			}
+			// Validate position
+			position, err := strconv.Atoi(args[2])
+			if err != nil {
+				return fmt.Errorf("invalid position: must be a number")
+			}
+			if position < 1 {
+				return fmt.Errorf("position must be 1 or greater (got %d)", position)
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runLibraryMoveStepCommand(cmd, args)
 		},
@@ -134,7 +201,22 @@ Examples:
   # Remove step from library checkpoint
   api-cli library remove-step 7023 19660498
   api-cli library remove-step lib_7023 step_19660498`,
-		Args: cobra.ExactArgs(2),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 2 {
+				return fmt.Errorf("requires exactly 2 arguments: LIBRARY_CHECKPOINT_ID TEST_STEP_ID\n\nExample:\n  api-cli library remove-step 7023 19660498")
+			}
+			// Validate library checkpoint ID
+			libraryCheckpointIDStr := stripPrefix(args[0], "lib_")
+			if _, err := strconv.Atoi(libraryCheckpointIDStr); err != nil {
+				return fmt.Errorf("invalid library checkpoint ID: must be a number (e.g., 7023)")
+			}
+			// Validate test step ID
+			testStepIDStr := stripPrefix(args[1], "step_")
+			if _, err := strconv.Atoi(testStepIDStr); err != nil {
+				return fmt.Errorf("invalid test step ID: must be a number (e.g., 19660498)")
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runLibraryRemoveStepCommand(cmd, args)
 		},
@@ -154,7 +236,21 @@ Examples:
   # Update library checkpoint title
   api-cli library update 7023 "New Checkpoint Title"
   api-cli library update lib_7023 "Updated Test Flow"`,
-		Args: cobra.ExactArgs(2),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 2 {
+				return fmt.Errorf("requires exactly 2 arguments: LIBRARY_CHECKPOINT_ID NEW_TITLE\n\nExample:\n  api-cli library update 7023 \"New Checkpoint Title\"")
+			}
+			// Validate library checkpoint ID
+			libraryCheckpointIDStr := stripPrefix(args[0], "lib_")
+			if _, err := strconv.Atoi(libraryCheckpointIDStr); err != nil {
+				return fmt.Errorf("invalid library checkpoint ID: must be a number (e.g., 7023)")
+			}
+			// Validate title is not empty
+			if strings.TrimSpace(args[1]) == "" {
+				return fmt.Errorf("title cannot be empty")
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runLibraryUpdateCommand(cmd, args)
 		},
@@ -273,10 +369,6 @@ func runLibraryAttachCommand(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid position: %w", err)
 	}
 
-	if position < 1 {
-		return fmt.Errorf("position must be 1 or greater")
-	}
-
 	// Attach library checkpoint to journey
 	checkpoint, err := base.Client.AttachLibraryCheckpoint(journeyID, libraryCheckpointID, position)
 	if err != nil {
@@ -327,10 +419,6 @@ func runLibraryMoveStepCommand(cmd *cobra.Command, args []string) error {
 	position, err := strconv.Atoi(args[2])
 	if err != nil {
 		return fmt.Errorf("invalid position: %w", err)
-	}
-
-	if position < 1 {
-		return fmt.Errorf("position must be 1 or greater")
 	}
 
 	// Move the step

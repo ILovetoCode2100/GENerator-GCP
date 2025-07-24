@@ -14,6 +14,13 @@ func (c *Client) createStepWithCustomBodyContext(ctx context.Context, checkpoint
 		"parsedStep":   parsedStepBody,
 	}
 
+	// Debug logging for scroll commands
+	if action, ok := parsedStepBody["action"].(string); ok && action == "SCROLL" {
+		if c.config != nil && c.config.Output.Verbose {
+			fmt.Printf("DEBUG: Scroll step payload: %+v\n", body)
+		}
+	}
+
 	// Try multiple response formats as the API might return different structures
 	var response struct {
 		Item struct {

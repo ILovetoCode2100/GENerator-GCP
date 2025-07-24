@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
@@ -114,8 +115,12 @@ var browserConfigs = map[string]browserConfig{
 		},
 		requiredArgs: 1,
 		buildMeta: func(args []string, flags map[string]interface{}) map[string]interface{} {
+			selector := ""
+			if len(args) > 0 {
+				selector = args[0]
+			}
 			return map[string]interface{}{
-				"selector":     args[0],
+				"selector":     selector,
 				"smooth":       flags["smooth"],
 				"scrollToView": flags["into-view"],
 				"block":        flags["block"],
@@ -142,10 +147,14 @@ var browserConfigs = map[string]browserConfig{
 		},
 		requiredArgs: 0, // Can use flags or positional arg
 		buildMeta: func(args []string, flags map[string]interface{}) map[string]interface{} {
+			// If coordinates weren't parsed from args, use flag defaults
+			x, _ := flags["x"].(int)
+			y, _ := flags["y"].(int)
+			smooth, _ := flags["smooth"].(bool)
 			return map[string]interface{}{
-				"x":      flags["x"],
-				"y":      flags["y"],
-				"smooth": flags["smooth"],
+				"x":      x,
+				"y":      y,
+				"smooth": smooth,
 			}
 		},
 		flags: []browserFlagConfig{
@@ -167,10 +176,14 @@ var browserConfigs = map[string]browserConfig{
 		},
 		requiredArgs: 0, // Can use flags or positional arg
 		buildMeta: func(args []string, flags map[string]interface{}) map[string]interface{} {
+			// If coordinates weren't parsed from args, use flag defaults
+			x, _ := flags["x"].(int)
+			y, _ := flags["y"].(int)
+			smooth, _ := flags["smooth"].(bool)
 			return map[string]interface{}{
-				"x":      flags["x"],
-				"y":      flags["y"],
-				"smooth": flags["smooth"],
+				"x":      x,
+				"y":      y,
+				"smooth": smooth,
 			}
 		},
 		flags: []browserFlagConfig{
@@ -512,16 +525,50 @@ Examples:
 		}
 	}
 
-	// Validate args based on operation
-	if config.requiredArgs > 0 {
-		cmd.Args = cobra.RangeArgs(config.requiredArgs, config.requiredArgs+2) // +2 for optional checkpoint and position
-	} else {
-		cmd.Args = cobra.MaximumNArgs(2) // Only optional checkpoint and position
-	}
+	// Set custom Args validation based on operation
+	cmd.Args = func(cmd *cobra.Command, args []string) error {
+		// Special handling for scroll commands that accept coordinate arguments
+		if operation == "scroll-position" || operation == "scroll-by" {
+			if len(args) > 3 {
+				return fmt.Errorf("too many arguments. Usage: %s", config.usage)
+			}
+			return nil
+		}
 
-	// Special handling for scroll commands that accept coordinate arguments
-	if operation == "scroll-position" || operation == "scroll-by" {
-		cmd.Args = cobra.RangeArgs(0, 3) // Can have coordinate arg + checkpoint + position
+		// For commands with required arguments
+		if config.requiredArgs > 0 {
+			minArgs := config.requiredArgs
+			maxArgs := config.requiredArgs + 2 // +2 for optional checkpoint and position
+
+			if len(args) < minArgs {
+				// Provide specific error messages based on the operation
+				switch operation {
+				case "to":
+					return fmt.Errorf("URL is required. Example: api-cli step-navigate to https://example.com")
+				case "scroll-element":
+					return fmt.Errorf("selector is required. Example: api-cli step-navigate scroll-element \"#target-section\"")
+				case "resize":
+					return fmt.Errorf("size is required in WIDTHxHEIGHT format. Example: api-cli step-window resize 1024x768")
+				case "index":
+					return fmt.Errorf("tab index is required. Example: api-cli step-window switch tab index 0")
+				case "iframe":
+					return fmt.Errorf("iframe selector is required. Example: api-cli step-window switch iframe \"#payment-frame\"")
+				default:
+					return fmt.Errorf("missing required argument. Usage: %s", config.usage)
+				}
+			}
+
+			if len(args) > maxArgs {
+				return fmt.Errorf("too many arguments. Usage: %s", config.usage)
+			}
+		} else {
+			// For commands with no required arguments (only optional checkpoint and position)
+			if len(args) > 2 {
+				return fmt.Errorf("too many arguments. Usage: %s", config.usage)
+			}
+		}
+
+		return nil
 	}
 
 	return cmd
@@ -568,7 +615,16 @@ func (bc *BrowserCommand) Execute(cmd *cobra.Command, args []string, config brow
 
 	// Special handling for scroll commands with coordinate arguments
 	if bc.operation == "scroll-position" || bc.operation == "scroll-by" {
+		// Debug: log original args
+		if cfg.Output.Verbose {
+			fmt.Printf("Debug: Original args before parseCoordinateArgs: %v\n", args)
+			fmt.Printf("Debug: Flags before parseCoordinateArgs: %v\n", flags)
+		}
 		args = bc.parseCoordinateArgs(args, flags)
+		if cfg.Output.Verbose {
+			fmt.Printf("Debug: Args after parseCoordinateArgs: %v\n", args)
+			fmt.Printf("Debug: Flags after parseCoordinateArgs: %v\n", flags)
+		}
 	}
 
 	// Resolve checkpoint and position
@@ -577,9 +633,18 @@ func (bc *BrowserCommand) Execute(cmd *cobra.Command, args []string, config brow
 		return fmt.Errorf("failed to resolve checkpoint and position: %w", err)
 	}
 
+	if cfg.Output.Verbose {
+		fmt.Printf("Debug: Remaining args after ResolveCheckpointAndPosition: %v\n", remainingArgs)
+	}
+
 	// Validate we have the required number of arguments
 	if len(remainingArgs) < config.requiredArgs {
 		return fmt.Errorf("expected %d arguments, got %d - usage: %s", config.requiredArgs, len(remainingArgs), config.usage)
+	}
+
+	// Debug logging for troubleshooting
+	if os.Getenv("DEBUG") == "true" {
+		fmt.Fprintf(os.Stderr, "DEBUG: operation=%s, remainingArgs=%v, flags=%v\n", bc.operation, remainingArgs, flags)
 	}
 
 	// Additional validation for specific operations
@@ -599,7 +664,7 @@ func (bc *BrowserCommand) Execute(cmd *cobra.Command, args []string, config brow
 	// Format and output the result
 	output, err := bc.FormatOutput(stepResult, bc.OutputFormat)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to format %s step output: %w", config.stepType, err)
 	}
 
 	fmt.Print(output)
@@ -608,17 +673,37 @@ func (bc *BrowserCommand) Execute(cmd *cobra.Command, args []string, config brow
 
 // parseCoordinateArgs handles coordinate parsing for scroll-position and scroll-by commands
 func (bc *BrowserCommand) parseCoordinateArgs(args []string, flags map[string]interface{}) []string {
-	if len(args) > 0 && strings.Contains(args[0], ",") {
-		coords := strings.Split(args[0], ",")
-		if len(coords) == 2 {
-			if xVal, err := strconv.Atoi(strings.TrimSpace(coords[0])); err == nil {
-				flags["x"] = xVal
+	// We need to find and parse coordinate arguments regardless of position
+	// They could be at args[0] (modern format) or args[1] (legacy format with checkpoint ID)
+	for i, arg := range args {
+		// Skip if this looks like a checkpoint ID (cp_XXXXX or just numeric without comma)
+		if strings.HasPrefix(arg, "cp_") || (IsNumeric(arg) && !strings.Contains(arg, ",")) {
+			continue
+		}
+
+		// Skip if this is the last arg and could be a position
+		if i == len(args)-1 && IsNumeric(arg) {
+			continue
+		}
+
+		// Check if it contains a comma (coordinate format)
+		if strings.Contains(arg, ",") {
+			coords := strings.Split(arg, ",")
+			if len(coords) == 2 {
+				if xVal, err := strconv.Atoi(strings.TrimSpace(coords[0])); err == nil {
+					flags["x"] = xVal
+				}
+				if yVal, err := strconv.Atoi(strings.TrimSpace(coords[1])); err == nil {
+					flags["y"] = yVal
+				}
+				// Remove this coordinate argument from args
+				newArgs := make([]string, 0, len(args)-1)
+				newArgs = append(newArgs, args[:i]...)
+				if i+1 < len(args) {
+					newArgs = append(newArgs, args[i+1:]...)
+				}
+				return newArgs
 			}
-			if yVal, err := strconv.Atoi(strings.TrimSpace(coords[1])); err == nil {
-				flags["y"] = yVal
-			}
-			// Remove the coordinate argument
-			return append(args[:0], args[1:]...)
 		}
 	}
 	return args

@@ -4,9 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"os"
-	"strconv"
+	"strings"
 
 	"github.com/marklovelady/api-cli-generator/pkg/api-cli/client"
 	"github.com/spf13/cobra"
@@ -31,15 +30,6 @@ func formatOutput(format string, data interface{}) error {
 		// Human format is handled by the caller
 		return nil
 	}
-}
-
-// Common ID parsing helper
-func parseID(idStr string, idType string) (int, error) {
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		return 0, fmt.Errorf("invalid %s ID: %w", idType, err)
-	}
-	return id, nil
 }
 
 // Common API error handling helper
@@ -69,28 +59,6 @@ func handleAPIError(err error, operation string) error {
 	return fmt.Errorf("failed to %s: %w", operation, err)
 }
 
-// Helper function to wrap API calls with context support
-func callWithContext[T any](ctx context.Context, apiCall func() (T, error)) (T, error) {
-	type result struct {
-		value T
-		err   error
-	}
-	resultChan := make(chan result, 1)
-
-	go func() {
-		val, err := apiCall()
-		resultChan <- result{value: val, err: err}
-	}()
-
-	select {
-	case res := <-resultChan:
-		return res.value, res.err
-	case <-ctx.Done():
-		var zero T
-		return zero, ctx.Err()
-	}
-}
-
 // CREATE PROJECT command
 func newCreateProjectCmd() *cobra.Command {
 	var description string
@@ -104,9 +72,17 @@ Example:
   api-cli create-project "My Test Project"
   api-cli create-project "My Test Project" --description "Project for testing"
   api-cli create-project "My Test Project" -o json`,
-		Args: cobra.ExactArgs(1),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 1 {
+				return fmt.Errorf("project name is required\n\nExample:\n  api-cli create-project \"My Test Project\"")
+			}
+			if strings.TrimSpace(args[0]) == "" {
+				return fmt.Errorf("project name cannot be empty")
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			projectName := args[0]
+			projectName := strings.TrimSpace(args[0])
 
 			ctx, cancel := CommandContext()
 			defer cancel()
@@ -167,13 +143,28 @@ Example:
   api-cli create-goal 123 "My Test Goal"
   api-cli create-goal 123 "My Test Goal" --url "https://example.com"
   api-cli create-goal 123 "My Test Goal" -o json`,
-		Args: cobra.ExactArgs(2),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 2 {
+				return fmt.Errorf("requires exactly 2 arguments: PROJECT_ID NAME\n\nExample:\n  api-cli create-goal 123 \"My Test Goal\"")
+			}
+			if strings.TrimSpace(args[1]) == "" {
+				return fmt.Errorf("goal name cannot be empty")
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			projectID, err := parseID(args[0], "project")
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to parse project ID '%s': %w", args[0], err)
 			}
-			goalName := args[1]
+			goalName := strings.TrimSpace(args[1])
+
+			// Validate URL if provided
+			if url != "" {
+				if err := ValidateURL(url); err != nil {
+					return fmt.Errorf("invalid URL: %w\n\nURL must start with http:// or https://", err)
+				}
+			}
 
 			apiClient := client.NewClient(cfg)
 
@@ -233,17 +224,25 @@ func newCreateJourneyCmd() *cobra.Command {
 Example:
   api-cli create-journey 13776 43802 "My Test Journey"
   api-cli create-journey 13776 43802 "My Test Journey" -o json`,
-		Args: cobra.ExactArgs(3),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 3 {
+				return fmt.Errorf("requires exactly 3 arguments: GOAL_ID SNAPSHOT_ID NAME\n\nExample:\n  api-cli create-journey 13776 43802 \"My Test Journey\"")
+			}
+			if strings.TrimSpace(args[2]) == "" {
+				return fmt.Errorf("journey name cannot be empty")
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			goalID, err := parseID(args[0], "goal")
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to parse goal ID '%s': %w", args[0], err)
 			}
 			snapshotID, err := parseID(args[1], "snapshot")
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to parse snapshot ID '%s': %w", args[1], err)
 			}
-			journeyName := args[2]
+			journeyName := strings.TrimSpace(args[2])
 
 			apiClient := client.NewClient(cfg)
 
@@ -302,19 +301,27 @@ Example:
   api-cli create-checkpoint 608038 13776 43802 "Login Test"
   api-cli create-checkpoint 608038 13776 43802 "Checkout Test" --position 3
   api-cli create-checkpoint 608038 13776 43802 "Payment Test" -o json`,
-		Args: cobra.ExactArgs(4),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 4 {
+				return fmt.Errorf("requires exactly 4 arguments: JOURNEY_ID GOAL_ID SNAPSHOT_ID NAME\n\nExample:\n  api-cli create-checkpoint 608038 13776 43802 \"Login Test\"")
+			}
+			if strings.TrimSpace(args[3]) == "" {
+				return fmt.Errorf("checkpoint name cannot be empty")
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			journeyID, err := parseID(args[0], "journey")
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to parse journey ID '%s': %w", args[0], err)
 			}
 			goalID, err := parseID(args[1], "goal")
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to parse goal ID '%s': %w", args[1], err)
 			}
 			snapshotID, err := parseID(args[2], "snapshot")
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to parse snapshot ID '%s': %w", args[2], err)
 			}
 			checkpointName := args[3]
 
@@ -397,15 +404,24 @@ func newUpdateJourneyCmd() *cobra.Command {
 Example:
   api-cli update-journey 12345 --name "Updated Journey Name"
   api-cli update-journey 12345 --name "New Name" -o json`,
-		Args: cobra.ExactArgs(1),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 1 {
+				return fmt.Errorf("requires exactly 1 argument: JOURNEY_ID\n\nExample:\n  api-cli update-journey 12345 --name \"Updated Journey Name\"")
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Validate name is provided and not empty
 			if name == "" {
 				return fmt.Errorf("--name flag is required")
+			}
+			if strings.TrimSpace(name) == "" {
+				return fmt.Errorf("journey name cannot be empty")
 			}
 
 			journeyID, err := parseID(args[0], "journey")
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to parse journey ID '%s': %w", args[0], err)
 			}
 
 			apiClient := client.NewClient(cfg)
@@ -490,10 +506,23 @@ Example:
   # Then update the navigation URL
   api-cli update-navigation 12345 "abc-def-123" --url "https://example.com"
   api-cli update-navigation 12345 "abc-def-123" --url "https://example.com" --new-tab`,
-		Args: cobra.ExactArgs(2),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 2 {
+				return fmt.Errorf("requires exactly 2 arguments: STEP_ID CANONICAL_ID\n\nExample:\n  api-cli update-navigation 12345 \"abc-def-123\" --url \"https://example.com\"")
+			}
+			if strings.TrimSpace(args[1]) == "" {
+				return fmt.Errorf("canonical ID cannot be empty")
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if urlFlag == "" {
 				return fmt.Errorf("--url flag is required")
+			}
+
+			// Validate URL format
+			if err := ValidateURL(urlFlag); err != nil {
+				return fmt.Errorf("invalid URL: %w\n\nURL must start with http:// or https://", err)
 			}
 
 			stepID, err := parseID(args[0], "step")
@@ -501,19 +530,6 @@ Example:
 				return err
 			}
 			canonicalID := args[1]
-
-			if canonicalID == "" {
-				return fmt.Errorf("canonical ID cannot be empty")
-			}
-
-			// Validate URL format
-			parsedURL, err := url.Parse(urlFlag)
-			if err != nil {
-				return fmt.Errorf("invalid URL format: %w", err)
-			}
-			if parsedURL.Scheme == "" || parsedURL.Host == "" {
-				return fmt.Errorf("URL must include scheme (http/https) and host")
-			}
 
 			apiClient := client.NewClient(cfg)
 
@@ -602,7 +618,7 @@ Example:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			stepID, err := parseID(args[0], "step")
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to parse step ID '%s': %w", args[0], err)
 			}
 
 			apiClient := client.NewClient(cfg)
