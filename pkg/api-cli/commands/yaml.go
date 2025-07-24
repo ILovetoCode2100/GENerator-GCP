@@ -454,14 +454,43 @@ func generateFromTemplate(template *ai.Template, prompt string) string {
 
 func generateCustomTest(prompt string) string {
 	// In real implementation, would use AI service
-	// For now, return a basic template
+	// For now, use template matching and keyword analysis
 
+	promptLower := strings.ToLower(prompt)
+
+	// User registration test
+	if strings.Contains(promptLower, "registration") || strings.Contains(promptLower, "register") || strings.Contains(promptLower, "sign up") {
+		return generateRegistrationTest(prompt)
+	}
+
+	// Login test
+	if strings.Contains(promptLower, "login") || strings.Contains(promptLower, "sign in") {
+		return generateLoginTest(prompt)
+	}
+
+	// Shopping/purchase test
+	if strings.Contains(promptLower, "shop") || strings.Contains(promptLower, "purchase") || strings.Contains(promptLower, "buy") {
+		return generateShoppingTest(prompt)
+	}
+
+	// Form test
+	if strings.Contains(promptLower, "form") {
+		return generateFormTest(prompt)
+	}
+
+	// Search test
+	if strings.Contains(promptLower, "search") {
+		return generateSearchTest(prompt)
+	}
+
+	// Default template
 	return fmt.Sprintf(`test: %s
 nav: /
 do:
-  # TODO: Add test steps based on:
-  # %s
+  # Generated test steps for: %s
+  - wait: body
   - c: "Start"
+  - wait: 1000
   - ch: "Success"
 `, prompt, prompt)
 }
@@ -478,6 +507,135 @@ func convertStepsToYAML(steps []interface{}) interface{} {
 			{"ch": "Success"},
 		},
 	}
+}
+
+func generateRegistrationTest(prompt string) string {
+	return `test: User Registration Flow
+nav: https://example.com/register
+data:
+  email: test_{{timestamp}}@example.com
+  password: SecurePass123!
+  name: Test User
+
+do:
+  # Fill registration form
+  - t: {#email: $email}
+  - t: {#password: $password}
+  - t: {#confirm-password: $password}
+  - t: {#name: $name}
+
+  # Accept terms if present
+  - c: "#terms"
+
+  # Submit
+  - c: "Sign Up"
+
+  # Wait and verify
+  - wait: .dashboard
+  - ch: Welcome
+  - ch: $email
+
+  # Store user ID
+  - store: {.user-id: userId}
+  - note: "Registered as: {{email}} (ID: {{userId}})"
+`
+}
+
+func generateLoginTest(prompt string) string {
+	return `test: User Login Flow
+nav: https://example.com/login
+data:
+  username: test@example.com
+  password: SecurePass123!
+
+do:
+  # Enter credentials
+  - t: {#email: $username}
+  - t: {#password: $password}
+
+  # Submit
+  - c: "Sign In"
+
+  # Verify login
+  - wait: .dashboard
+  - ch: Welcome
+  - ch: $username
+`
+}
+
+func generateShoppingTest(prompt string) string {
+	return `test: Shopping Cart Flow
+nav: https://shop.example.com
+data:
+  product: "Wireless Headphones"
+  quantity: 2
+
+do:
+  # Search for product
+  - c: "#search"
+  - t: $product
+  - k: Enter
+
+  # Select product
+  - wait: .products
+  - c: $product
+
+  # Add to cart
+  - wait: .product-page
+  - c: "Add to Cart"
+
+  # View cart
+  - wait: 1000
+  - c: "Cart"
+
+  # Checkout
+  - wait: .cart
+  - c: "Checkout"
+  - ch: $product
+  - ch: "Total"
+`
+}
+
+func generateFormTest(prompt string) string {
+	return `test: Form Submission
+nav: /contact
+
+do:
+  # Wait for form
+  - wait: form, .contact-form
+
+  # Fill form fields
+  - t: {#name, input[name="name"]: Test User}
+  - t: {#email, input[type="email"]: test@example.com}
+  - t: {#message, textarea: This is a test message}
+
+  # Submit form
+  - c: Submit, Send
+
+  # Verify submission
+  - wait: .success-message, .thank-you
+  - ch: Thank you, Success, Received
+`
+}
+
+func generateSearchTest(prompt string) string {
+	return `test: Search Functionality
+nav: https://example.com
+data:
+  query: "test product"
+
+do:
+  # Search
+  - c: "#search"
+  - t: $query
+  - k: Enter
+
+  # Verify results
+  - wait: .results
+  - ch: $query
+  - store: {.result-count: count}
+  - note: "Found {{count}} results for: {{query}}"
+`
 }
 
 func yamlMarshal(v interface{}) ([]byte, error) {
