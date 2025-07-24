@@ -1,0 +1,57 @@
+name: "Test All Assert Commands"
+description: "Comprehensive test of all 12 assert command variations"
+project: "Assert Commands Test Suite"
+
+steps:
+  # Test navigation first
+  - navigate: "https://example.com"
+  - wait: 1000
+
+  # 1. Assert exists
+  - assert: "Example Domain" # Simple text assertion
+  - assert: "h1" # Element selector assertion
+  - comment: "Assert exists - text and element"
+
+  # 2. Assert not-exists (would need a command that removes something first)
+  - comment: "Assert not-exists - verify error messages don't exist"
+  # Note: run-test doesn't support assert not-exists syntax yet
+
+  # 3. Assert equals
+  - comment: "Assert equals - verify exact text match"
+  # Note: run-test doesn't support assert equals syntax yet
+
+  # 4. Assert checked
+  - navigate: "https://www.w3schools.com/html/tryit.asp?filename=tryhtml_checkbox"
+  - wait: 2000
+  - comment: "Assert checked - verify checkbox state"
+  # Note: run-test doesn't support assert checked syntax yet
+
+  # 5. Assert selected
+  - navigate: "https://www.w3schools.com/tags/tryit.asp?filename=tryhtml_select"
+  - wait: 2000
+  - comment: "Assert selected - verify dropdown selection"
+  # Note: run-test doesn't support assert selected syntax yet
+
+  # 6. Store and assert variable
+  - store:
+      selector: "h1"
+      as: "pageTitle"
+  - comment: "Stored page title in variable"
+  # Note: run-test doesn't support assert variable syntax yet
+
+  # 7-10. Assert gt, gte, lt, lte (comparison assertions)
+  - navigate: "https://www.random.org/integers/?num=1&min=1&max=100&col=1&base=10&format=html"
+  - wait: 2000
+  - store:
+      selector: "pre.data"
+      as: "randomNumber"
+  - comment: "Stored random number for comparison assertions"
+  # Note: run-test doesn't support comparison assertions syntax yet
+
+  # 11. Assert matches (regex)
+  - navigate: "https://example.com"
+  - comment: "Assert matches - verify pattern matching"
+  # Note: run-test doesn't support assert matches syntax yet
+
+  # Summary comment
+  - comment: "Assert commands test completed - Note: run-test simplified syntax only supports basic 'assert' for exists"

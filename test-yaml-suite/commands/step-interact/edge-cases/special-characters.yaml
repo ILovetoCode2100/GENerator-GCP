@@ -1,0 +1,134 @@
+# Edge Case: Special Characters and Unicode
+# Tests interaction commands with special characters, unicode, and edge inputs
+
+name: "Special Characters Edge Case Test"
+description: "Tests handling of special characters, unicode, and unusual inputs"
+
+config:
+  continue_on_error: false
+  output_format: "json"
+
+steps:
+  # Special characters in text input
+  - interact:
+      action: "write"
+      target: "input#special-chars"
+      text: '!@#$%^&*()_+-=[]{}|;'':",./<>?'
+
+  - interact:
+      action: "write"
+      target: "input#quotes"
+      text: 'Single '' and double " quotes'
+
+  - interact:
+      action: "write"
+      target: "input#backslash"
+      text: "C:\\Users\\Test\\Path"
+
+  - interact:
+      action: "write"
+      target: "input#newlines"
+      text: "Line 1\nLine 2\nLine 3"
+
+  # Unicode text input
+  - interact:
+      action: "write"
+      target: "input#unicode"
+      text: "Hello 世界 🌍 مرحبا мир"
+
+  - interact:
+      action: "write"
+      target: "input#emoji"
+      text: "😀😃😄😁😆😅🤣😂"
+
+  - interact:
+      action: "write"
+      target: "input#rtl"
+      text: "العربية עברית فارسی"
+
+  # Special characters in selectors
+  - interact:
+      action: "click"
+      target: "button[data-test='special:button']"
+
+  - interact:
+      action: "click"
+      target: "div[class*='test-class']"
+
+  - interact:
+      action: "click"
+      target: "input[name='user[email]']"
+
+  # Empty and whitespace inputs
+  - interact:
+      action: "write"
+      target: "input#empty"
+      text: ""
+
+  - interact:
+      action: "write"
+      target: "input#spaces"
+      text: "   "
+
+  - interact:
+      action: "write"
+      target: "input#tabs"
+      text: "\t\t\t"
+
+  # Very long text input
+  - interact:
+      action: "write"
+      target: "textarea#long-text"
+      text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. This text continues for a very long time to test the limits of text input handling in the system."
+
+  # HTML and script injection attempts (should be handled safely)
+  - interact:
+      action: "write"
+      target: "input#html-test"
+      text: "<script>alert('test')</script>"
+
+  - interact:
+      action: "write"
+      target: "input#sql-test"
+      text: "'; DROP TABLE users; --"
+
+  # Special keyboard keys
+  - interact:
+      action: "key"
+      key: "F1"
+
+  - interact:
+      action: "key"
+      key: "PageDown"
+
+  - interact:
+      action: "key"
+      key: "Home"
+
+  # Zero and negative values in mouse operations
+  - interact:
+      action: "mouse"
+      operation: "move"
+      position:
+        x: 0
+        y: 0
+
+  - interact:
+      action: "mouse"
+      operation: "move-by"
+      offset:
+        x: -50
+        y: -100
+
+  # Special characters in variable names
+  - data:
+      action: "store"
+      type: "literal"
+      value: "test value"
+      variable: "special_var_123"
+
+  - data:
+      action: "store"
+      type: "literal"
+      value: "another value"
+      variable: "UPPERCASE_VAR"

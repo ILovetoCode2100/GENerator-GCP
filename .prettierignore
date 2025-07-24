@@ -1,0 +1,6 @@
+# Ignore YAML test layer examples - they use custom compact syntax
+pkg/api-cli/yaml-layer/examples/
+test-yaml-suite/
+test-yaml-files/
+*.yaml
+*.yml

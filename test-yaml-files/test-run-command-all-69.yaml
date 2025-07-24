@@ -1,0 +1,202 @@
+name: "Complete Run-Test Command Test - All 69 Commands"
+description: "Test file demonstrating all 69 Virtuoso CLI commands in simplified syntax"
+infrastructure:
+  organization_id: "2242"
+  project:
+    name: "Enhanced CLI Test 20250723_132003_a36234"
+    description: "Testing all 69 commands through run-test"
+  starting_url: "https://example.com"
+steps:
+  # ========== NAVIGATION COMMANDS (10 types) ==========
+  - navigate: "https://example.com"
+  - scroll:
+      to: "top"
+  - scroll:
+      to: "bottom"
+  - scroll:
+      to: "h1"
+  - scroll:
+      position: "100,200"
+  - scroll:
+      by: "0,300"
+  - scroll:
+      direction: "up"
+  - scroll:
+      direction: "down"
+  - navigate:
+      url: "https://example.com/page2"
+      new_tab: true
+  - scroll: "div.content" # Simple element scroll
+
+  # ========== INTERACTION COMMANDS (15 types) ==========
+  - click: "button.submit"
+  - double-click: "div.card"
+  - right-click: "div.menu"
+  - hover: "a.tooltip"
+  - write:
+      selector: "input#email"
+      text: "test@example.com"
+  - key: "Enter"
+  - mouse:
+      action: "move-to"
+      selector: "nav.menu"
+  - mouse:
+      action: "move-by"
+      offset: "50,100"
+  - mouse:
+      action: "move"
+      position: "200,300"
+  - mouse:
+      action: "down"
+  - mouse:
+      action: "up"
+  - mouse:
+      action: "enter"
+  - select:
+      selector: "select#country"
+      option: "United States"
+  - select:
+      selector: "select#language"
+      index: 0
+  - select:
+      selector: "select#timezone"
+      last: true
+
+  # ========== ASSERTION COMMANDS (12 types) ==========
+  - assert: "h1" # Simple exists
+  - assert:
+      type: "not-exists"
+      selector: "div.error"
+  - assert:
+      type: "equals"
+      selector: "h1"
+      value: "Welcome"
+  - assert:
+      type: "not-equals"
+      selector: "span.status"
+      value: "Error"
+  - assert:
+      type: "checked"
+      selector: "input[type=checkbox]"
+  - assert:
+      type: "selected"
+      selector: "option[value=us]"
+  - assert:
+      type: "gt"
+      selector: "span.count"
+      value: "10"
+  - assert:
+      type: "gte"
+      selector: "span.total"
+      value: "100"
+  - assert:
+      type: "lt"
+      selector: "span.price"
+      value: "1000"
+  - assert:
+      type: "lte"
+      selector: "span.quantity"
+      value: "50"
+  - assert:
+      type: "matches"
+      selector: "div.email"
+      pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+  - assert:
+      type: "variable"
+      variable: "userName"
+      value: "testuser"
+
+  # ========== WINDOW COMMANDS (7 types) ==========
+  - window:
+      action: "resize"
+      size: "1024x768"
+  - window:
+      action: "maximize"
+  - window:
+      action: "switch"
+      to: "next"
+  - window:
+      action: "switch"
+      to: "prev"
+  - window:
+      action: "switch"
+      to: "tab-0"
+  - window:
+      action: "switch"
+      iframe: "iframe#content"
+  - window:
+      action: "switch"
+      parent: true
+
+  # ========== DATA COMMANDS (6 types) ==========
+  - store:
+      selector: "h1"
+      as: "pageTitle"
+  - store:
+      type: "attribute"
+      selector: "a.link"
+      attribute: "href"
+      as: "linkUrl"
+  - store:
+      type: "literal"
+      value: "test123"
+      as: "myVariable"
+  - cookie:
+      action: "create"
+      name: "sessionId"
+      value: "abc123"
+  - cookie:
+      action: "delete"
+      name: "sessionId"
+  - cookie:
+      action: "clear"
+
+  # ========== WAIT COMMANDS (2 types) ==========
+  - wait: "div.loaded" # Wait for element
+  - wait: 2000 # Wait time in milliseconds
+
+  # ========== DIALOG COMMANDS (5 types) ==========
+  - alert: "dismiss"
+  - dialog:
+      type: "confirm"
+      action: "accept"
+  - dialog:
+      type: "confirm"
+      action: "reject"
+  - dialog:
+      type: "prompt"
+      text: "User Input Text"
+  - dialog:
+      type: "prompt"
+      action: "reject"
+
+  # ========== FILE COMMANDS (2 types) ==========
+  - file:
+      selector: "input[type=file]"
+      url: "https://example.com/test.pdf"
+  - upload:
+      selector: "input.file-upload"
+      url: "https://example.com/document.doc"
+
+  # ========== MISC COMMANDS (2 types) ==========
+  - comment: "This is a test comment for verification"
+  - execute: "return document.title;"
+
+  # Additional variations to demonstrate flexibility
+  - write:
+      into: "textarea#notes"
+      value: "Multiple ways to write text"
+  - assert:
+      element: "button.primary"
+      equals: "Continue"
+  - store:
+      from: "span.user"
+      in: "currentUser"
+      type: "text"
+  - select:
+      from: "select#state"
+      text: "California"
+  - wait:
+      for: "img.loaded"
+  - javascript: "console.log('Alternative JS syntax');"
+# Total: 69 command variations demonstrated

@@ -1,0 +1,60 @@
+# Global Test Configuration
+# This file contains shared configuration for all test cases
+
+test_environment:
+  base_url: "https://example.com"
+  timeout: 30000
+  retry_count: 3
+  continue_on_error: false
+  output_format: "json"
+
+# Test user credentials
+test_users:
+  - &default_user
+    username: "test_user@example.com"
+    password: "TestPassword123!"
+  - &admin_user
+    username: "admin@example.com"
+    password: "AdminPass456!"
+
+# Common selectors
+selectors: &common_selectors
+  login_form: "#login-form"
+  username_field: "input[name='username']"
+  password_field: "input[name='password']"
+  submit_button: "button[type='submit']"
+  error_message: ".error-message"
+  success_message: ".success-message"
+  navigation_menu: "nav.main-menu"
+  search_box: "input#search"
+  results_container: "div.results"
+
+# Common test data
+test_data: &test_data
+  valid_email: "test@example.com"
+  invalid_email: "not-an-email"
+  long_string: "This is a very long string that exceeds normal input limits and should be used for boundary testing of text fields to ensure they handle large inputs gracefully without breaking the application or causing performance issues"
+  special_chars: '!@#$%^&*()_+-=[]{}|;'':",./<>?'
+  unicode_text: "Hello 世界 🌍 مرحبا мир"
+  sql_injection: "'; DROP TABLE users; --"
+  xss_attempt: "<script>alert('xss')</script>"
+
+# Timing configurations
+timings:
+  short_wait: 1000
+  medium_wait: 3000
+  long_wait: 10000
+  animation_delay: 500
+
+# Browser configurations
+browser_settings:
+  default_viewport: "1366x768"
+  mobile_viewport: "375x667"
+  tablet_viewport: "768x1024"
+  desktop_viewport: "1920x1080"
+
+# API rate limits
+rate_limits:
+  max_steps_per_checkpoint: 1000
+  max_checkpoints_per_journey: 50
+  max_journeys_per_goal: 20

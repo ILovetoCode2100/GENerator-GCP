@@ -1,0 +1,82 @@
+name: "Comprehensive Test - All Supported Commands"
+description: "A complete test using all commands supported by the simplified run-test syntax"
+project: "Comprehensive Test Suite"
+config:
+  continue_on_error: true # Continue even if a step fails
+
+steps:
+  # Start with navigation
+  - navigate: "https://www.google.com"
+  - wait: 2000
+  - assert: "Google"
+  - comment: "Successfully navigated to Google"
+
+  # Test search interaction
+  - write:
+      selector: "textarea[name='q']"
+      text: "Virtuoso test automation"
+  - wait: 500
+  - key: "Enter"
+  - wait: 3000
+  - assert: "results"
+  - comment: "Performed Google search"
+
+  # Store search results
+  - store:
+      selector: "h3"
+      as: "firstResult"
+  - comment: "Stored first search result"
+
+  # Navigate to another site
+  - navigate: "https://example.com"
+  - wait: 1000
+  - assert: "Example Domain"
+
+  # Test hover
+  - hover: "h1"
+  - wait: 500
+  - comment: "Hovered over heading"
+
+  # Test scrolling
+  - navigate: "https://en.wikipedia.org/wiki/Test_automation"
+  - wait: 2000
+  # Note: Simplified syntax doesn't support scroll with 'to' parameter
+  - comment: "Scroll operations not fully supported in simplified syntax"
+
+  # Test form interaction
+  - navigate: "https://www.w3schools.com/html/tryit.asp?filename=tryhtml_form_text"
+  - wait: 2000
+  - write:
+      selector: "input[name='fname']"
+      text: "Test"
+  - write:
+      selector: "input[name='lname']"
+      text: "User"
+  - click: "input[type='submit']"
+  - wait: 1000
+  - comment: "Tested form submission"
+
+  # Test dropdown selection
+  - navigate: "https://www.w3schools.com/tags/tryit.asp?filename=tryhtml_select"
+  - wait: 2000
+  - select:
+      selector: "select"
+      option: "Saab"
+  - wait: 1000
+  - comment: "Selected dropdown option"
+
+  # Execute JavaScript
+  - execute: |
+      console.log('Test execution timestamp:', new Date().toISOString());
+      document.body.style.backgroundColor = '#f0f0f0';
+  - wait: 1000
+  - comment: "Executed JavaScript code"
+
+  # Final navigation and assertion
+  - navigate: "https://virtuoso.qa"
+  - wait: 3000
+  - assert: "Virtuoso"
+  - comment: "Test completed successfully!"
+
+  # Summary of what was tested
+  - comment: "Tested commands: navigate (5x), wait (13x), assert (4x), write (4x), click (1x), key (1x), hover (1x), store (1x), select (1x), execute (1x), comment (12x)"

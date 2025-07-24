@@ -1,0 +1,258 @@
+# Test: Assert Commands - Invalid Arguments
+metadata:
+  name: "Assert with Invalid Arguments"
+  description: "Test assertion commands with invalid arguments to ensure proper error handling"
+  tags: [assert, negative, error-handling]
+  category: step-assert
+  priority: high
+
+setup:
+  checkpoint_id: "${TEST_CHECKPOINT_ID}"
+  base_url: "${TEST_BASE_URL}"
+  expect_failures: true
+
+tests:
+  # Missing required arguments
+  - name: "Assert exists without selector"
+    description: "Missing required selector argument"
+    steps:
+      - command: step-navigate
+        action: to
+        args:
+          url: "${base_url}/test/simple"
+
+      - command: step-assert
+        action: exists
+        args: {}
+
+    expected:
+      success: false
+      error_type: "validation_error"
+      error_message_contains: "selector is required"
+
+  - name: "Assert equals without expected value"
+    description: "Missing expected value for comparison"
+    steps:
+      - command: step-assert
+        action: equals
+        args:
+          selector: "h1"
+          # missing: expected
+
+    expected:
+      success: false
+      error_type: "validation_error"
+
+  - name: "Assert GT without value"
+    description: "Missing comparison value"
+    steps:
+      - command: step-assert
+        action: gt
+        args:
+          selector: "span.number"
+          # missing: value
+
+    expected:
+      success: false
+      error_type: "validation_error"
+
+  # Invalid selector formats
+  - name: "Assert with malformed CSS selector"
+    description: "Invalid CSS selector syntax"
+    steps:
+      - command: step-assert
+        action: exists
+        args:
+          selector: "div[invalid[syntax]]"
+
+    expected:
+      success: false
+      error_type: "selector_error"
+      notes: "Should fail during selector parsing"
+
+  - name: "Assert with invalid XPath"
+    description: "Malformed XPath expression"
+    steps:
+      - command: step-assert
+        action: exists
+        args:
+          selector: "//div[[@invalid]]"
+
+    expected:
+      success: false
+      error_type: "xpath_error"
+
+  # Type mismatches
+  - name: "Assert numeric comparison with non-numeric value"
+    description: "GT assertion on non-numeric content"
+    steps:
+      - command: step-navigate
+        action: to
+        args:
+          url: "${base_url}/test/simple"
+
+      - command: step-assert
+        action: gt
+        args:
+          selector: "h1" # Contains text, not number
+          value: "5"
+
+    expected:
+      success: false
+      error_type: "type_error"
+      error_message_contains: "numeric comparison"
+
+  - name: "Assert LTE with invalid number format"
+    description: "Invalid number format for comparison"
+    steps:
+      - command: step-assert
+        action: lte
+        args:
+          selector: "span.price"
+          value: "not-a-number"
+
+    expected:
+      success: false
+      error_type: "type_error"
+
+  # Non-existent elements
+  - name: "Assert non-existent element exists"
+    description: "Element does not exist on page"
+    steps:
+      - command: step-navigate
+        action: to
+        args:
+          url: "${base_url}/test/simple"
+
+      - command: step-assert
+        action: exists
+        args:
+          selector: "#this-id-does-not-exist"
+
+    expected:
+      success: false
+      error_type: "element_not_found"
+
+  - name: "Assert equals on missing element"
+    description: "Try to compare non-existent element"
+    steps:
+      - command: step-assert
+        action: equals
+        args:
+          selector: ".missing-class"
+          expected: "Some text"
+
+    expected:
+      success: false
+      error_type: "element_not_found"
+
+  # Invalid variable references
+  - name: "Assert undefined variable"
+    description: "Reference to variable that doesn't exist"
+    steps:
+      - command: step-assert
+        action: variable
+        args:
+          variable: "undefined_variable_name"
+          expected: "value"
+
+    expected:
+      success: false
+      error_type: "variable_not_found"
+
+  - name: "Assert variable with invalid name"
+    description: "Variable name with invalid characters"
+    steps:
+      - command: step-assert
+        action: variable
+        args:
+          variable: "invalid-variable-name!"
+          expected: "value"
+
+    expected:
+      success: false
+      error_type: "validation_error"
+
+  # Checkbox/Select specific errors
+  - name: "Assert checked on non-checkbox element"
+    description: "Use checked assertion on wrong element type"
+    steps:
+      - command: step-assert
+        action: checked
+        args:
+          selector: "div.not-a-checkbox"
+
+    expected:
+      success: false
+      error_type: "element_type_error"
+      error_message_contains: "not a checkbox"
+
+  - name: "Assert selected on non-option element"
+    description: "Use selected assertion on wrong element type"
+    steps:
+      - command: step-assert
+        action: selected
+        args:
+          selector: "button.not-an-option"
+
+    expected:
+      success: false
+      error_type: "element_type_error"
+
+  # Regex errors
+  - name: "Assert matches with invalid regex"
+    description: "Invalid regular expression pattern"
+    steps:
+      - command: step-assert
+        action: matches
+        args:
+          selector: "div.content"
+          pattern: "[invalid(regex"
+
+    expected:
+      success: false
+      error_type: "regex_error"
+      error_message_contains: "invalid regular expression"
+
+  # Timeout scenarios
+  - name: "Assert element that never appears"
+    description: "Element doesn't appear within timeout"
+    steps:
+      - command: step-navigate
+        action: to
+        args:
+          url: "${base_url}/test/slow?delay=60000"
+
+      - command: step-assert
+        action: exists
+        args:
+          selector: ".delayed-element"
+
+    expected:
+      success: false
+      error_type: "timeout_error"
+      notes: "Should timeout after configured wait time"
+
+  # Extra/unexpected arguments
+  - name: "Assert exists with extra arguments"
+    description: "Provide arguments that shouldn't exist"
+    steps:
+      - command: step-assert
+        action: exists
+        args:
+          selector: "h1"
+          unexpected_arg: "should not be here"
+          another_extra: 123
+
+    expected:
+      success: false
+      error_type: "validation_error"
+      notes: "Should reject unexpected arguments"
+
+validation:
+  - description: "All negative tests should fail with appropriate errors"
+    condition: "all_tests_fail"
+  - description: "Error messages should be descriptive"
+    condition: "error_messages_clear"
+  - description: "No crashes or panics"
+    condition: "graceful_failures"

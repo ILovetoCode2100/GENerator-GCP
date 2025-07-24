@@ -1,0 +1,325 @@
+# Test: Click Interaction Variations
+metadata:
+  name: "Click Command Variations"
+  description: "Test different click interactions including single, double, and right clicks"
+  tags: [interact, click, positive, smoke]
+  category: step-interact
+  command: click
+
+setup:
+  checkpoint_id: "${TEST_CHECKPOINT_ID}"
+  base_url: "${TEST_BASE_URL}"
+  imports:
+    - "../../../config/test-data.yaml"
+
+tests:
+  # Single click variations
+  - name: "Simple button click"
+    description: "Click a button by CSS selector"
+    steps:
+      - command: step-navigate
+        action: to
+        args:
+          url: "${base_url}/test/buttons"
+
+      - command: step-interact
+        action: click
+        args:
+          selector: "button.primary"
+
+      - command: step-assert
+        action: exists
+        args:
+          selector: ".click-result"
+
+    expected:
+      success: true
+      step_count: 3
+
+  - name: "Click element by text"
+    description: "Click element containing specific text"
+    steps:
+      - command: step-interact
+        action: click
+        args:
+          selector: "Click Me"
+
+      - command: step-assert
+        action: exists
+        args:
+          selector: ".clicked"
+
+    expected:
+      success: true
+
+  - name: "Click link by partial text"
+    description: "Click link with partial text match"
+    steps:
+      - command: step-interact
+        action: click
+        args:
+          selector: "Learn More"
+
+    expected:
+      success: true
+      notes: "Should match 'Learn More About Us' link"
+
+  # Double click tests
+  - name: "Double click element"
+    description: "Test double-click interaction"
+    steps:
+      - command: step-navigate
+        action: to
+        args:
+          url: "${base_url}/test/double-click"
+
+      - command: step-interact
+        action: double-click
+        args:
+          selector: "div.double-click-target"
+
+      - command: step-assert
+        action: exists
+        args:
+          selector: ".double-clicked"
+
+    expected:
+      success: true
+
+  - name: "Double click text selection"
+    description: "Double click to select word"
+    steps:
+      - command: step-interact
+        action: double-click
+        args:
+          selector: "p.text-content"
+
+      - command: step-misc
+        action: execute
+        args:
+          script: "return window.getSelection().toString();"
+          variable: "selected_text"
+
+      - command: step-assert
+        action: variable
+        args:
+          variable: "selected_text"
+          operator: "not-empty"
+
+    expected:
+      success: true
+
+  # Right click tests
+  - name: "Right click context menu"
+    description: "Test right-click to open context menu"
+    steps:
+      - command: step-navigate
+        action: to
+        args:
+          url: "${base_url}/test/context-menu"
+
+      - command: step-interact
+        action: right-click
+        args:
+          selector: "div.context-target"
+
+      - command: step-wait
+        action: element
+        args:
+          selector: ".context-menu"
+
+      - command: step-assert
+        action: exists
+        args:
+          selector: ".context-menu-item"
+
+    expected:
+      success: true
+
+  # Complex selectors
+  - name: "Click nested element"
+    description: "Click deeply nested element"
+    steps:
+      - command: step-interact
+        action: click
+        args:
+          selector: "div.container > ul > li:nth-child(3) > a"
+
+    expected:
+      success: true
+
+  - name: "Click element with attributes"
+    description: "Click using attribute selectors"
+    steps:
+      - command: step-interact
+        action: click
+        args:
+          selector: "button[data-action='submit'][type='button']"
+
+    expected:
+      success: true
+
+  # Dynamic elements
+  - name: "Click after element appears"
+    description: "Wait for element then click"
+    steps:
+      - command: step-navigate
+        action: to
+        args:
+          url: "${base_url}/test/dynamic"
+
+      - command: step-wait
+        action: element
+        args:
+          selector: "button.delayed-button"
+
+      - command: step-interact
+        action: click
+        args:
+          selector: "button.delayed-button"
+
+    expected:
+      success: true
+
+  # Click and hold (mouse down)
+  - name: "Mouse down on element"
+    description: "Press and hold mouse button"
+    steps:
+      - command: step-navigate
+        action: to
+        args:
+          url: "${base_url}/test/drag"
+
+      - command: step-interact
+        action: mouse
+        sub_action: down
+        args:
+          selector: "div.draggable"
+
+      - command: step-wait
+        action: time
+        args:
+          milliseconds: 500
+
+      - command: step-interact
+        action: mouse
+        sub_action: up
+
+      - command: step-assert
+        action: exists
+        args:
+          selector: ".mouse-held"
+
+    expected:
+      success: true
+
+  # Click coordinates
+  - name: "Click at specific coordinates"
+    description: "Click at x,y position"
+    steps:
+      - command: step-interact
+        action: mouse
+        sub_action: move-to
+        args:
+          coordinates: "500,300"
+
+      - command: step-interact
+        action: click
+        args:
+          selector: "body" # Click at current mouse position
+
+    expected:
+      success: true
+
+  # Hover then click
+  - name: "Hover before click"
+    description: "Hover to reveal element then click"
+    steps:
+      - command: step-navigate
+        action: to
+        args:
+          url: "${base_url}/test/hover-menu"
+
+      - command: step-interact
+        action: hover
+        args:
+          selector: "nav.menu-trigger"
+
+      - command: step-wait
+        action: element
+        args:
+          selector: ".dropdown-menu"
+
+      - command: step-interact
+        action: click
+        args:
+          selector: ".dropdown-item:first-child"
+
+    expected:
+      success: true
+
+  # Click with modifier keys
+  - name: "Ctrl+Click for new tab"
+    description: "Click with ctrl key pressed"
+    steps:
+      - command: step-interact
+        action: key
+        args:
+          key: "ctrl"
+          action: "down"
+
+      - command: step-interact
+        action: click
+        args:
+          selector: "a.external-link"
+
+      - command: step-interact
+        action: key
+        args:
+          key: "ctrl"
+          action: "up"
+
+    expected:
+      success: true
+      notes: "Should open link in new tab"
+
+  # Rapid clicks
+  - name: "Multiple rapid clicks"
+    description: "Click same element multiple times quickly"
+    steps:
+      - command: step-navigate
+        action: to
+        args:
+          url: "${base_url}/test/counter"
+
+      - command: step-interact
+        action: click
+        args:
+          selector: "button.increment"
+
+      - command: step-interact
+        action: click
+        args:
+          selector: "button.increment"
+
+      - command: step-interact
+        action: click
+        args:
+          selector: "button.increment"
+
+      - command: step-assert
+        action: equals
+        args:
+          selector: "span.count"
+          expected: "3"
+
+    expected:
+      success: true
+
+validation:
+  - description: "All click variations should work"
+    condition: "all_tests_pass"
+  - description: "Click events should be triggered"
+    condition: "events_fired"
+  - description: "No unintended side effects"
+    condition: "no_extra_clicks"

@@ -1,0 +1,192 @@
+# Test: Assert Element Exists - Positive Cases
+metadata:
+  name: "Assert Element Exists"
+  description: "Validate element existence assertion with various selectors"
+  tags: [assert, positive, smoke]
+  category: step-assert
+  command: exists
+
+setup:
+  checkpoint_id: "${TEST_CHECKPOINT_ID}"
+  base_url: "${TEST_BASE_URL}"
+  imports:
+    - "../../../config/test-data.yaml"
+
+tests:
+  - name: "Simple CSS selector exists"
+    description: "Verify basic CSS selector matching"
+    steps:
+      - command: step-navigate
+        action: to
+        args:
+          url: "${base_url}/test/simple"
+
+      - command: step-assert
+        action: exists
+        args:
+          selector: "h1"
+
+    expected:
+      success: true
+      step_count: 2
+
+  - name: "Complex CSS selector exists"
+    description: "Verify complex CSS selector with attributes"
+    steps:
+      - command: step-navigate
+        action: to
+        args:
+          url: "${base_url}/test/forms"
+
+      - command: step-assert
+        action: exists
+        args:
+          selector: "input[type='email'][required]"
+
+    expected:
+      success: true
+
+  - name: "Element by text content exists"
+    description: "Find element by its text content"
+    steps:
+      - command: step-navigate
+        action: to
+        args:
+          url: "${base_url}/test/simple"
+
+      - command: step-assert
+        action: exists
+        args:
+          selector: "Submit Button"
+
+    expected:
+      success: true
+
+  - name: "Element by partial text exists"
+    description: "Find element by partial text match"
+    steps:
+      - command: step-assert
+        action: exists
+        args:
+          selector: "Submit"
+
+    expected:
+      success: true
+
+  - name: "Element with special characters in selector"
+    description: "Handle special CSS characters"
+    steps:
+      - command: step-assert
+        action: exists
+        args:
+          selector: "div[data-test='user:email']"
+
+    expected:
+      success: true
+
+  - name: "Multiple elements exist"
+    description: "Assert when multiple elements match"
+    steps:
+      - command: step-navigate
+        action: to
+        args:
+          url: "${base_url}/test/list"
+
+      - command: step-assert
+        action: exists
+        args:
+          selector: "li.item"
+
+    expected:
+      success: true
+      notes: "Should pass if at least one element matches"
+
+  - name: "Nested element exists"
+    description: "Find deeply nested element"
+    steps:
+      - command: step-assert
+        action: exists
+        args:
+          selector: "div > ul > li > a.link"
+
+    expected:
+      success: true
+
+  - name: "Element with pseudo-selector"
+    description: "Use CSS pseudo-selectors"
+    steps:
+      - command: step-assert
+        action: exists
+        args:
+          selector: "li:first-child"
+
+    expected:
+      success: true
+
+  - name: "Element by ID exists"
+    description: "Find element by ID attribute"
+    steps:
+      - command: step-assert
+        action: exists
+        args:
+          selector: "#main-content"
+
+    expected:
+      success: true
+
+  - name: "Element by class exists"
+    description: "Find element by class name"
+    steps:
+      - command: step-assert
+        action: exists
+        args:
+          selector: ".container"
+
+    expected:
+      success: true
+
+  - name: "Dynamic element exists after wait"
+    description: "Element appears after page load"
+    steps:
+      - command: step-navigate
+        action: to
+        args:
+          url: "${base_url}/test/dynamic"
+
+      - command: step-wait
+        action: time
+        args:
+          milliseconds: 2000
+
+      - command: step-assert
+        action: exists
+        args:
+          selector: ".dynamic-content"
+
+    expected:
+      success: true
+
+  - name: "Shadow DOM element exists"
+    description: "Find element within shadow root"
+    steps:
+      - command: step-navigate
+        action: to
+        args:
+          url: "${base_url}/test/shadow-dom"
+
+      - command: step-assert
+        action: exists
+        args:
+          selector: "custom-element::shadow .shadow-child"
+
+    expected:
+      success: true
+      notes: "Requires shadow DOM support"
+
+validation:
+  - description: "All positive tests should pass"
+    condition: "all_tests_pass"
+  - description: "No errors should be thrown"
+    condition: "no_errors"
+  - description: "Elements should be found within timeout"
+    condition: "response_time < 5000"

@@ -1,0 +1,270 @@
+# Test: Assert Commands - Special Characters Edge Cases
+metadata:
+  name: "Assert with Special Characters"
+  description: "Test assertion commands with special characters, unicode, and edge cases"
+  tags: [assert, edge-case, special-characters]
+  category: step-assert
+  priority: high
+
+setup:
+  checkpoint_id: "${TEST_CHECKPOINT_ID}"
+  base_url: "${TEST_BASE_URL}"
+  imports:
+    - "../../../config/test-data.yaml"
+
+tests:
+  # Unicode text assertions
+  - name: "Assert Chinese text exists"
+    description: "Verify assertion with Chinese characters"
+    steps:
+      - command: step-navigate
+        action: to
+        args:
+          url: "${base_url}/test/international"
+
+      - command: step-assert
+        action: exists
+        args:
+          selector: "你好世界" # Hello World in Chinese
+
+    expected:
+      success: true
+
+  - name: "Assert Arabic RTL text exists"
+    description: "Verify assertion with right-to-left text"
+    steps:
+      - command: step-assert
+        action: exists
+        args:
+          selector: "مرحبا بالعالم" # Hello World in Arabic
+
+    expected:
+      success: true
+
+  - name: "Assert emoji text exists"
+    description: "Verify assertion with emoji characters"
+    steps:
+      - command: step-assert
+        action: exists
+        args:
+          selector: "🎉 Welcome 🎆"
+
+    expected:
+      success: true
+
+  # Special CSS selector characters
+  - name: "Assert element with quotes in selector"
+    description: "Handle quotes in CSS selectors"
+    steps:
+      - command: step-assert
+        action: exists
+        args:
+          selector: 'div[data-value="test''s value"]'
+
+    expected:
+      success: true
+
+  - name: "Assert element with backslashes"
+    description: "Handle backslashes in selectors"
+    steps:
+      - command: step-assert
+        action: exists
+        args:
+          selector: "div[data-path='C:\\\\Users\\\\Test']"
+
+    expected:
+      success: true
+
+  - name: "Assert element with special CSS characters"
+    description: "Handle :, ., #, [], etc. in attribute values"
+    steps:
+      - command: step-assert
+        action: exists
+        args:
+          selector: "input[name='user[email]']"
+
+    expected:
+      success: true
+
+  # Text content edge cases
+  - name: "Assert equals with newlines"
+    description: "Compare text containing newlines"
+    steps:
+      - command: step-navigate
+        action: to
+        args:
+          url: "${base_url}/test/multiline"
+
+      - command: step-assert
+        action: equals
+        args:
+          selector: "pre.formatted"
+          expected: "Line 1\nLine 2\nLine 3"
+
+    expected:
+      success: true
+
+  - name: "Assert equals with tabs"
+    description: "Compare text containing tabs"
+    steps:
+      - command: step-assert
+        action: equals
+        args:
+          selector: "td.data"
+          expected: "Col1\tCol2\tCol3"
+
+    expected:
+      success: true
+
+  - name: "Assert matches with regex special chars"
+    description: "Use regex with special characters"
+    steps:
+      - command: step-assert
+        action: matches
+        args:
+          selector: "div.price"
+          pattern: "\\$[0-9]+\\.[0-9]{2}"
+
+    expected:
+      success: true
+
+  # Empty and whitespace cases
+  - name: "Assert empty element exists"
+    description: "Verify empty element detection"
+    steps:
+      - command: step-assert
+        action: exists
+        args:
+          selector: "div.empty"
+
+    expected:
+      success: true
+
+  - name: "Assert equals empty string"
+    description: "Compare with empty string"
+    steps:
+      - command: step-assert
+        action: equals
+        args:
+          selector: "input#cleared"
+          expected: ""
+
+    expected:
+      success: true
+
+  - name: "Assert whitespace-only text"
+    description: "Handle whitespace-only content"
+    steps:
+      - command: step-assert
+        action: equals
+        args:
+          selector: "span.spaces"
+          expected: "   "
+
+    expected:
+      success: true
+
+  # Zero-width and invisible characters
+  - name: "Assert text with zero-width spaces"
+    description: "Handle zero-width Unicode characters"
+    steps:
+      - command: step-assert
+        action: equals
+        args:
+          selector: "span.zwsp"
+          expected: "Hello​World" # Contains zero-width space
+
+    expected:
+      success: true
+
+  # Variable name edge cases
+  - name: "Assert variable with special name"
+    description: "Variable names with numbers and underscores"
+    steps:
+      - command: step-data
+        action: store
+        sub_action: element-text
+        args:
+          selector: "h1"
+          variable: "page_title_123"
+
+      - command: step-assert
+        action: variable
+        args:
+          variable: "page_title_123"
+          expected: "Test Page"
+
+    expected:
+      success: true
+
+  # Numeric comparisons edge cases
+  - name: "Assert GT with negative numbers"
+    description: "Greater than comparison with negatives"
+    steps:
+      - command: step-assert
+        action: gt
+        args:
+          selector: "span.temperature"
+          value: "-10"
+
+    expected:
+      success: true
+      notes: "Should work if element contains value > -10"
+
+  - name: "Assert LTE with decimals"
+    description: "Less than or equal with decimal values"
+    steps:
+      - command: step-assert
+        action: lte
+        args:
+          selector: "span.price"
+          value: "99.99"
+
+    expected:
+      success: true
+
+  - name: "Assert equals with scientific notation"
+    description: "Compare numbers in scientific notation"
+    steps:
+      - command: step-assert
+        action: equals
+        args:
+          selector: "span.scientific"
+          expected: "1.23e-4"
+
+    expected:
+      success: true
+
+  # Long text assertions
+  - name: "Assert very long text exists"
+    description: "Handle text at maximum length"
+    steps:
+      - command: step-assert
+        action: exists
+        args:
+          selector: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
+
+    expected:
+      success: true
+
+  # HTML entities and encoding
+  - name: "Assert HTML entities in text"
+    description: "Handle HTML encoded characters"
+    steps:
+      - command: step-assert
+        action: equals
+        args:
+          selector: "span.encoded"
+          expected: '<div> & "quotes" & ''apostrophes'''
+
+    expected:
+      success: true
+      notes: "Should handle both encoded and decoded forms"
+
+validation:
+  - description: "All special character tests should be handled correctly"
+    condition: "no_encoding_errors"
+  - description: "Unicode should be preserved"
+    condition: "unicode_integrity"
+  - description: "Regex patterns should escape properly"
+    condition: "regex_valid"

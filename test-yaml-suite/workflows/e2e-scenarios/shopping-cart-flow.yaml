@@ -1,0 +1,286 @@
+# E2E Workflow: Shopping Cart Flow
+# Complete user journey from browsing to checkout
+
+name: "Shopping Cart E2E Flow"
+description: "Tests complete shopping experience with product selection, cart management, and checkout"
+
+config:
+  continue_on_error: false
+  output_format: "json"
+  base_url: "https://shop.example.com"
+
+steps:
+  # Navigate to homepage
+  - navigate:
+      action: "to"
+      url: "{{base_url}}"
+
+  - wait:
+      type: "element"
+      target: "div.homepage-loaded"
+
+  - misc:
+      action: "comment"
+      text: "=== Starting Shopping Flow ==="
+
+  # Search for product
+  - interact:
+      action: "click"
+      target: "input#search-box"
+
+  - interact:
+      action: "write"
+      target: "input#search-box"
+      text: "laptop"
+      clear: true
+
+  - interact:
+      action: "key"
+      key: "Enter"
+
+  - wait:
+      type: "element"
+      target: "div.search-results"
+      timeout: 5000
+
+  # Verify search results
+  - assert:
+      type: "exists"
+      target: "div.product-grid"
+
+  - assert:
+      type: "greater-than"
+      target: "span.result-count"
+      expected: "0"
+
+  # Store product information
+  - data:
+      action: "store"
+      type: "element-text"
+      target: "div.product-card:first-child h3.product-name"
+      variable: "firstProductName"
+
+  - data:
+      action: "store"
+      type: "element-text"
+      target: "div.product-card:first-child span.price"
+      variable: "firstProductPrice"
+
+  # Click on first product
+  - interact:
+      action: "click"
+      target: "div.product-card:first-child a.product-link"
+
+  - wait:
+      type: "element"
+      target: "div.product-details"
+
+  # Verify product page
+  - assert:
+      type: "equals"
+      target: "h1.product-title"
+      expected: "{{firstProductName}}"
+
+  # Select options
+  - interact:
+      action: "select"
+      target: "select#product-size"
+      option: "15 inch"
+
+  - interact:
+      action: "select"
+      target: "select#product-color"
+      option: "Silver"
+
+  # Add to cart
+  - interact:
+      action: "click"
+      target: "button.add-to-cart"
+
+  - wait:
+      type: "element"
+      target: "div.cart-notification"
+      timeout: 3000
+
+  - assert:
+      type: "equals"
+      target: "span.cart-count"
+      expected: "1"
+
+  # Navigate to cart
+  - interact:
+      action: "click"
+      target: "a.cart-icon"
+
+  - wait:
+      type: "element"
+      target: "div.cart-page"
+
+  # Verify cart contents
+  - assert:
+      type: "exists"
+      target: "div.cart-item"
+
+  - assert:
+      type: "equals"
+      target: "div.cart-item h4.item-name"
+      expected: "{{firstProductName}}"
+
+  # Update quantity
+  - interact:
+      action: "write"
+      target: "input.quantity"
+      text: "2"
+      clear: true
+
+  - interact:
+      action: "click"
+      target: "button.update-cart"
+
+  - wait:
+      type: "time"
+      duration: 1000
+
+  # Store updated total
+  - data:
+      action: "store"
+      type: "element-text"
+      target: "span.cart-total"
+      variable: "cartTotal"
+
+  # Proceed to checkout
+  - interact:
+      action: "click"
+      target: "button.proceed-to-checkout"
+
+  - wait:
+      type: "element"
+      target: "form.checkout-form"
+
+  # Fill shipping information
+  - interact:
+      action: "write"
+      target: "input#shipping-name"
+      text: "John Doe"
+
+  - interact:
+      action: "write"
+      target: "input#shipping-email"
+      text: "john.doe@example.com"
+
+  - interact:
+      action: "write"
+      target: "input#shipping-address"
+      text: "123 Main Street"
+
+  - interact:
+      action: "write"
+      target: "input#shipping-city"
+      text: "New York"
+
+  - interact:
+      action: "select"
+      target: "select#shipping-state"
+      option: "NY"
+
+  - interact:
+      action: "write"
+      target: "input#shipping-zip"
+      text: "10001"
+
+  # Handle shipping method
+  - interact:
+      action: "click"
+      target: "input[name='shipping-method'][value='standard']"
+
+  # Payment information (test data)
+  - interact:
+      action: "click"
+      target: "button.continue-to-payment"
+
+  - wait:
+      type: "element"
+      target: "div.payment-section"
+
+  - window:
+      action: "switch"
+      target: "iframe"
+      selector: "iframe.payment-frame"
+
+  - interact:
+      action: "write"
+      target: "input#card-number"
+      text: "4111111111111111"
+
+  - interact:
+      action: "write"
+      target: "input#card-expiry"
+      text: "12/25"
+
+  - interact:
+      action: "write"
+      target: "input#card-cvc"
+      text: "123"
+
+  - window:
+      action: "switch"
+      target: "parent-frame"
+
+  # Review order
+  - interact:
+      action: "click"
+      target: "button.review-order"
+
+  - wait:
+      type: "element"
+      target: "div.order-summary"
+
+  # Verify order total matches cart
+  - assert:
+      type: "equals"
+      target: "span.order-total"
+      expected: "{{cartTotal}}"
+
+  # Accept terms
+  - interact:
+      action: "click"
+      target: "input#accept-terms"
+
+  - assert:
+      type: "checked"
+      target: "input#accept-terms"
+
+  # Place order
+  - interact:
+      action: "click"
+      target: "button.place-order"
+
+  - wait:
+      type: "element"
+      target: "div.order-confirmation"
+      timeout: 10000
+
+  # Verify order confirmation
+  - assert:
+      type: "exists"
+      target: "h1.thank-you"
+
+  - data:
+      action: "store"
+      type: "element-text"
+      target: "span.order-number"
+      variable: "orderNumber"
+
+  - assert:
+      type: "matches"
+      target: "span.order-number"
+      pattern: "^ORD-\\d{6,}$"
+
+  # Take screenshot of confirmation
+  - misc:
+      action: "execute"
+      script: "console.log('Order completed:', '{{orderNumber}}');"
+
+  - misc:
+      action: "comment"
+      text: "=== Shopping Flow Completed Successfully ==="

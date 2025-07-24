@@ -1,0 +1,21 @@
+name: "Enhanced Run-Test Simple Verification V3"
+description: "Quick test of enhanced command support"
+project: 8753 # Use existing project ID
+starting_url: "https://example.com"
+steps:
+  # Test a few commands from each category
+  - navigate: "https://example.com"
+  - click: "button.submit"
+  - assert: "h1"
+  - write:
+      selector: "input#email"
+      text: "test@example.com"
+  - wait: 1000
+  - scroll:
+      to: "bottom"
+  - store:
+      selector: "h1"
+      as: "title"
+  - window:
+      action: "maximize"
+  - comment: "Test complete"

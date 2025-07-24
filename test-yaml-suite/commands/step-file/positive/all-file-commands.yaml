@@ -1,0 +1,88 @@
+# Comprehensive File Commands Test
+# Tests file upload operations (URL-based only)
+
+name: "Complete File Commands Test"
+description: "Tests file upload functionality with URLs"
+
+config:
+  continue_on_error: false
+  output_format: "json"
+
+steps:
+  # Basic file uploads
+  - file:
+      action: "upload"
+      target: "input[type='file']"
+      url: "https://example.com/sample.pdf"
+
+  - file:
+      action: "upload"
+      target: "input#document-upload"
+      url: "https://example.com/documents/report.docx"
+
+  - file:
+      action: "upload-url"
+      target: "input.file-input"
+      url: "https://example.com/images/photo.jpg"
+
+  # Different file types
+  - file:
+      action: "upload"
+      target: "input#image-upload"
+      url: "https://example.com/images/logo.png"
+
+  - file:
+      action: "upload"
+      target: "input#csv-upload"
+      url: "https://example.com/data/export.csv"
+
+  - file:
+      action: "upload"
+      target: "input#video-upload"
+      url: "https://example.com/media/intro.mp4"
+
+  # Multiple file upload scenario
+  - file:
+      action: "upload"
+      target: "input#file1"
+      url: "https://example.com/doc1.pdf"
+
+  - file:
+      action: "upload"
+      target: "input#file2"
+      url: "https://example.com/doc2.pdf"
+
+  - file:
+      action: "upload"
+      target: "input#file3"
+      url: "https://example.com/doc3.pdf"
+
+  # Upload with validation
+  - file:
+      action: "upload"
+      target: "input.avatar-upload"
+      url: "https://example.com/avatars/user123.jpg"
+
+  - wait:
+      type: "element"
+      target: "div.upload-success"
+
+  - assert:
+      type: "exists"
+      target: "img.uploaded-preview"
+
+  # Edge cases
+  - file:
+      action: "upload"
+      target: "input.optional-file"
+      url: "https://example.com/optional/file.txt"
+
+  - file:
+      action: "upload-url"
+      target: "input[accept='.pdf']"
+      url: "https://example.com/pdfs/terms.pdf"
+
+  - file:
+      action: "upload"
+      target: "input[multiple]"
+      url: "https://example.com/batch/file1.zip"

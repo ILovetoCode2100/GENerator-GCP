@@ -35,6 +35,11 @@ func RegisterCommands(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(NewListCheckpointsCmd())
 
 	// ========================================
+	// YAML COMMAND GROUP
+	// ========================================
+	rootCmd.AddCommand(NewYAMLCmd())
+
+	// ========================================
 	// TEST STEP COMMANDS (9 Groups - All create test steps)
 	// ========================================
 	// All commands use unified positional argument syntax with 'step-' prefix

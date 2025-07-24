@@ -1,0 +1,102 @@
+# Comprehensive Wait Commands Test
+# Tests wait for element and wait for time operations
+
+name: "Complete Wait Commands Test"
+description: "Tests element waiting and time delays"
+
+config:
+  continue_on_error: false
+  output_format: "json"
+
+steps:
+  # Wait for elements
+  - wait:
+      type: "element"
+      target: "div.loading-complete"
+
+  - wait:
+      type: "element"
+      target: "span.ajax-loaded"
+      timeout: 5000
+
+  - wait:
+      type: "element"
+      target: "div.dynamic-content"
+      timeout: 10000
+
+  # Time-based waits
+  - wait:
+      type: "time"
+      duration: 1000
+
+  - wait:
+      type: "time"
+      duration: 500
+
+  - wait:
+      type: "time"
+      duration: 3000
+
+  # Complex wait scenarios
+  - interact:
+      action: "click"
+      target: "button.load-data"
+
+  - wait:
+      type: "element"
+      target: "div.data-loaded"
+      timeout: 15000
+
+  - assert:
+      type: "exists"
+      target: "table.results"
+
+  # Animation waits
+  - interact:
+      action: "click"
+      target: "button.animate"
+
+  - wait:
+      type: "time"
+      duration: 600 # Wait for CSS animation
+
+  - assert:
+      type: "exists"
+      target: "div.animation-complete"
+
+  # Multiple elements with waits
+  - navigate:
+      action: "to"
+      url: "https://example.com/slow-page"
+
+  - wait:
+      type: "element"
+      target: "header.loaded"
+
+  - wait:
+      type: "element"
+      target: "main.content"
+
+  - wait:
+      type: "element"
+      target: "footer.ready"
+
+  # Wait for elements that may not appear
+  - wait:
+      type: "element"
+      target: "div.optional-banner"
+      timeout: 2000
+      continue_on_error: true
+
+  # Precise timing scenarios
+  - wait:
+      type: "time"
+      duration: 100
+
+  - wait:
+      type: "time"
+      duration: 250
+
+  - wait:
+      type: "time"
+      duration: 1500
