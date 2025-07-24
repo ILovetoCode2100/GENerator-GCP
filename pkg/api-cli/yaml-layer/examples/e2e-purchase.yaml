@@ -1,0 +1,96 @@
+# End-to-end purchase flow with error handling
+test: Complete Purchase Flow
+base: https://shop.example.com
+data:
+  product: "Wireless Headphones"
+  quantity: 2
+
+  # Customer info
+  customer:
+    name: John Doe
+    email: john.doe@test.com
+    phone: 555-0123
+
+  # Shipping address
+  shipping:
+    address: 123 Test Street
+    city: Test City
+    state: CA
+    zip: 90210
+
+  # Test credit card
+  payment:
+    number: 4111111111111111
+    expiry: 12/25
+    cvv: 123
+
+setup:
+  # Clear any existing cart items
+  - nav: /cart
+  - if:
+      cond: exists("Remove")
+      then:
+        - c: Remove
+        - wait: "Cart is empty"
+
+do:
+  # Search and select product
+  - nav: /
+  - c: search
+  - t: $product
+  - k: Enter
+  - wait: .search-results
+  - ch: $product
+
+  # Add to cart
+  - c: $product
+  - wait: .product-details
+  - select: {#quantity: $quantity}
+  - c: "Add to Cart"
+  - ch: "Added to cart"
+
+  # Proceed to checkout
+  - c: "View Cart"
+  - wait: .cart-page
+  - ch: $product
+  - ch: "Quantity: {{quantity}}"
+  - c: "Proceed to Checkout"
+
+  # Guest checkout
+  - wait: .checkout-page
+  - c: "Continue as Guest"
+
+  # Shipping information
+  - t: {#ship-name: $customer.name}
+  - t: {#ship-email: $customer.email}
+  - t: {#ship-phone: $customer.phone}
+  - t: {#ship-address: $shipping.address}
+  - t: {#ship-city: $shipping.city}
+  - select: {#ship-state: $shipping.state}
+  - t: {#ship-zip: $shipping.zip}
+  - c: "Continue to Payment"
+
+  # Payment information
+  - wait: .payment-section
+  - t: {#card-number: $payment.number}
+  - t: {#card-expiry: $payment.expiry}
+  - t: {#card-cvv: $payment.cvv}
+  - c: @terms-checkbox
+  - c: "Place Order"
+
+  # Order confirmation
+  - wait: .order-confirmation
+  - ch: "Order Confirmed"
+  - ch: $customer.email
+  - store: {.order-number: orderNumber}
+  - note: "Order placed: {{orderNumber}}"
+
+teardown:
+  # Log order details
+  - js: |
+      console.log('Test order:', {
+        number: '{{orderNumber}}',
+        product: '{{product}}',
+        quantity: {{quantity}},
+        timestamp: new Date().toISOString()
+      });

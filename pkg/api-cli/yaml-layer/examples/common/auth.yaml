@@ -1,0 +1,24 @@
+# Common authentication blocks
+blocks:
+  login:
+    - wait: #email
+    - t: {#email: $username}
+    - t: {#password: $password}
+    - c: Sign In
+    - wait: .dashboard
+
+  logout:
+    - c: .user-menu
+    - wait: .dropdown-menu
+    - c: Sign Out
+    - wait: .login-page
+
+  ensure_logged_in:
+    - if:
+        cond: "missing(.user-menu)"
+        then:
+          - nav: /login
+          - use: login
+            with:
+              username: ${ENV:TEST_USER}
+              password: ${ENV:TEST_PASS}

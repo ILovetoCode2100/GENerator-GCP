@@ -1,0 +1,245 @@
+# Test: YAML Anchors and Aliases
+metadata:
+  name: "YAML Feature Test - Anchors & Aliases"
+  description: "Demonstrate YAML anchor and alias features for test reusability"
+  tags: [yaml-features, anchors, aliases]
+  category: yaml-features
+
+# Define reusable test components with anchors
+common_config: &default_config
+  checkpoint_id: "${TEST_CHECKPOINT_ID}"
+  base_url: "${TEST_BASE_URL}"
+  timeout: 10000
+  retry: 3
+
+# Common navigation steps
+navigation_steps: &navigate_home
+  - command: step-navigate
+    action: to
+    args:
+      url: "${base_url}"
+  - command: step-wait
+    action: element
+    args:
+      selector: "body"
+
+# Common assertions
+standard_assertions: &verify_page_loaded
+  - command: step-assert
+    action: exists
+    args:
+      selector: "h1"
+  - command: step-assert
+    action: exists
+    args:
+      selector: "nav.main-menu"
+
+# Reusable form interaction pattern
+form_fill_pattern: &fill_email_field
+  command: step-interact
+  action: write
+  args:
+    selector: "input[type='email']"
+    text: "test@example.com"
+
+# Error handling pattern
+error_check: &check_no_errors
+  - command: step-assert
+    action: not-exists
+    args:
+      selector: ".error-message"
+  - command: step-assert
+    action: not-exists
+    args:
+      selector: ".warning-banner"
+
+tests:
+  # Test 1: Basic anchor usage
+  - name: "Homepage Load Test"
+    <<: *default_config  # Merge default config
+    steps:
+      - *navigate_home     # Reference navigation steps
+
+    validations:
+      - *verify_page_loaded  # Reference assertions
+
+  # Test 2: Extend anchored content
+  - name: "Homepage with Extended Checks"
+    <<: *default_config
+    timeout: 20000  # Override specific value
+    steps:
+      - *navigate_home
+      # Additional steps after anchor
+      - command: step-interact
+        action: click
+        args:
+          selector: "a.about-link"
+      - command: step-wait
+        action: element
+        args:
+          selector: "div.about-content"
+
+  # Test 3: Multiple anchor references
+  - name: "Form Submission Test"
+    <<: *default_config
+    steps:
+      - *navigate_home
+      - command: step-interact
+        action: click
+        args:
+          selector: "a.contact"
+      - command: step-wait
+        action: element
+        args:
+          selector: "form.contact-form"
+      - *fill_email_field  # Single command reference
+      - command: step-interact
+        action: write
+        args:
+          selector: "textarea#message"
+          text: "Test message"
+      - command: step-interact
+        action: click
+        args:
+          selector: "button.submit"
+      *check_no_errors  # Multiple commands reference
+
+  # Test 4: Nested anchor usage
+  - name: "Complex Navigation Flow"
+    config:
+      <<: *default_config
+      custom_setting: "value"
+    steps:
+      - sequence_1:
+          <<: *navigate_home
+      - sequence_2:
+          - command: step-navigate
+            action: to
+            args:
+              url: "${base_url}/products"
+      - sequence_3:
+          <<: *verify_page_loaded
+
+# Demonstrate merge keys with multiple anchors
+advanced_test: &advanced_base
+  name: "Advanced Test Base"
+  <<: *default_config
+  tags: [advanced]
+  steps:
+    *navigate_home
+
+# Array of tests using anchors
+test_suite:
+  - <<: *advanced_base
+    name: "Advanced Test 1"
+    additional_step:
+      command: step-interact
+      action: click
+      args:
+        selector: "button.action1"
+
+  - <<: *advanced_base
+    name: "Advanced Test 2"
+    additional_step:
+      command: step-interact
+      action: click
+      args:
+        selector: "button.action2"
+
+# Demonstrate complex nested structures
+test_patterns:
+  login_flow: &login_pattern
+    username_input:
+      <<: *fill_email_field
+      args:
+        selector: "input#username"
+    password_input:
+      command: step-interact
+      action: write
+      args:
+        selector: "input#password"
+        text: "password123"
+    submit:
+      command: step-interact
+      action: click
+      args:
+        selector: "button[type='submit']"
+
+  checkout_flow: &checkout_pattern
+    add_to_cart:
+      command: step-interact
+      action: click
+      args:
+        selector: "button.add-to-cart"
+    proceed:
+      command: step-interact
+      action: click
+      args:
+        selector: "a.checkout"
+    complete_order:
+      # Reuse login pattern within checkout
+      login_steps:
+        <<: *login_pattern
+      payment_steps:
+        - command: step-interact
+          action: write
+          args:
+            selector: "input.card-number"
+            text: "4111111111111111"
+
+# Validation patterns
+validation_anchors:
+  success_criteria: &success_validation
+    - all_steps_pass: true
+    - no_errors: true
+    - response_time: "< 5000"
+
+  performance_criteria: &performance_validation
+    - response_time: "< 1000"
+    - memory_usage: "< 100MB"
+    - cpu_usage: "< 50%"
+
+# Final test using multiple patterns
+integrated_test:
+  name: "Full Integration Test"
+  <<: *default_config
+  steps:
+    # Navigation
+    - phase: "navigation"
+      <<: *navigate_home
+
+    # Login
+    - phase: "authentication"
+      <<: *login_pattern
+
+    # Checkout
+    - phase: "purchase"
+      <<: *checkout_pattern
+
+    # Verification
+    - phase: "validation"
+      <<: *check_no_errors
+
+  validations:
+    <<: [*success_validation, *performance_validation]  # Merge multiple validations
+
+# Demonstrate YAML tags and types
+type_demonstrations:
+  # Explicit string
+  string_value: !!str "12345"
+
+  # Explicit integer
+  int_value: !!int "12345"
+
+  # Explicit boolean
+  bool_value: !!bool "true"
+
+  # Null value
+  null_value: !!null ""
+
+  # Binary data
+  binary_data: !!binary |
+    R0lGODlhDAAMAIQAAP//9/X17unp5WZmZgAAAOfn515eXvPz7Y6OjuDg4J+fn5
+    OTk6enp56enmlpaWNjY6Ojo4SEhP/++f/++f/++f/++f/++f/++f/++f/++f/+
+    +f/++f/++f/++f/++f/++SH+Dk1hZGUgd2l0aCBHSU1QACwAAAAADAAMAAAFLC
+    AgjoEwnuNAFOhpEMTRiggcz4BNJHrv/zCFcLiwMWYNG84BwwEeECcgggoBADs=
