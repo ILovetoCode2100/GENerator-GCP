@@ -34,6 +34,7 @@ type Config struct {
 	API        APIConfig
 	Validation ValidationConfig
 	Execution  ExecutionConfig
+	Session    SessionConfig
 }
 
 // APIConfig holds API configuration
@@ -57,6 +58,15 @@ type ExecutionConfig struct {
 	AutoWait            bool
 	Parallel            int
 	Timeout             time.Duration
+}
+
+// SessionConfig holds session context
+type SessionConfig struct {
+	CheckpointID int
+	ProjectID    int
+	GoalID       int
+	SnapshotID   int
+	JourneyID    int
 }
 
 // Metrics tracks performance
@@ -284,13 +294,36 @@ func (s *Service) execute(ctx context.Context, test *core.YAMLTest, compiled *co
 
 // ensureTestInfrastructure creates or retrieves test infrastructure
 func (s *Service) ensureTestInfrastructure(ctx context.Context, testName string) (string, string, string, string, error) {
-	// For now, return dummy IDs
-	// In real implementation, would create project/goal/journey/checkpoint
+	// First check if we have a session checkpoint
+	if s.config.Session.CheckpointID > 0 {
+		// Use existing checkpoint from session
+		return fmt.Sprintf("%d", s.config.Session.ProjectID),
+			fmt.Sprintf("%d", s.config.Session.GoalID),
+			fmt.Sprintf("%d", s.config.Session.JourneyID),
+			fmt.Sprintf("%d", s.config.Session.CheckpointID),
+			nil
+	}
+
+	// Check VIRTUOSO_SESSION_ID environment variable
+	if sessionID := os.Getenv("VIRTUOSO_SESSION_ID"); sessionID != "" {
+		// Parse checkpoint ID from session
+		checkpointID, ok := parseCheckpointID(sessionID)
+		if ok && checkpointID > 0 {
+			// For now, we don't have the other IDs, so we'll use dummy values
+			// In a real implementation, we would fetch these from the API
+			return "0", "0", "0", fmt.Sprintf("%d", checkpointID), nil
+		}
+	}
+
+	// No existing checkpoint, create new infrastructure
+	// This is a placeholder - in real implementation, would create via API
 	projectID := "proj_" + generateID()
 	goalID := "goal_" + generateID()
 	journeyID := "journey_" + generateID()
 	checkpointID := "cp_" + generateID()
 
+	log.Printf("Warning: Creating ephemeral checkpoint IDs. Set VIRTUOSO_SESSION_ID to use existing checkpoint.")
+	
 	return projectID, goalID, journeyID, checkpointID, nil
 }
 

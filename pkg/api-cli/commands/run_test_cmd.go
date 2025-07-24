@@ -117,108 +117,154 @@ The command accepts input from:
 				return outputDryRun(testDef, outputFormat)
 			}
 
-			// Create or find project
-			// Check if infrastructure config is provided
-			var projectRef interface{}
-			var startingURL string
-
-			if testDef.Infrastructure != nil {
-				// Use infrastructure config
-				projectRef = testDef.Infrastructure.Project
-				startingURL = testDef.Infrastructure.StartingURL
-			} else {
-				// Use direct fields
-				projectRef = testDef.Project
-				startingURL = testDef.StartingURL
-			}
-
-			// Override with direct StartingURL if specified
-			if testDef.StartingURL != "" {
-				startingURL = testDef.StartingURL
-			}
-
-			projectID, err := resolveProject(ctx, apiClient, projectRef, projectName)
-			if err != nil {
-				result.Success = false
-				result.Error = fmt.Sprintf("Failed to resolve project: %v", err)
-				return outputResult(result, outputFormat)
-			}
-			result.ProjectID = projectID
-
-			// Create goal
-			goalName := fmt.Sprintf("%s - Goal", testDef.Name)
-			// Convert projectID string to int
-			projectIDInt, err := strconv.Atoi(projectID)
-			if err != nil {
-				result.Success = false
-				result.Error = fmt.Sprintf("Invalid project ID: %v", err)
-				return outputResult(result, outputFormat)
-			}
-
-			goal, err := callWithContext(ctx, func() (*client.Goal, error) {
-				// CreateGoal needs projectID, name, and URL
-				// Use starting_url from earlier resolution, or default to example.com
-				if startingURL == "" {
-					startingURL = "https://example.com"
+			// Check if we should use existing session checkpoint
+			var checkpoint *client.Checkpoint
+			var checkpointID int
+			var skipInfrastructure bool
+			var goal *client.Goal
+			var journey *client.Journey
+			var snapshotIDInt int
+			var projectID string
+			
+			// Check for session checkpoint first
+			if cfg.Session.CurrentCheckpointID != nil && *cfg.Session.CurrentCheckpointID > 0 {
+				checkpointID = *cfg.Session.CurrentCheckpointID
+				checkpoint = &client.Checkpoint{ID: checkpointID}
+				skipInfrastructure = true
+			} else if sessionID := os.Getenv("VIRTUOSO_SESSION_ID"); sessionID != "" {
+				// Check environment variable
+				sessionID = strings.TrimPrefix(sessionID, "cp_")
+				if id, err := strconv.Atoi(sessionID); err == nil && id > 0 {
+					checkpointID = id
+					checkpoint = &client.Checkpoint{ID: checkpointID}
+					skipInfrastructure = true
 				}
-				return apiClient.CreateGoal(projectIDInt, goalName, startingURL)
-			})
-			if err != nil {
-				result.Success = false
-				result.Error = fmt.Sprintf("Failed to create goal: %v", err)
-				return outputResult(result, outputFormat)
-			}
-			result.GoalID = fmt.Sprintf("%d", goal.ID)
-
-			// Get snapshot ID for the goal
-			snapshotIDStr, err := callWithContext(ctx, func() (string, error) {
-				return apiClient.GetGoalSnapshot(goal.ID)
-			})
-			if err != nil {
-				result.Success = false
-				result.Error = fmt.Sprintf("Failed to get snapshot ID: %v", err)
-				return outputResult(result, outputFormat)
 			}
 
-			// Convert snapshot ID to int
-			snapshotIDInt, err := strconv.Atoi(snapshotIDStr)
-			if err != nil {
-				result.Success = false
-				result.Error = fmt.Sprintf("Invalid snapshot ID: %v", err)
-				return outputResult(result, outputFormat)
-			}
+			// Only create infrastructure if not using existing checkpoint
+			if !skipInfrastructure {
+				// Create or find project
+				// Check if infrastructure config is provided
+				var projectRef interface{}
+				var startingURL string
 
-			// Create journey
-			journeyName := testDef.Name
+				if testDef.Infrastructure != nil {
+					// Use infrastructure config
+					projectRef = testDef.Infrastructure.Project
+					startingURL = testDef.Infrastructure.StartingURL
+				} else {
+					// Use direct fields
+					projectRef = testDef.Project
+					startingURL = testDef.StartingURL
+				}
 
-			journey, err := callWithContext(ctx, func() (*client.Journey, error) {
-				return apiClient.CreateJourney(goal.ID, snapshotIDInt, journeyName)
-			})
-			if err != nil {
-				result.Success = false
-				result.Error = fmt.Sprintf("Failed to create journey: %v", err)
-				return outputResult(result, outputFormat)
-			}
-			result.JourneyID = fmt.Sprintf("%d", journey.ID)
+				// Override with direct StartingURL if specified
+				if testDef.StartingURL != "" {
+					startingURL = testDef.StartingURL
+				}
 
-			// Create checkpoint
-			checkpointName := "Test Steps"
-			checkpoint, err := callWithContext(ctx, func() (*client.Checkpoint, error) {
-				return apiClient.CreateCheckpoint(goal.ID, snapshotIDInt, checkpointName)
-			})
-			if err != nil {
-				result.Success = false
-				result.Error = fmt.Sprintf("Failed to create checkpoint: %v", err)
-				return outputResult(result, outputFormat)
+				projectID, err = resolveProject(ctx, apiClient, projectRef, projectName)
+				if err != nil {
+					result.Success = false
+					result.Error = fmt.Sprintf("Failed to resolve project: %v", err)
+					return outputResult(result, outputFormat)
+				}
+				result.ProjectID = projectID
+
+				// Create goal
+				goalName := fmt.Sprintf("%s - Goal", testDef.Name)
+				// Convert projectID string to int
+				projectIDInt, err := strconv.Atoi(projectID)
+				if err != nil {
+					result.Success = false
+					result.Error = fmt.Sprintf("Invalid project ID: %v", err)
+					return outputResult(result, outputFormat)
+				}
+
+				goal, err = callWithContext(ctx, func() (*client.Goal, error) {
+					// CreateGoal needs projectID, name, and URL
+					// Use starting_url from earlier resolution, or default to example.com
+					if startingURL == "" {
+						startingURL = "https://example.com"
+					}
+					return apiClient.CreateGoal(projectIDInt, goalName, startingURL)
+				})
+				if err != nil {
+					result.Success = false
+					result.Error = fmt.Sprintf("Failed to create goal: %v", err)
+					return outputResult(result, outputFormat)
+				}
+				result.GoalID = fmt.Sprintf("%d", goal.ID)
+
+				// Get snapshot ID for the goal
+				snapshotIDStr, err := callWithContext(ctx, func() (string, error) {
+					return apiClient.GetGoalSnapshot(goal.ID)
+				})
+				if err != nil {
+					result.Success = false
+					result.Error = fmt.Sprintf("Failed to get snapshot ID: %v", err)
+					return outputResult(result, outputFormat)
+				}
+
+				// Convert snapshot ID to int
+				snapshotIDInt, err = strconv.Atoi(snapshotIDStr)
+				if err != nil {
+					result.Success = false
+					result.Error = fmt.Sprintf("Invalid snapshot ID: %v", err)
+					return outputResult(result, outputFormat)
+				}
+
+				// Create journey
+				journeyName := testDef.Name
+
+				journey, err = callWithContext(ctx, func() (*client.Journey, error) {
+					return apiClient.CreateJourney(goal.ID, snapshotIDInt, journeyName)
+				})
+				if err != nil {
+					result.Success = false
+					result.Error = fmt.Sprintf("Failed to create journey: %v", err)
+					return outputResult(result, outputFormat)
+				}
+				result.JourneyID = fmt.Sprintf("%d", journey.ID)
+
+				// Create checkpoint for new infrastructure
+				checkpointName := "Test Steps"
+				checkpoint, err = callWithContext(ctx, func() (*client.Checkpoint, error) {
+					return apiClient.CreateCheckpoint(goal.ID, snapshotIDInt, checkpointName)
+				})
+				if err != nil {
+					result.Success = false
+					result.Error = fmt.Sprintf("Failed to create checkpoint: %v", err)
+					return outputResult(result, outputFormat)
+				}
+				result.CheckpointID = fmt.Sprintf("%d", checkpoint.ID)
+			} else {
+				// Using existing checkpoint - populate IDs from session
+				if cfg.Session.CurrentProjectID != nil {
+					result.ProjectID = fmt.Sprintf("%d", *cfg.Session.CurrentProjectID)
+				}
+				if cfg.Session.CurrentGoalID != nil {
+					result.GoalID = fmt.Sprintf("%d", *cfg.Session.CurrentGoalID)
+				}
+				if cfg.Session.CurrentJourneyID != nil {
+					result.JourneyID = fmt.Sprintf("%d", *cfg.Session.CurrentJourneyID)
+				}
+				result.CheckpointID = fmt.Sprintf("%d", checkpointID)
 			}
-			result.CheckpointID = fmt.Sprintf("%d", checkpoint.ID)
 
 			// Add links
-			result.Links = TestLinks{
-				Project:    fmt.Sprintf("https://app.virtuoso.qa/#/project/%s", projectID),
-				Goal:       fmt.Sprintf("https://app.virtuoso.qa/#/goal/%d", goal.ID),
-				Journey:    fmt.Sprintf("https://app.virtuoso.qa/#/journey/%d", journey.ID),
-				Checkpoint: fmt.Sprintf("https://app.virtuoso.qa/#/checkpoint/%d", checkpoint.ID),
+			result.Links = TestLinks{}
+			if result.ProjectID != "" {
+				result.Links.Project = fmt.Sprintf("https://app.virtuoso.qa/#/project/%s", result.ProjectID)
+			}
+			if result.GoalID != "" {
+				result.Links.Goal = fmt.Sprintf("https://app.virtuoso.qa/#/goal/%s", result.GoalID)
+			}
+			if result.JourneyID != "" {
+				result.Links.Journey = fmt.Sprintf("https://app.virtuoso.qa/#/journey/%s", result.JourneyID)
+			}
+			if result.CheckpointID != "" {
+				result.Links.Checkpoint = fmt.Sprintf("https://app.virtuoso.qa/#/checkpoint/%s", result.CheckpointID)
 			}
 
 			// Create steps

@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/marklovelady/api-cli-generator/pkg/api-cli/client"
 	"github.com/marklovelady/api-cli-generator/pkg/api-cli/yaml-layer/ai"
+	yamlDetector "github.com/marklovelady/api-cli-generator/pkg/api-cli/yaml-layer/detector"
 	"github.com/marklovelady/api-cli-generator/pkg/api-cli/yaml-layer/service"
 	"github.com/spf13/cobra"
 )
@@ -17,6 +19,7 @@ import (
 var (
 	yamlOutputFormat string
 	yamlStrict       bool
+	yamlVerbose      bool
 	yamlEnvVars      map[string]string
 	yamlVars         map[string]string
 	yamlTemplate     string
@@ -345,6 +348,67 @@ var yamlConvertCmd = &cobra.Command{
 	},
 }
 
+// yamlDetectCmd detects YAML format
+var yamlDetectCmd = &cobra.Command{
+	Use:   "detect <file.yaml>",
+	Short: "Detect YAML file format",
+	Long:  `Analyzes YAML test files to determine their format (compact, simplified, or extended).`,
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		content, err := os.ReadFile(args[0])
+		if err != nil {
+			return fmt.Errorf("failed to read file: %w", err)
+		}
+
+		detector := yamlDetector.NewFormatDetector()
+		result, err := detector.DetectFormat(content)
+		if err != nil {
+			return fmt.Errorf("failed to detect format: %w", err)
+		}
+
+		// Output based on format
+		switch yamlOutputFormat {
+		case "json":
+			data, err := json.MarshalIndent(result, "", "  ")
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(data))
+
+		default:
+			// Human readable
+			fmt.Printf("File: %s\n", args[0])
+			fmt.Printf("Format: %s\n", yamlDetector.GetFormatDescription(result.Format))
+			fmt.Printf("Confidence: %.2f\n", result.Confidence)
+			
+			if result.Format != yamlDetector.FormatUnknown {
+				fmt.Printf("Supported: %v\n", yamlDetector.IsFormatSupported(result.Format))
+				if cmd := yamlDetector.GetSupportedCommand(result.Format); cmd != "" {
+					fmt.Printf("Command: api-cli %s\n", cmd)
+				}
+			}
+			
+			if len(result.Warnings) > 0 {
+				fmt.Printf("\nWarnings:\n")
+				for _, warn := range result.Warnings {
+					fmt.Printf("  - %s\n", warn)
+				}
+			}
+			
+			if yamlVerbose {
+				fmt.Printf("\nFeatures detected:\n")
+				for feature, present := range result.Features {
+					if present {
+						fmt.Printf("  - %s\n", feature)
+					}
+				}
+			}
+		}
+
+		return nil
+	},
+}
+
 // NewYAMLCmd creates the yaml command group
 func NewYAMLCmd() *cobra.Command {
 
@@ -354,6 +418,7 @@ func NewYAMLCmd() *cobra.Command {
 	yamlCmd.AddCommand(yamlRunCmd)
 	yamlCmd.AddCommand(yamlGenerateCmd)
 	yamlCmd.AddCommand(yamlConvertCmd)
+	yamlCmd.AddCommand(yamlDetectCmd)
 
 	// Validate flags
 	yamlValidateCmd.Flags().BoolVar(&yamlStrict, "strict", false, "Treat warnings as errors")
@@ -371,11 +436,46 @@ func NewYAMLCmd() *cobra.Command {
 	yamlGenerateCmd.Flags().StringVar(&yamlTemplate, "template", "", "Use specific template")
 	yamlGenerateCmd.Flags().BoolVar(&yamlStrict, "strict", false, "Validate generated output strictly")
 
+	// Detect flags
+	yamlDetectCmd.Flags().StringVarP(&yamlOutputFormat, "output", "o", "human", "Output format: human, json")
+	yamlDetectCmd.Flags().BoolVarP(&yamlVerbose, "verbose", "v", false, "Show detailed feature detection")
+
 	return yamlCmd
 }
 
 // createYAMLService creates a configured YAML service
 func createYAMLService() *service.Service {
+	// Initialize session config
+	sessionConfig := service.SessionConfig{}
+	
+	// Use checkpoint ID from config if available
+	if cfg.Session.CurrentCheckpointID != nil {
+		sessionConfig.CheckpointID = *cfg.Session.CurrentCheckpointID
+	}
+	if cfg.Session.CurrentProjectID != nil {
+		sessionConfig.ProjectID = *cfg.Session.CurrentProjectID
+	}
+	if cfg.Session.CurrentGoalID != nil {
+		sessionConfig.GoalID = *cfg.Session.CurrentGoalID
+	}
+	if cfg.Session.CurrentSnapshotID != nil {
+		sessionConfig.SnapshotID = *cfg.Session.CurrentSnapshotID
+	}
+	if cfg.Session.CurrentJourneyID != nil {
+		sessionConfig.JourneyID = *cfg.Session.CurrentJourneyID
+	}
+	
+	// Check VIRTUOSO_SESSION_ID env var if checkpoint not set
+	if sessionConfig.CheckpointID == 0 {
+		if sessionID := os.Getenv("VIRTUOSO_SESSION_ID"); sessionID != "" {
+			// Remove cp_ prefix if present
+			sessionID = strings.TrimPrefix(sessionID, "cp_")
+			if id, err := strconv.Atoi(sessionID); err == nil {
+				sessionConfig.CheckpointID = id
+			}
+		}
+	}
+
 	svcConfig := &service.Config{
 		API: service.APIConfig{
 			BaseURL:   cfg.API.BaseURL,
@@ -393,6 +493,7 @@ func createYAMLService() *service.Service {
 			AutoWait:            true,
 			Parallel:            yamlParallel,
 		},
+		Session: sessionConfig,
 	}
 
 	return service.NewService(svcConfig)
