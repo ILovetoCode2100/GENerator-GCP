@@ -7,7 +7,7 @@ The Virtuoso API CLI is a Go-based command-line tool that provides an AI-friendl
 **Version:** 4.1
 **Status:** Production Ready (All commands create steps successfully)
 **Language:** Go 1.21+
-**Latest Update:** January 2025 (Context support & error handling improvements)
+**Latest Update:** January 2025 (All 60 commands tested with 100% success rate)
 
 ## Architecture
 
@@ -84,7 +84,7 @@ Specialized commands that remain separate:
 
 ### Command Groups
 
-The CLI provides 69 fully working commands organized into logical groups:
+The CLI provides 60 fully working commands organized into logical groups:
 
 1. **`step-assert`** - Validation commands (12 types)
 

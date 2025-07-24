@@ -1,10 +1,10 @@
 # Virtuoso API CLI
 
-**Version:** 3.2
+**Version:** 3.3
 **Status:** Production Ready (100% success rate - all commands tested)
 **Language:** Go 1.21+
 **Purpose:** AI-friendly CLI for Virtuoso test automation platform
-**Latest Update:** January 2025 (Unified Command Syntax - Complete)
+**Latest Update:** January 2025 (Command Validator & Auto-Correction Added)
 
 > **Note:** The MCP (Model Context Protocol) server has been moved to a separate repository at `/Users/marklovelady/_dev/_projects/virtuoso-mcp-server` for better modularity and maintenance.
 
@@ -117,6 +117,50 @@ api-cli step-assert exists cp_12345 "Login successful" 3
 2. **Auto-increment Position**: Positions automatically increment (1, 2, 3...)
 3. **Backward Compatible**: Legacy `--checkpoint` syntax still works
 4. **Consistent Pattern**: All 70 commands use the same syntax
+5. **Automatic Command Validation**: Built-in validator corrects common syntax errors
+
+## 🔧 Command Validator & Auto-Correction
+
+The CLI includes an intelligent command validator that automatically:
+
+### Features
+
+1. **Auto-corrects common syntax errors**
+
+   - Fixes missing hyphens: `scroll top` → `scroll-top`
+   - Updates deprecated syntax: `alert accept` → `dismiss-alert`
+   - Corrects argument order: `switch tab $ID next` → `switch-tab next $ID`
+
+2. **Validates flag compatibility**
+
+   - Prevents unsupported flags like `--offset-x` on click commands
+   - Suggests valid alternatives
+
+3. **Handles deprecated commands**
+
+   - Shows warnings with explanations
+   - Automatically uses the replacement command
+
+4. **Detects removed commands**
+   - Provides helpful error messages
+   - Suggests alternatives (e.g., `scroll-left` → use `scroll-by`)
+
+### Examples
+
+```bash
+# Auto-correction examples
+api-cli step-navigate scroll top        # → scroll-top
+api-cli step-dialog alert accept        # → dismiss-alert
+api-cli step-data store element-text    # → store text
+api-cli step-interact mouse move-to "100 200"  # → "100,200"
+api-cli step-wait time 5                # → 5000 (ms)
+
+# Error detection
+api-cli step-navigate scroll-left       # Error: Use scroll-by instead
+api-cli step-interact click --offset-x  # Error: Flag not supported
+```
+
+See [COMMAND_MIGRATION_GUIDE.md](COMMAND_MIGRATION_GUIDE.md) for a complete migration guide.
 
 ## 🚀 Unified Test Runner
 
