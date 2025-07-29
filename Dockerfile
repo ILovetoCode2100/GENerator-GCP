@@ -1,6 +1,6 @@
 # Multi-stage optimized Dockerfile for complete API deployment
 # Stage 1: Go builder for CLI binary
-FROM golang:1.23-alpine as go-builder
+FROM golang:1.24-alpine as go-builder
 
 # Install build dependencies
 RUN apk add --no-cache git make
