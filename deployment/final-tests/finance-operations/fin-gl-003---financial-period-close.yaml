@@ -1,0 +1,43 @@
+project: 9369
+goal: 14141
+name: FIN-GL-003 - Financial Period Close - Execute month-end closing procedures
+description: 'Execute month-end closing procedures (Module: Finance Operations, Suite: General Ledger)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: General ledger
+- click: Period close
+- click: Financial period close workspace
+- click: Validate period close
+- select:
+    selector: Period
+    option: $CURRENT_MONTH
+- click: Run validation
+- wait: 5
+- comment: Assert that all validations show "Passed"
+- click: Closing tasks
+- click: Foreign currency revaluation
+- select:
+    selector: Currency
+    option: All
+- write:
+    selector: Considered date
+    text: $MONTH_END_DATE
+- click: OK
+- wait: 10
+- click: Ledger allocations
+- click: Process allocations
+- select:
+    selector: Allocation rule
+    option: Monthly allocations
+- click: Process
+- wait: 5
+- assert: Allocation journal created
+- click: Close period
+- select:
+    selector: Period
+    option: $CURRENT_MONTH
+- click: Close
+- comment: Confirm in dialog
+- assert_text:
+    selector: Period status
+    expected: Closed

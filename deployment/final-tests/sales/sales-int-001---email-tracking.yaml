@@ -1,0 +1,26 @@
+project: 9369
+goal: 14137
+name: SALES-INT-001 - Email Tracking - Verify email tracking to opportunity
+description: 'Verify email tracking to opportunity (Module: Sales Module, Suite: Integration Tests)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Opportunities
+- click: first opportunity
+- click: Timeline
+- click: Create a timeline record
+- select:
+    selector: Activity Type
+    option: Email
+- write:
+    selector: To
+    text: customer@contoso.com
+- write:
+    selector: Subject
+    text: Follow-up on our discussion
+- write:
+    selector: Description
+    text: Thank you for your time today. Please find attached...
+- click: Send
+- wait: 2
+- assert: Email
+- assert: Tracked

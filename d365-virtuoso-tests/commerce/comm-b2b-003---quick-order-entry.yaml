@@ -1,0 +1,61 @@
+name: COMM-B2B-003 - Quick Order Entry - B2B bulk order entry
+description: 'B2B bulk order entry (Module: Commerce, Suite: B2B Commerce)'
+project: D365 Test Automation
+goal: Commerce Tests
+journey: B2B Commerce
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: navigate
+  target: B2B portal
+- type: interact
+  command: click
+  target: Quick order
+- type: interact
+  command: write
+  target: SKU
+  value: SURF-001
+- type: interact
+  command: write
+  target: Qty
+  value: '25'
+- stepType: pressKey
+  key: '"TAB"'
+- type: interact
+  command: write
+  target: SKU
+  value: MOUSE-001
+- type: interact
+  command: write
+  target: Qty
+  value: '100'
+- stepType: pressKey
+  key: '"TAB"'
+- type: interact
+  command: write
+  target: SKU
+  value: KEYB-001
+- type: interact
+  command: write
+  target: Qty
+  value: '50'
+- type: interact
+  command: click
+  target: Add all to cart
+- type: assert
+  command: exists
+  target: 3 items added
+- type: interact
+  command: click
+  target: Submit for approval
+- type: interact
+  command: write
+  target: Order name
+  value: Q1 computer equipment order
+- type: interact
+  command: select
+  target: Cost center
+  value: IT Budget
+- type: interact
+  command: click
+  target: Submit

@@ -1,0 +1,41 @@
+project: 9369
+goal: 14145
+name: COMM-PRICE-003 - Buy One Get One Promotion - Configure BOGO promotion
+description: 'Configure BOGO promotion (Module: Commerce, Suite: Pricing and Promotions)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: New
+- write:
+    selector: Name
+    text: BOGO Apparel - $TIMESTAMP
+- select:
+    selector: Discount type
+    option: Mix and match
+- select:
+    selector: Discount method
+    option: Least expensive free
+- click: Buy products
+- select:
+    selector: Product selection
+    option: Category
+- select:
+    selector: Category
+    option: Apparel > Shirts
+- write:
+    selector: Minimum quantity
+    text: '2'
+- click: Get products
+- select:
+    selector: Selection
+    option: Same as buy products
+- write:
+    selector: Quantity
+    text: '1'
+- write:
+    selector: Discount percentage
+    text: '100'
+- write:
+    selector: Maximum applications per transaction
+    text: '2'
+- comment: Toggle "Combinable with other discounts" to off
+- click: Save and activate

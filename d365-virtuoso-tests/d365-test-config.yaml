@@ -1,0 +1,262 @@
+# D365 Test Automation Suite Configuration
+# This file contains environment-specific settings and test data configuration
+
+# API Configuration
+api:
+  auth_token: "${VIRTUOSO_API_TOKEN}"  # Set via environment variable
+  base_url: "https://api-app2.virtuoso.qa/api"
+  timeout: 30000
+  retry_attempts: 3
+  retry_delay: 1000
+
+# Organization Settings
+organization:
+  id: "2242"  # Your Virtuoso organization ID
+
+# D365 Environment Configuration
+d365:
+  # Primary test environment
+  environments:
+    dev:
+      url: "https://your-org-dev.crm.dynamics.com"
+      username: "testuser-dev@your-org.onmicrosoft.com"
+      password: "${D365_DEV_PASSWORD}"
+      is_default: true
+
+    test:
+      url: "https://your-org-test.crm.dynamics.com"
+      username: "testuser-test@your-org.onmicrosoft.com"
+      password: "${D365_TEST_PASSWORD}"
+
+    staging:
+      url: "https://your-org-staging.crm.dynamics.com"
+      username: "testuser-staging@your-org.onmicrosoft.com"
+      password: "${D365_STAGING_PASSWORD}"
+
+  # Default test user roles
+  test_users:
+    sales_rep:
+      username: "salesrep@your-org.onmicrosoft.com"
+      password: "${D365_SALESREP_PASSWORD}"
+      roles: ["Sales Representative", "Sales Person"]
+
+    service_agent:
+      username: "serviceagent@your-org.onmicrosoft.com"
+      password: "${D365_SERVICEAGENT_PASSWORD}"
+      roles: ["Customer Service Representative", "Service Manager"]
+
+    field_tech:
+      username: "fieldtech@your-org.onmicrosoft.com"
+      password: "${D365_FIELDTECH_PASSWORD}"
+      roles: ["Field Service - Resource", "Field Technician"]
+
+    marketing_manager:
+      username: "marketingmgr@your-org.onmicrosoft.com"
+      password: "${D365_MARKETING_PASSWORD}"
+      roles: ["Marketing Manager", "Marketing Professional"]
+
+    finance_user:
+      username: "financeuser@your-org.onmicrosoft.com"
+      password: "${D365_FINANCE_PASSWORD}"
+      roles: ["Accountant", "Finance Manager"]
+
+    hr_manager:
+      username: "hrmanager@your-org.onmicrosoft.com"
+      password: "${D365_HR_PASSWORD}"
+      roles: ["Human Resources Manager", "HR Assistant"]
+
+    admin:
+      username: "admin@your-org.onmicrosoft.com"
+      password: "${D365_ADMIN_PASSWORD}"
+      roles: ["System Administrator", "System Customizer"]
+
+# Test Data Configuration
+test_data:
+  # Common test data patterns
+  patterns:
+    company_prefix: "TEST_"
+    email_domain: "@testdata.example.com"
+    phone_pattern: "+1 (555) XXX-XXXX"
+
+  # Sample data for different entities
+  accounts:
+    - name: "TEST_Contoso Corporation"
+      type: "Customer"
+      industry: "Technology"
+    - name: "TEST_Fabrikam Inc"
+      type: "Vendor"
+      industry: "Manufacturing"
+    - name: "TEST_Adventure Works"
+      type: "Partner"
+      industry: "Retail"
+
+  contacts:
+    - first_name: "John"
+      last_name: "TestUser"
+      email: "john.testuser@testdata.example.com"
+    - first_name: "Jane"
+      last_name: "TestUser"
+      email: "jane.testuser@testdata.example.com"
+
+  products:
+    - name: "TEST_Product_001"
+      price: 99.99
+      category: "Software"
+    - name: "TEST_Product_002"
+      price: 199.99
+      category: "Hardware"
+
+# Test Execution Settings
+execution:
+  # Browser configuration
+  browser:
+    type: "chrome"  # chrome, firefox, edge, safari
+    headless: false
+    window_size: "1920x1080"
+
+  # Screenshot settings
+  screenshots:
+    on_failure: true
+    on_success: false
+    on_checkpoint: true
+    quality: 80
+
+  # Timeout settings (in milliseconds)
+  timeouts:
+    default: 30000
+    page_load: 60000
+    element_wait: 10000
+    script: 30000
+
+  # Retry configuration
+  retry:
+    max_attempts: 2
+    wait_between: 5000
+
+  # Parallel execution
+  parallel:
+    enabled: false
+    max_threads: 4
+
+# Reporting Configuration
+reporting:
+  # Report generation
+  formats:
+    - html
+    - json
+    - junit
+
+  # Report storage
+  storage:
+    local_path: "./test-results"
+    archive_days: 30
+
+  # Notifications
+  notifications:
+    email:
+      enabled: false
+      smtp_server: "smtp.office365.com"
+      smtp_port: 587
+      from: "d365-tests@your-org.com"
+      to:
+        - "qa-team@your-org.com"
+      on_failure_only: true
+
+    slack:
+      enabled: false
+      webhook_url: "${SLACK_WEBHOOK_URL}"
+      channel: "#d365-test-results"
+      mention_on_failure: "@qa-team"
+
+    teams:
+      enabled: false
+      webhook_url: "${TEAMS_WEBHOOK_URL}"
+
+# Module-specific Configuration
+modules:
+  sales:
+    enabled: true
+    default_timeout: 45000
+    test_data_set: "sales_standard"
+
+  customer_service:
+    enabled: true
+    default_timeout: 40000
+    test_data_set: "service_standard"
+
+  field_service:
+    enabled: true
+    default_timeout: 50000
+    test_data_set: "field_standard"
+
+  marketing:
+    enabled: true
+    default_timeout: 60000
+    test_data_set: "marketing_standard"
+
+  finance_operations:
+    enabled: true
+    default_timeout: 55000
+    test_data_set: "finance_standard"
+
+  project_operations:
+    enabled: true
+    default_timeout: 50000
+    test_data_set: "project_standard"
+
+  human_resources:
+    enabled: true
+    default_timeout: 40000
+    test_data_set: "hr_standard"
+
+  supply_chain:
+    enabled: true
+    default_timeout: 60000
+    test_data_set: "supply_standard"
+
+  commerce:
+    enabled: true
+    default_timeout: 50000
+    test_data_set: "commerce_standard"
+
+# Advanced Settings
+advanced:
+  # API rate limiting
+  rate_limit:
+    requests_per_minute: 60
+    burst_size: 10
+
+  # Caching
+  cache:
+    enabled: true
+    ttl: 3600  # seconds
+
+  # Debug settings
+  debug:
+    enabled: false
+    log_level: "info"  # debug, info, warn, error
+    log_api_calls: false
+    save_raw_responses: false
+
+  # Performance monitoring
+  monitoring:
+    enabled: true
+    collect_metrics: true
+    trace_slow_operations: true
+    slow_threshold: 10000  # milliseconds
+
+# Environment Variables Reference
+# The following environment variables should be set:
+# - VIRTUOSO_API_TOKEN: Your Virtuoso API authentication token
+# - D365_DEV_PASSWORD: Password for dev environment test user
+# - D365_TEST_PASSWORD: Password for test environment test user
+# - D365_STAGING_PASSWORD: Password for staging environment test user
+# - D365_SALESREP_PASSWORD: Password for sales rep test user
+# - D365_SERVICEAGENT_PASSWORD: Password for service agent test user
+# - D365_FIELDTECH_PASSWORD: Password for field tech test user
+# - D365_MARKETING_PASSWORD: Password for marketing test user
+# - D365_FINANCE_PASSWORD: Password for finance test user
+# - D365_HR_PASSWORD: Password for HR test user
+# - D365_ADMIN_PASSWORD: Password for admin test user
+# - SLACK_WEBHOOK_URL: (Optional) Slack webhook for notifications
+# - TEAMS_WEBHOOK_URL: (Optional) Teams webhook for notifications

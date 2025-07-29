@@ -1,0 +1,35 @@
+# Free Tier Configuration for Virtuoso API
+# This configuration maximizes the use of GCP free tier services
+
+cloud_run:
+  # Cloud Run free tier: 2 million requests/month
+  min_instances: 0  # Scale to zero when not in use
+  max_instances: 10  # Stay within free tier limits
+  memory: 512Mi  # Free tier allows up to 1Gi
+  cpu: 1
+  request_timeout: 60s
+
+firestore:
+  # Firestore free tier: 1GB storage, 50K reads/day, 20K writes/day
+  mode: native  # Use native mode for better performance
+
+secrets:
+  # Secret Manager free tier: 10K operations/month
+  replication: automatic
+
+monitoring:
+  # Cloud Monitoring free tier: 150 MB/month of logs
+  log_level: WARNING  # Reduce log volume
+
+# Services to skip in free tier
+skip_services:
+  - memorystore  # No free tier, use in-memory caching
+  - cloud_cdn    # No free tier, Cloud Run serves globally
+  - cloud_armor  # No free tier, basic protection included
+
+# Free alternatives
+alternatives:
+  cache: memory  # Use in-memory cache instead of Redis
+  cdn: cloud_run_global  # Cloud Run serves from edge locations
+
+estimated_cost: "$0.00/month for light usage"

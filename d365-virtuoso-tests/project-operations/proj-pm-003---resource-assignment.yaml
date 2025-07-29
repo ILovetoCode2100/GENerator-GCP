@@ -1,0 +1,82 @@
+name: PROJ-PM-003 - Resource Assignment - Assign resources to project tasks
+description: 'Assign resources to project tasks (Module: Project Operations, Suite: Project Management)'
+project: D365 Test Automation
+goal: Project Operations Tests
+journey: Project Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Team
+- type: interact
+  command: click
+  target: Add Team Member
+- type: interact
+  command: select
+  target: Booking Type
+  value: Generic Resource
+- type: interact
+  command: select
+  target: Role
+  value: Business Analyst
+- type: interact
+  command: write
+  target: Hours/Week
+  value: '40'
+- type: interact
+  command: write
+  target: From Date
+  value: $TODAY
+- type: interact
+  command: write
+  target: To Date
+  value: $DATE_PLUS_90
+- type: interact
+  command: click
+  target: Add
+- type: interact
+  command: click
+  target: Add Team Member
+- type: interact
+  command: select
+  target: Booking Type
+  value: Named Resource
+- type: interact
+  command: select
+  target: Resource
+  value: John Developer
+- type: interact
+  command: select
+  target: Role
+  value: Developer
+- type: interact
+  command: write
+  target: Hours/Week
+  value: '40'
+- type: interact
+  command: click
+  target: Add
+- type: interact
+  command: click
+  target: Work Breakdown Structure
+- type: interact
+  command: click
+  target: Conduct stakeholder interviews
+- type: interact
+  command: click
+  target: Assign Resources
+- type: interact
+  command: select
+  target: Resource
+  value: Business Analyst
+- type: interact
+  command: write
+  target: Hours
+  value: '16'
+- type: interact
+  command: click
+  target: Assign
+- type: assert
+  command: exists
+  target: Resource assigned

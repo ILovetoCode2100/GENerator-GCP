@@ -260,11 +260,15 @@ and displays them in a table format by default.`,
 			if description == "" {
 				description = "-"
 			}
+			snapshotID := g.SnapshotID
+			if snapshotID == "" && g.LatestSnapshotID != 0 {
+				snapshotID = fmt.Sprintf("%d", g.LatestSnapshotID)
+			}
 			return []string{
 				fmt.Sprintf("%d", g.ID),
 				g.Name,
 				truncate(description, 30),
-				g.SnapshotID,
+				snapshotID,
 			}
 		},
 		ListFunc: func(ctx context.Context, c *client.Client, args []string, limit, offset int) ([]interface{}, error) {

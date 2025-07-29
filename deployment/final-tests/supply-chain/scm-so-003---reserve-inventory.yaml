@@ -1,0 +1,20 @@
+project: 9369
+goal: 14144
+name: SCM-SO-003 - Reserve Inventory - Reserve inventory for sales order
+description: 'Reserve inventory for sales order (Module: Supply Chain, Suite: Sales Order Processing)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Inventory
+- click: Reservation
+- select:
+    selector: Reservation method
+    option: Automatic
+- click: Reserve lot
+- wait: 2
+- assert_text:
+    selector: Reserved physical
+    expected: '25'
+- assert_text:
+    selector: Reservation status
+    expected: Physical reserved
+- click: Close

@@ -1,0 +1,41 @@
+project: 9369
+goal: 14145
+name: COMM-STORE-004 - Product Assortment - Configure product catalog for online store
+description: 'Configure product catalog for online store (Module: Commerce, Suite: E-Commerce Store Setup)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Assortments
+- click: New
+- write:
+    selector: Name
+    text: Online Product Catalog - $TIMESTAMP
+- select:
+    selector: Channel
+    option: $channelId
+- write:
+    selector: Effective date
+    text: $TODAY
+- write:
+    selector: Expiration date
+    text: $DATE_PLUS_365
+- click: Products
+- click: Add category
+- comment: Pick "Electronics" from category tree
+- comment: Check "Include subcategories"
+- click: Add
+- click: Add category
+- comment: Pick "Apparel" from category tree
+- comment: Check "Include subcategories"
+- click: Add
+- click: Add products
+- comment: Search for "Surface Pro"
+- comment: Select all Surface products
+- click: Add
+- click: Validate
+- wait: 3
+- assert: Validation passed
+- comment: Assert that element shows "1,250 products included"
+- click: Publish
+- assert_text:
+    selector: Status
+    expected: Published

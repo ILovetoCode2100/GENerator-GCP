@@ -1,0 +1,66 @@
+name: HR-PERF-003 - Manager Performance Evaluation - Manager completes performance evaluation
+description: 'Manager completes performance evaluation (Module: Human Resources, Suite: Performance Management)'
+project: D365 Test Automation
+goal: Human Resources Tests
+journey: Performance Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: navigate
+  target: Team Reviews
+- type: interact
+  command: click
+  target: $reviewId
+- type: interact
+  command: click
+  target: Start Evaluation
+- type: interact
+  command: click
+  target: Q1 Project Delivery
+- type: assert
+  command: text
+  target: Self Rating
+  expected: Exceeded
+- type: interact
+  command: select
+  target: Manager Rating
+  value: Exceeded
+- type: interact
+  command: write
+  target: Manager Comments
+  value: Excellent project management and delivery
+- type: interact
+  command: click
+  target: Competencies
+- type: interact
+  command: click
+  target: Overall Rating
+- type: interact
+  command: select
+  target: Overall Performance
+  value: Exceeds Expectations
+- type: interact
+  command: write
+  target: Summary
+  value: John has been a valuable contributor to the team with consistent high-quality deliverables
+- type: interact
+  command: click
+  target: Development Plan
+- type: interact
+  command: write
+  target: Development Goal
+  value: Cloud Architecture Certification
+- type: interact
+  command: write
+  target: Target Date
+  value: Q3 2024
+- type: interact
+  command: write
+  target: Support Needed
+  value: Company will cover certification costs
+- type: interact
+  command: click
+  target: Complete Review
+- type: assert
+  command: exists
+  target: Review Completed

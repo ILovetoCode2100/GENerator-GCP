@@ -1,0 +1,41 @@
+project: 9369
+goal: 14145
+name: COMM-B2B-003 - Quick Order Entry - B2B bulk order entry
+description: 'B2B bulk order entry (Module: Commerce, Suite: B2B Commerce)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- navigate: B2B portal
+- comment: Sign in as "buyer@northwind.com"
+- click: Quick order
+- write:
+    selector: SKU
+    text: SURF-001
+- write:
+    selector: Qty
+    text: '25'
+- key: '"TAB"'
+- write:
+    selector: SKU
+    text: MOUSE-001
+- write:
+    selector: Qty
+    text: '100'
+- key: '"TAB"'
+- write:
+    selector: SKU
+    text: KEYB-001
+- write:
+    selector: Qty
+    text: '50'
+- click: Add all to cart
+- assert: 3 items added
+- comment: Assert that contract pricing applied
+- click: Submit for approval
+- write:
+    selector: Order name
+    text: Q1 computer equipment order
+- select:
+    selector: Cost center
+    option: IT Budget
+- click: Submit
+- comment: Assert that element "Pending approval" status shows

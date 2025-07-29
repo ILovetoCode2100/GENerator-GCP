@@ -1,0 +1,7 @@
+name: "Quick Test"
+description: "Simple test to verify functionality"
+steps:
+  - navigate: "https://example.com"
+  - wait: 2000
+  - assert: "Example Domain"
+  - comment: "Test completed"

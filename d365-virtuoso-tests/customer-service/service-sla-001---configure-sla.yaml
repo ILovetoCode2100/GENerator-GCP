@@ -1,0 +1,72 @@
+name: SERVICE-SLA-001 - Configure SLA - Set up new SLA for premium customers
+description: 'Set up new SLA for premium customers (Module: Customer Service, Suite: Service Level Agreements)'
+project: D365 Test Automation
+goal: Customer Service Tests
+journey: Service Level Agreements
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Service Management
+- type: interact
+  command: click
+  target: SLAs
+- type: interact
+  command: click
+  target: New
+- type: interact
+  command: write
+  target: Name
+  value: Premium Customer SLA
+- type: interact
+  command: select
+  target: Entity
+  value: Case
+- type: interact
+  command: write
+  target: Description
+  value: SLA for premium tier customers
+- type: interact
+  command: click
+  target: New SLA Item
+- type: interact
+  command: write
+  target: Name
+  value: First Response
+- type: interact
+  command: select
+  target: KPI Field
+  value: First Response By
+- type: interact
+  command: select
+  target: Failure Time
+  value: 4 hours
+- type: interact
+  command: select
+  target: Warning Time
+  value: 2 hours
+- type: interact
+  command: click
+  target: Save & Close
+- type: interact
+  command: click
+  target: Success Conditions
+- type: interact
+  command: click
+  target: Add Condition
+- type: interact
+  command: select
+  target: Field
+  value: Case Status
+- type: interact
+  command: select
+  target: Operator
+  value: equals
+- type: interact
+  command: select
+  target: Value
+  value: Resolved
+- type: interact
+  command: click
+  target: Save

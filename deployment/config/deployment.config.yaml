@@ -1,0 +1,80 @@
+# Virtuoso D365 Test Deployment Configuration
+# This file contains all deployment-specific settings
+
+# D365 Instance Configuration
+d365:
+  instance_url: ${D365_INSTANCE}  # Set via D365_INSTANCE environment variable
+
+# Virtuoso API Configuration
+virtuoso:
+  api_token: ${VIRTUOSO_API_TOKEN}  # Set via VIRTUOSO_API_TOKEN environment variable
+  base_url: https://api-app2.virtuoso.qa/api
+  organization_id: "2242"
+
+# Deployment Settings
+deployment:
+  # Project naming convention
+  project_name: "D365 Test Suite"
+  project_description: "Comprehensive D365 test automation suite covering all modules"
+
+  # Goal naming convention (one per module)
+  goals:
+    - name: "Commerce Tests"
+      description: "All commerce module tests including B2B, CX, POS, etc."
+      path: "commerce"
+    - name: "Customer Service Tests"
+      description: "Customer service module tests including cases, KB, SLA, etc."
+      path: "customer-service"
+    - name: "Field Service Tests"
+      description: "Field service module tests including work orders, IoT, scheduling, etc."
+      path: "field-service"
+    - name: "Finance Operations Tests"
+      description: "Finance and operations tests including AP, AR, GL, etc."
+      path: "finance-operations"
+    - name: "Human Resources Tests"
+      description: "HR module tests including benefits, leave, performance, etc."
+      path: "human-resources"
+    - name: "Marketing Tests"
+      description: "Marketing module tests including email, events, journeys, etc."
+      path: "marketing"
+    - name: "Project Operations Tests"
+      description: "Project operations tests including PM, resources, time tracking, etc."
+      path: "project-operations"
+    - name: "Sales Tests"
+      description: "Sales module tests including leads, opportunities, orders, etc."
+      path: "sales"
+    - name: "Supply Chain Tests"
+      description: "Supply chain tests including inventory, production, quality, etc."
+      path: "supply-chain"
+
+  # Test execution settings
+  execution:
+    parallel_uploads: 5  # Number of tests to upload in parallel
+    batch_size: 10      # Number of tests to process in each batch
+    retry_attempts: 3   # Number of retry attempts for failed operations
+    retry_delay: 5      # Delay in seconds between retries
+
+  # Progress tracking
+  tracking:
+    checkpoint_file: "deployment/state/deployment-checkpoint.json"
+    log_file: "deployment/logs/deployment-${TIMESTAMP}.log"
+
+  # Rollback settings
+  rollback:
+    enabled: true
+    backup_dir: "deployment/backups"
+
+# Test validation settings
+validation:
+  required_fields:
+    - name
+    - description
+    - starting_url
+    - steps
+  url_pattern: "https://${D365_INSTANCE}.crm.dynamics.com"
+
+# Error handling
+error_handling:
+  continue_on_error: false  # Stop deployment on first error
+  max_consecutive_failures: 3
+  error_report: "deployment/reports/error-report-${TIMESTAMP}.json"

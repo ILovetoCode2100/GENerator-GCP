@@ -1,0 +1,46 @@
+name: COMM-POS-002 - Buy Online Pickup Store - Process BOPIS order
+description: 'Process BOPIS order (Module: Commerce, Suite: POS Integration)'
+project: D365 Test Automation
+goal: Commerce Tests
+journey: POS Integration
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: navigate
+  target: online store
+- type: interact
+  command: click
+  target: Checkout
+- type: interact
+  command: select
+  target: Delivery method
+  value: Store pickup
+- type: interact
+  command: select
+  target: Store
+  value: Contoso Store 001
+- type: interact
+  command: select
+  target: Pickup time
+  value: Tomorrow 2:00 PM
+- type: navigate
+  target: Store Commerce
+- type: interact
+  command: click
+  target: Online orders
+- type: interact
+  command: click
+  target: order
+- type: interact
+  command: click
+  target: Customer arrived
+- type: interact
+  command: write
+  target: ID verification
+  value: DL-123456
+- type: interact
+  command: click
+  target: Release items
+- type: interact
+  command: click
+  target: Complete pickup

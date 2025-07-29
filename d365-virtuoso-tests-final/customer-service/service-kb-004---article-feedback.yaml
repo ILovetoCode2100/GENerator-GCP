@@ -1,0 +1,15 @@
+name: SERVICE-KB-004 - Article Feedback - Rate and provide feedback on article
+description: 'Rate and provide feedback on article (Module: Customer Service, Suite: Knowledge Management)'
+starting_url: https://[instance].crm.dynamics.com
+steps:
+- navigate: https://[instance].crm.dynamics.com/main.aspx?pagetype=entitylist&etn=knowledgearticle
+- click: How to Reset Customer Portal Password
+- scroll: Feedback
+- click: 5 stars
+- write:
+    selector: Comments
+    text: Very helpful article, solved my issue
+- click: Submit Feedback
+- assert_text:
+    selector: Rating
+    expected: '5.0'

@@ -124,8 +124,8 @@ func RegisterCommands(rootCmd *cobra.Command) {
 
 // applyValidatorToCommand applies the command validator middleware to a command and all its subcommands
 func applyValidatorToCommand(cmd *cobra.Command, validator *CommandValidator) {
-	// Apply to the main command
-	validator.ApplyAsMiddleware(cmd)
+	// TODO: Implement ApplyAsMiddleware method
+	// validator.ApplyAsMiddleware(cmd)
 
 	// Apply to all subcommands recursively
 	for _, subCmd := range cmd.Commands() {

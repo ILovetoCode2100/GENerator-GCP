@@ -1,0 +1,40 @@
+name: FIELD-INV-001 - Inventory Transfer - Transfer parts between warehouses
+description: 'Transfer parts between warehouses (Module: Field Service, Suite: Inventory Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Inventory
+- click: Transfers
+- click: New Transfer
+- select:
+    selector: Source Warehouse
+    option: Main Warehouse
+- select:
+    selector: Destination
+    option: North Truck 01
+- write:
+    selector: Description
+    text: Stock truck for tomorrow's routes
+- click: Add Product
+- select:
+    selector: Product
+    option: HVAC Filter 20x25
+- write:
+    selector: Quantity
+    text: '10'
+- click: Add
+- click: Add Product
+- select:
+    selector: Product
+    option: Refrigerant R410A
+- write:
+    selector: Quantity
+    text: '5'
+- click: Add
+- click: Ship
+- assert_text:
+    selector: Status
+    expected: Shipped
+- store:
+    type: text
+    selector: Transfer Number
+    variable: $transferNumber

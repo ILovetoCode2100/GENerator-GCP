@@ -1,0 +1,31 @@
+name: SALES-LEAD-002 - Lead Qualification Process - Qualify a lead and convert to opportunity
+description: 'Qualify a lead and convert to opportunity (Module: Sales Module, Suite: Lead Management)'
+project: D365 Test Automation
+goal: Sales Module Tests
+journey: Lead Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Qualify
+- type: wait
+  command: time
+  value: 2
+- type: interact
+  command: click
+  target: button "OK"
+- type: wait
+  command: time
+  value: 5
+- type: assert
+  command: exists
+  target: Opportunity
+- type: store
+  command: text
+  target: Opportunity Name
+  variable: opportunityName
+- type: assert
+  command: text
+  target: Estimated Revenue
+  expected: '50000'

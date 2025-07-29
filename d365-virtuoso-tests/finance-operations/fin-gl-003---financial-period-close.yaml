@@ -1,0 +1,83 @@
+name: FIN-GL-003 - Financial Period Close - Execute month-end closing procedures
+description: 'Execute month-end closing procedures (Module: Finance Operations, Suite: General Ledger)'
+project: D365 Test Automation
+goal: Finance Operations Tests
+journey: General Ledger
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: General ledger
+- type: interact
+  command: click
+  target: Period close
+- type: interact
+  command: click
+  target: Financial period close workspace
+- type: interact
+  command: click
+  target: Validate period close
+- type: interact
+  command: select
+  target: Period
+  value: $CURRENT_MONTH
+- type: interact
+  command: click
+  target: Run validation
+- type: wait
+  command: time
+  value: 5
+- type: interact
+  command: click
+  target: Closing tasks
+- type: interact
+  command: click
+  target: Foreign currency revaluation
+- type: interact
+  command: select
+  target: Currency
+  value: All
+- type: interact
+  command: write
+  target: Considered date
+  value: $MONTH_END_DATE
+- type: interact
+  command: click
+  target: OK
+- type: wait
+  command: time
+  value: 10
+- type: interact
+  command: click
+  target: Ledger allocations
+- type: interact
+  command: click
+  target: Process allocations
+- type: interact
+  command: select
+  target: Allocation rule
+  value: Monthly allocations
+- type: interact
+  command: click
+  target: Process
+- type: wait
+  command: time
+  value: 5
+- type: assert
+  command: exists
+  target: Allocation journal created
+- type: interact
+  command: click
+  target: Close period
+- type: interact
+  command: select
+  target: Period
+  value: $CURRENT_MONTH
+- type: interact
+  command: click
+  target: Close
+- type: assert
+  command: text
+  target: Period status
+  expected: Closed

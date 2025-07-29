@@ -1,0 +1,58 @@
+name: FIELD-WO-004 - Resource Requirements - Set resource requirements for specialized work
+description: 'Set resource requirements for specialized work (Module: Field Service, Suite: Work Order Management)'
+project: D365 Test Automation
+goal: Field Service Tests
+journey: Work Order Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: navigate
+  target: work order "$workOrderNumber"
+- type: interact
+  command: click
+  target: Resource Requirements
+- type: interact
+  command: click
+  target: New
+- type: interact
+  command: select
+  target: Characteristic
+  value: Printer Technician
+- type: interact
+  command: select
+  target: Proficiency
+  value: Expert
+- type: interact
+  command: select
+  target: Requirement Type
+  value: Required
+- type: interact
+  command: write
+  target: Notes
+  value: Need certified printer repair technician
+- type: interact
+  command: click
+  target: Save
+- type: interact
+  command: click
+  target: New
+- type: interact
+  command: select
+  target: Type
+  value: Service Territory
+- type: interact
+  command: select
+  target: Territory
+  value: Seattle Metro
+- type: interact
+  command: click
+  target: Save
+- type: interact
+  command: click
+  target: Book
+- type: interact
+  command: click
+  target: Schedule Assistant
+- type: wait
+  command: time
+  value: 3

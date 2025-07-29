@@ -1,0 +1,36 @@
+name: SALES-ORDER-001 - Create Order from Quote - Convert accepted quote to order
+description: 'Convert accepted quote to order (Module: Sales Module, Suite: Order Management)'
+project: D365 Test Automation
+goal: Sales Module Tests
+journey: Order Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: navigate
+  target: https://[instance].crm.dynamics.com/main.aspx?pagetype=entitylist&etn=quote
+- type: interact
+  command: click
+  target: first "Active" quote
+- type: interact
+  command: click
+  target: Create Order
+- type: wait
+  command: time
+  value: 2
+- type: interact
+  command: click
+  target: OK
+- type: wait
+  command: time
+  value: 3
+- type: assert
+  command: exists
+  target: Order
+- type: store
+  command: text
+  target: Order Number
+  variable: orderNumber
+- type: assert
+  command: text
+  target: Total Amount
+  expected: $quoteAmount

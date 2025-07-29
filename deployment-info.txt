@@ -1,0 +1,49 @@
+Virtuoso API Deployment - Google Cloud Platform
+==============================================
+Date: 2025-07-24 20:58:00
+Project: virtuoso-api-1753389008
+Service: virtuoso-api
+URL: https://virtuoso-api-936111683985.us-central1.run.app
+Region: us-central1
+
+🔑 API Keys (Save these!):
+Client 1: 6a54e405ab1277b555f13ccfcd68f32343a21debcb2f7fe12ce845ca8dfd5e2d
+Client 2: 9750b0bffa87d68aba2321959a42072cd584d2e23386f65e801b0e4842ffb9f2
+
+🧪 Test Commands:
+curl https://virtuoso-api-936111683985.us-central1.run.app/health
+curl https://virtuoso-api-936111683985.us-central1.run.app/
+curl https://virtuoso-api-936111683985.us-central1.run.app/api/v1/commands
+
+📊 Test with API Key:
+curl -H "X-API-Key: 6a54e405ab1277b555f13ccfcd68f32343a21debcb2f7fe12ce845ca8dfd5e2d" \
+  https://virtuoso-api-936111683985.us-central1.run.app/api/v1/commands
+
+🔧 Management Commands:
+View logs: gcloud run services logs read virtuoso-api --project=virtuoso-api-1753389008
+Update service: gcloud run services update virtuoso-api --region us-central1
+Delete service: gcloud run services delete virtuoso-api --region us-central1
+View in console: https://console.cloud.google.com/run/detail/us-central1/virtuoso-api/metrics?project=virtuoso-api-1753389008
+
+📈 Monitoring:
+Dashboard: https://console.cloud.google.com/run?project=virtuoso-api-1753389008
+Logs: https://console.cloud.google.com/logs?project=virtuoso-api-1753389008
+
+💰 Cost Estimate:
+- While idle: $0.00/month
+- Active usage: ~$0.50 per million requests
+- Free tier: 2M requests/month included
+
+🚀 Next Steps:
+1. Deploy the full API (currently using simplified version)
+2. Enable Firestore for data persistence
+3. Set up Cloud Tasks for async processing
+4. Configure monitoring alerts
+5. Add custom domain
+
+📝 Notes:
+- Service is configured with min 0 instances (scales to zero)
+- Max 10 instances for auto-scaling
+- Using 512MB memory per instance
+- Secrets are stored in Secret Manager
+- Service account has access to required secrets

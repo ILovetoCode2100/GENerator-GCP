@@ -1,0 +1,20 @@
+name: HR-TRAIN-003 - Record Training Completion - Employee completes assigned training
+description: 'Employee completes assigned training (Module: Human Resources, Suite: Training and Development)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- navigate: My Learning
+- click: Information Security Awareness
+- click: Start Course
+- wait: 5
+- click: Next Module
+- click: Take Assessment
+- comment: Answer all questions correctly
+- click: Submit Assessment
+- assert_text:
+    selector: Score
+    expected: 100%
+- assert_text:
+    selector: Status
+    expected: Completed
+- click: Download Certificate
+- comment: Assert that certificate downloads successfully

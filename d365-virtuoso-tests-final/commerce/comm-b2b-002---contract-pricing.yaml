@@ -1,0 +1,48 @@
+name: COMM-B2B-002 - Contract Pricing - Set up B2B contract pricing
+description: 'Set up B2B contract pricing (Module: Commerce, Suite: B2B Commerce)'
+starting_url: https://[instance].crm.dynamics.com
+steps:
+- click: Trade agreements
+- click: New journal
+- write:
+    selector: Name
+    text: Northwind Contract - $TIMESTAMP
+- click: Lines
+- click: New
+- select:
+    selector: Relation
+    option: Price (sales)
+- select:
+    selector: Account
+    option: NW-$TIMESTAMP
+- select:
+    selector: Item
+    option: SURF-001
+- write:
+    selector: Price
+    text: '999.99'
+- write:
+    selector: Minimum quantity
+    text: '10'
+- write:
+    selector: From date
+    text: $TODAY
+- write:
+    selector: To date
+    text: $DATE_PLUS_365
+- click: New
+- write:
+    selector: Minimum quantity
+    text: '50'
+- write:
+    selector: Price
+    text: '949.99'
+- click: New
+- write:
+    selector: Minimum quantity
+    text: '100'
+- write:
+    selector: Price
+    text: '899.99'
+- click: Post
+- comment: Assert that journal posts successfully

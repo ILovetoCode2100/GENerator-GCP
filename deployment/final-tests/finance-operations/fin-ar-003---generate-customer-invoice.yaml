@@ -1,0 +1,31 @@
+project: 9369
+goal: 14141
+name: FIN-AR-003 - Generate Customer Invoice - Post customer invoice from sales order
+description: 'Post customer invoice from sales order (Module: Finance Operations, Suite: Accounts Receivable)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Pick and pack
+- click: Post packing slip
+- write:
+    selector: Packing slip
+    text: PACK-$TIMESTAMP
+- click: OK
+- wait: 3
+- click: Invoice
+- click: Invoice
+- click: 'Default from: Packing slip quantity'
+- comment: Assert that quantities populate from packing slip
+- click: Post
+- wait: 3
+- assert: Posted sales invoice
+- store:
+    type: text
+    selector: Invoice
+    variable: $invoiceNumber
+- click: Print
+- click: Invoice
+- select:
+    selector: Print destination
+    option: Screen
+- click: OK
+- comment: Assert that invoice preview displays

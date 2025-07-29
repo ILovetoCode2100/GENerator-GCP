@@ -1,0 +1,31 @@
+name: COMM-PROD-002 - Product Media Upload - Add images and videos to product
+description: 'Add images and videos to product (Module: Commerce, Suite: Product Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Media
+- click: Add image
+- comment: Upload "surface-pro-main.jpg" as "Primary image"
+- comment: Set as "Default image"
+- write:
+    selector: Alt text
+    text: Surface Pro 9 front view
+- click: Add image
+- comment: Upload "surface-pro-side.jpg"
+- write:
+    selector: Alt text
+    text: Side view showing kickstand
+- click: Add image
+- comment: Upload "surface-pro-keyboard.jpg"
+- write:
+    selector: Alt text
+    text: With Type Cover keyboard attached
+- click: Add video
+- comment: Upload "surface-pro-demo.mp4"
+- write:
+    selector: Title
+    text: Surface Pro 9 Demo
+- write:
+    selector: Description
+    text: See Surface Pro 9 in action
+- click: Save all media
+- assert: 4 media items

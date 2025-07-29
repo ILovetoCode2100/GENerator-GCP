@@ -1,0 +1,40 @@
+name: HR-BEN-003 - Annual Benefits Review - Annual open enrollment process
+description: 'Annual open enrollment process (Module: Human Resources, Suite: Benefits Administration)'
+project: D365 Test Automation
+goal: Human Resources Tests
+journey: Benefits Administration
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: navigate
+  target: Open Enrollment
+- type: interact
+  command: click
+  target: Start Enrollment
+- type: interact
+  command: click
+  target: Make Changes
+- type: interact
+  command: click
+  target: Medical Insurance
+- type: interact
+  command: select
+  target: New Plan
+  value: HSA Plan
+- type: interact
+  command: click
+  target: Flexible Spending Account
+- type: interact
+  command: write
+  target: Annual Contribution
+  value: '2500'
+- type: assert
+  command: text
+  target: Per Paycheck
+  expected: '96.15'
+- type: interact
+  command: click
+  target: Review Changes
+- type: interact
+  command: click
+  target: Confirm Enrollment

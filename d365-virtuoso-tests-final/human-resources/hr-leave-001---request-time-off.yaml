@@ -1,0 +1,33 @@
+name: HR-LEAVE-001 - Request Time Off - Employee requests vacation time
+description: 'Employee requests vacation time (Module: Human Resources, Suite: Leave and Absence Management)'
+starting_url: https://[instance].crm.dynamics.com
+steps:
+- click: Time Off
+- click: New Request
+- select:
+    selector: Leave Type
+    option: Vacation
+- write:
+    selector: Start Date
+    text: $DATE_PLUS_30
+- write:
+    selector: End Date
+    text: $DATE_PLUS_35
+- select:
+    selector: Duration Type
+    option: Full Day
+- comment: Calculate that element "Total Days" equals "6"
+- write:
+    selector: Comments
+    text: Family vacation to Hawaii
+- comment: Assert that element "Current Balance" is greater than "6"
+- comment: Assert that element "Balance After Request" shows correct remaining
+- click: Submit Request
+- wait: 2
+- assert_text:
+    selector: Status
+    expected: Pending Approval
+- store:
+    type: text
+    selector: Request ID
+    variable: $leaveRequestId

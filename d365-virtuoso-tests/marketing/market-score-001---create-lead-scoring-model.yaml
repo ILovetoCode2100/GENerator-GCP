@@ -1,0 +1,128 @@
+name: MARKET-SCORE-001 - Create Lead Scoring Model - Build automated lead scoring model
+description: 'Build automated lead scoring model (Module: Marketing, Suite: Lead Scoring)'
+project: D365 Test Automation
+goal: Marketing Tests
+journey: Lead Scoring
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Lead scoring
+- type: interact
+  command: click
+  target: New
+- type: interact
+  command: write
+  target: Name
+  value: Engagement Score Model - $TIMESTAMP
+- type: interact
+  command: select
+  target: Target entity
+  value: Contact
+- type: interact
+  command: click
+  target: Conditions
+- type: interact
+  command: click
+  target: Add condition
+- type: interact
+  command: write
+  target: Name
+  value: Job Title Score
+- type: interact
+  command: select
+  target: Field
+  value: Job Title
+- type: interact
+  command: select
+  target: Operator
+  value: contains
+- type: interact
+  command: write
+  target: Value
+  value: Manager,Director,VP
+- type: interact
+  command: write
+  target: Points
+  value: '10'
+- type: interact
+  command: click
+  target: Save
+- type: interact
+  command: click
+  target: Add condition
+- type: interact
+  command: write
+  target: Name
+  value: Email Engagement
+- type: interact
+  command: select
+  target: Interaction type
+  value: Email opened
+- type: interact
+  command: select
+  target: Time frame
+  value: Last 30 days
+- type: interact
+  command: write
+  target: Points per interaction
+  value: '5'
+- type: interact
+  command: write
+  target: Maximum points
+  value: '25'
+- type: interact
+  command: click
+  target: Save
+- type: interact
+  command: click
+  target: Add condition
+- type: interact
+  command: write
+  target: Name
+  value: Website Visits
+- type: interact
+  command: select
+  target: Interaction type
+  value: Website visited
+- type: interact
+  command: select
+  target: Specific page
+  value: Pricing page
+- type: interact
+  command: write
+  target: Points
+  value: '20'
+- type: interact
+  command: click
+  target: Save
+- type: interact
+  command: click
+  target: Grades
+- type: interact
+  command: write
+  target: Grade D minimum
+  value: '0'
+- type: interact
+  command: write
+  target: Grade C minimum
+  value: '25'
+- type: interact
+  command: write
+  target: Grade B minimum
+  value: '50'
+- type: interact
+  command: write
+  target: Grade A minimum
+  value: '75'
+- type: interact
+  command: click
+  target: Save
+- type: interact
+  command: click
+  target: Go live
+- type: assert
+  command: text
+  target: Status
+  expected: Live

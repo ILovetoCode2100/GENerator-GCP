@@ -142,12 +142,13 @@ type Project struct {
 
 // Goal represents a Virtuoso goal
 type Goal struct {
-	ID          int    `json:"id"`
-	ProjectID   int    `json:"projectId"`
-	Name        string `json:"name"`
-	Description string `json:"description,omitempty"`
-	SnapshotID  string `json:"snapshotId,omitempty"`
-	URL         string `json:"url,omitempty"`
+	ID               int    `json:"id"`
+	ProjectID        int    `json:"projectId"`
+	Name             string `json:"name"`
+	Description      string `json:"description,omitempty"`
+	SnapshotID       string `json:"snapshotId,omitempty"`
+	LatestSnapshotID int    `json:"latestSnapshotId,omitempty"`
+	URL              string `json:"url,omitempty"`
 }
 
 // Journey represents a Virtuoso journey (testsuite)
@@ -626,10 +627,12 @@ func (c *Client) ListProjectsWithOptions(offset, limit int) ([]*Project, error) 
 
 // ListGoals lists all goals for a project
 func (c *Client) ListGoals(projectID int) ([]*Goal, error) {
+	// The API returns goals in a map structure
 	var response struct {
-		Success bool   `json:"success"`
-		Items   []Goal `json:"items"`
-		Error   string `json:"error,omitempty"`
+		Success bool            `json:"success"`
+		Map     map[string]Goal `json:"map"`
+		Items   []Goal          `json:"items"` // Keep for backward compatibility
+		Error   string          `json:"error,omitempty"`
 	}
 
 	resp, err := c.httpClient.R().
@@ -648,10 +651,22 @@ func (c *Client) ListGoals(projectID int) ([]*Goal, error) {
 		return nil, fmt.Errorf("list goals failed with status %d: %s", resp.StatusCode(), resp.String())
 	}
 
-	// Convert to slice of pointers
-	goals := make([]*Goal, len(response.Items))
-	for i := range response.Items {
-		goals[i] = &response.Items[i]
+	// Convert map to slice of pointers
+	var goals []*Goal
+
+	// First check if we have goals in the map structure
+	if response.Map != nil && len(response.Map) > 0 {
+		goals = make([]*Goal, 0, len(response.Map))
+		for _, goal := range response.Map {
+			g := goal // Create a copy to avoid pointer issues
+			goals = append(goals, &g)
+		}
+	} else if len(response.Items) > 0 {
+		// Fall back to items array if map is empty
+		goals = make([]*Goal, len(response.Items))
+		for i := range response.Items {
+			goals[i] = &response.Items[i]
+		}
 	}
 
 	return goals, nil

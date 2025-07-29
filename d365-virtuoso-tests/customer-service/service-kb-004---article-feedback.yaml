@@ -1,0 +1,29 @@
+name: SERVICE-KB-004 - Article Feedback - Rate and provide feedback on article
+description: 'Rate and provide feedback on article (Module: Customer Service, Suite: Knowledge Management)'
+project: D365 Test Automation
+goal: Customer Service Tests
+journey: Knowledge Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: navigate
+  target: https://[instance].crm.dynamics.com/main.aspx?pagetype=entitylist&etn=knowledgearticle
+- type: interact
+  command: click
+  target: How to Reset Customer Portal Password
+- stepType: scrollTo
+  target: Feedback
+- type: interact
+  command: click
+  target: 5 stars
+- type: interact
+  command: write
+  target: Comments
+  value: Very helpful article, solved my issue
+- type: interact
+  command: click
+  target: Submit Feedback
+- type: assert
+  command: text
+  target: Rating
+  expected: '5.0'

@@ -1,0 +1,26 @@
+name: PROJ-TEMP-001 - Create Project Template - Create reusable project template
+description: 'Create reusable project template (Module: Project Operations, Suite: Project Templates and Automation)'
+starting_url: https://[instance].crm.dynamics.com
+steps:
+- click: Project Templates
+- click: New Template
+- write:
+    selector: Template Name
+    text: D365 Implementation Template
+- select:
+    selector: Category
+    option: Implementation
+- write:
+    selector: Description
+    text: Standard template for D365 module implementations
+- click: Copy from Project
+- select:
+    selector: Source Project
+    option: $projectId
+- comment: Select checkboxes for "Tasks", "Team", "Budget"
+- click: Copy
+- click: Edit Template
+- comment: Remove customer-specific information
+- comment: Add placeholder values
+- click: Save Template
+- assert: Template saved

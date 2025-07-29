@@ -1,0 +1,26 @@
+name: PROJ-RES-003 - Resource Request Workflow - Request and approve resource allocation
+description: 'Request and approve resource allocation (Module: Project Operations, Suite: Resource Management)'
+starting_url: https://[instance].crm.dynamics.com
+steps:
+- click: first matching resource
+- click: Request Resource
+- write:
+    selector: Justification
+    text: Need senior developer for integration work
+- select:
+    selector: Priority
+    option: High
+- click: Submit Request
+- navigate: Resource Requests
+- click: Pending Requests
+- click: Senior .NET Developer
+- comment: Review request details
+- click: Approve
+- select:
+    selector: Decision
+    option: Approved with Conditions
+- write:
+    selector: Comments
+    text: Approved for 30 hours/week
+- click: Approve
+- comment: Assert that resource is now allocated to project

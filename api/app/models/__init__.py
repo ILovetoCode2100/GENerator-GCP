@@ -1,0 +1,475 @@
+"""
+Pydantic models for the Virtuoso API.
+
+This package contains comprehensive models for all CLI commands, API requests,
+and API responses.
+"""
+
+# Import all command models
+from .commands import (
+    # Enums
+    StepType,
+    ElementType,
+    Position,
+    MouseButton,
+    KeyModifier,
+    ScrollDirection,
+    TabDirection,
+    OutputFormat,
+    # Base models
+    BaseCommand,
+    SelectorCommand,
+    # Assertion commands
+    AssertExistsCommand,
+    AssertNotExistsCommand,
+    AssertEqualsCommand,
+    AssertNotEqualsCommand,
+    AssertCheckedCommand,
+    AssertSelectedCommand,
+    AssertVariableCommand,
+    AssertGreaterThanCommand,
+    AssertGreaterThanOrEqualCommand,
+    AssertLessThanCommand,
+    AssertLessThanOrEqualCommand,
+    AssertMatchesCommand,
+    AssertCommand,
+    # Interaction commands
+    ClickCommand,
+    DoubleClickCommand,
+    RightClickCommand,
+    HoverCommand,
+    WriteCommand,
+    KeyCommand,
+    MouseMoveToCommand,
+    MouseMoveByCommand,
+    MouseDownCommand,
+    MouseUpCommand,
+    SelectOptionCommand,
+    SelectIndexCommand,
+    SelectLastCommand,
+    MouseCommand,
+    SelectCommand,
+    InteractCommand,
+    # Navigation commands
+    NavigateToCommand,
+    ScrollTopCommand,
+    ScrollBottomCommand,
+    ScrollElementCommand,
+    ScrollPositionCommand,
+    ScrollByCommand,
+    ScrollUpCommand,
+    ScrollDownCommand,
+    NavigateCommand,
+    # Window commands
+    WindowResizeCommand,
+    WindowMaximizeCommand,
+    SwitchTabCommand,
+    SwitchIframeCommand,
+    SwitchParentFrameCommand,
+    WindowCommand,
+    # Data commands
+    StoreTextCommand,
+    StoreValueCommand,
+    StoreAttributeCommand,
+    CookieCreateCommand,
+    CookieDeleteCommand,
+    CookieClearCommand,
+    DataCommand,
+    # Dialog commands
+    DismissAlertCommand,
+    DismissConfirmCommand,
+    DismissPromptCommand,
+    DismissPromptWithTextCommand,
+    DialogCommand,
+    # Wait commands
+    WaitElementCommand,
+    WaitTimeCommand,
+    WaitCommand,
+    # File commands
+    FileUploadCommand,
+    FileUploadUrlCommand,
+    FileCommand,
+    # Misc commands
+    CommentCommand,
+    ExecuteCommand,
+    MiscCommand,
+    # Library commands
+    LibraryAddCommand,
+    LibraryGetCommand,
+    LibraryAttachCommand,
+    LibraryMoveStepCommand,
+    LibraryRemoveStepCommand,
+    LibraryUpdateCommand,
+    LibraryCommand,
+    # Master union type
+    VirtuosoCommand,
+    # Command groups
+    StepAssertGroup,
+    StepInteractGroup,
+    StepNavigateGroup,
+    StepWindowGroup,
+    StepDataGroup,
+    StepDialogGroup,
+    StepWaitGroup,
+    StepFileGroup,
+    StepMiscGroup,
+    LibraryGroup,
+    # Simplified step models
+    SimpleNavigateStep,
+    SimpleClickStep,
+    SimpleWriteStep,
+    SimpleAssertStep,
+    SimpleWaitStep,
+    SimpleStoreStep,
+    SimpleScrollStep,
+    SimpleExecuteStep,
+    SimpleCommentStep,
+    SimplifiedStep,
+)
+
+# Import all request models
+from .requests import (
+    # Session management
+    CreateSessionRequest,
+    UpdateSessionRequest,
+    SessionContext,
+    # Command execution
+    ExecuteCommandRequest,
+    BatchCommandRequest,
+    # Test execution
+    TestInfrastructure,
+    TestVariable,
+    TestConfiguration,
+    RunTestRequest,
+    RunTestFromFileRequest,
+    # Project management
+    CreateProjectRequest,
+    CreateGoalRequest,
+    CreateJourneyRequest,
+    CreateCheckpointRequest,
+    # Execution management
+    CreateEnvironmentRequest,
+    ExecuteGoalRequest,
+    MonitorExecutionRequest,
+    # Query/Filter
+    ListFilter,
+    ListProjectsRequest,
+    ListGoalsRequest,
+    ListJourneysRequest,
+    ListCheckpointsRequest,
+    ListStepsRequest,
+    # Template management
+    LoadTemplateRequest,
+    GenerateFromTemplateRequest,
+    # Validation
+    ValidateCommandRequest,
+    ValidateTestRequest,
+    # Export/Import
+    ExportTestRequest,
+    ImportTestRequest,
+)
+
+# Import all response models
+from .responses import (
+    # Status and errors
+    ResponseStatus,
+    ErrorType,
+    ErrorDetail,
+    # Base responses
+    BaseResponse,
+    ErrorResponse,
+    PaginatedResponse,
+    # Command execution
+    StepResult,
+    CommandExecutionResponse,
+    BatchExecutionResult,
+    BatchCommandResponse,
+    # Test execution
+    TestCreationResult,
+    TestExecutionResult,
+    RunTestResponse,
+    # Project management
+    ProjectInfo,
+    GoalInfo,
+    JourneyInfo,
+    CheckpointInfo,
+    StepInfo,
+    CreateProjectResponse,
+    CreateGoalResponse,
+    CreateJourneyResponse,
+    CreateCheckpointResponse,
+    ListProjectsResponse,
+    ListGoalsResponse,
+    ListJourneysResponse,
+    ListCheckpointsResponse,
+    ListStepsResponse,
+    # Execution management
+    EnvironmentInfo,
+    ExecutionStatus,
+    ExecutionAnalysis,
+    CreateEnvironmentResponse,
+    ExecuteGoalResponse,
+    MonitorExecutionResponse,
+    GetExecutionAnalysisResponse,
+    # Session management
+    SessionInfo,
+    CreateSessionResponse,
+    GetSessionResponse,
+    # Library management
+    LibraryStepInfo,
+    AddLibraryStepResponse,
+    GetLibraryStepResponse,
+    AttachLibraryStepResponse,
+    UpdateLibraryStepResponse,
+    # Template management
+    TemplateInfo,
+    GeneratedCommands,
+    LoadTemplateResponse,
+    GenerateCommandsResponse,
+    ListTemplatesResponse,
+    # Validation
+    ValidationResult,
+    ValidateCommandResponse,
+    ValidateTestResponse,
+    # Export/Import
+    ExportResult,
+    ImportResult,
+    ExportTestResponse,
+    ImportTestResponse,
+    # Streaming
+    StreamEventType,
+    StreamEvent,
+    # Health check
+    HealthStatus,
+    HealthCheckResponse,
+)
+
+__all__ = [
+    # Commands - Enums
+    "StepType",
+    "ElementType",
+    "Position",
+    "MouseButton",
+    "KeyModifier",
+    "ScrollDirection",
+    "TabDirection",
+    "OutputFormat",
+    # Commands - Base
+    "BaseCommand",
+    "SelectorCommand",
+    # Commands - Assertions
+    "AssertExistsCommand",
+    "AssertNotExistsCommand",
+    "AssertEqualsCommand",
+    "AssertNotEqualsCommand",
+    "AssertCheckedCommand",
+    "AssertSelectedCommand",
+    "AssertVariableCommand",
+    "AssertGreaterThanCommand",
+    "AssertGreaterThanOrEqualCommand",
+    "AssertLessThanCommand",
+    "AssertLessThanOrEqualCommand",
+    "AssertMatchesCommand",
+    "AssertCommand",
+    # Commands - Interactions
+    "ClickCommand",
+    "DoubleClickCommand",
+    "RightClickCommand",
+    "HoverCommand",
+    "WriteCommand",
+    "KeyCommand",
+    "MouseMoveToCommand",
+    "MouseMoveByCommand",
+    "MouseDownCommand",
+    "MouseUpCommand",
+    "SelectOptionCommand",
+    "SelectIndexCommand",
+    "SelectLastCommand",
+    "MouseCommand",
+    "SelectCommand",
+    "InteractCommand",
+    # Commands - Navigation
+    "NavigateToCommand",
+    "ScrollTopCommand",
+    "ScrollBottomCommand",
+    "ScrollElementCommand",
+    "ScrollPositionCommand",
+    "ScrollByCommand",
+    "ScrollUpCommand",
+    "ScrollDownCommand",
+    "NavigateCommand",
+    # Commands - Window
+    "WindowResizeCommand",
+    "WindowMaximizeCommand",
+    "SwitchTabCommand",
+    "SwitchIframeCommand",
+    "SwitchParentFrameCommand",
+    "WindowCommand",
+    # Commands - Data
+    "StoreTextCommand",
+    "StoreValueCommand",
+    "StoreAttributeCommand",
+    "CookieCreateCommand",
+    "CookieDeleteCommand",
+    "CookieClearCommand",
+    "DataCommand",
+    # Commands - Dialog
+    "DismissAlertCommand",
+    "DismissConfirmCommand",
+    "DismissPromptCommand",
+    "DismissPromptWithTextCommand",
+    "DialogCommand",
+    # Commands - Wait
+    "WaitElementCommand",
+    "WaitTimeCommand",
+    "WaitCommand",
+    # Commands - File
+    "FileUploadCommand",
+    "FileUploadUrlCommand",
+    "FileCommand",
+    # Commands - Misc
+    "CommentCommand",
+    "ExecuteCommand",
+    "MiscCommand",
+    # Commands - Library
+    "LibraryAddCommand",
+    "LibraryGetCommand",
+    "LibraryAttachCommand",
+    "LibraryMoveStepCommand",
+    "LibraryRemoveStepCommand",
+    "LibraryUpdateCommand",
+    "LibraryCommand",
+    # Commands - Master type
+    "VirtuosoCommand",
+    # Commands - Groups
+    "StepAssertGroup",
+    "StepInteractGroup",
+    "StepNavigateGroup",
+    "StepWindowGroup",
+    "StepDataGroup",
+    "StepDialogGroup",
+    "StepWaitGroup",
+    "StepFileGroup",
+    "StepMiscGroup",
+    "LibraryGroup",
+    # Commands - Simplified
+    "SimpleNavigateStep",
+    "SimpleClickStep",
+    "SimpleWriteStep",
+    "SimpleAssertStep",
+    "SimpleWaitStep",
+    "SimpleStoreStep",
+    "SimpleScrollStep",
+    "SimpleExecuteStep",
+    "SimpleCommentStep",
+    "SimplifiedStep",
+    # Requests - Session
+    "CreateSessionRequest",
+    "UpdateSessionRequest",
+    "SessionContext",
+    # Requests - Command execution
+    "ExecuteCommandRequest",
+    "BatchCommandRequest",
+    # Requests - Test execution
+    "TestInfrastructure",
+    "TestVariable",
+    "TestConfiguration",
+    "RunTestRequest",
+    "RunTestFromFileRequest",
+    # Requests - Project management
+    "CreateProjectRequest",
+    "CreateGoalRequest",
+    "CreateJourneyRequest",
+    "CreateCheckpointRequest",
+    # Requests - Execution management
+    "CreateEnvironmentRequest",
+    "ExecuteGoalRequest",
+    "MonitorExecutionRequest",
+    # Requests - Query/Filter
+    "ListFilter",
+    "ListProjectsRequest",
+    "ListGoalsRequest",
+    "ListJourneysRequest",
+    "ListCheckpointsRequest",
+    "ListStepsRequest",
+    # Requests - Templates
+    "LoadTemplateRequest",
+    "GenerateFromTemplateRequest",
+    # Requests - Validation
+    "ValidateCommandRequest",
+    "ValidateTestRequest",
+    # Requests - Export/Import
+    "ExportTestRequest",
+    "ImportTestRequest",
+    # Responses - Status/Errors
+    "ResponseStatus",
+    "ErrorType",
+    "ErrorDetail",
+    # Responses - Base
+    "BaseResponse",
+    "ErrorResponse",
+    "PaginatedResponse",
+    # Responses - Command execution
+    "StepResult",
+    "CommandExecutionResponse",
+    "BatchExecutionResult",
+    "BatchCommandResponse",
+    # Responses - Test execution
+    "TestCreationResult",
+    "TestExecutionResult",
+    "RunTestResponse",
+    # Responses - Project management
+    "ProjectInfo",
+    "GoalInfo",
+    "JourneyInfo",
+    "CheckpointInfo",
+    "StepInfo",
+    "CreateProjectResponse",
+    "CreateGoalResponse",
+    "CreateJourneyResponse",
+    "CreateCheckpointResponse",
+    "ListProjectsResponse",
+    "ListGoalsResponse",
+    "ListJourneysResponse",
+    "ListCheckpointsResponse",
+    "ListStepsResponse",
+    # Responses - Execution management
+    "EnvironmentInfo",
+    "ExecutionStatus",
+    "ExecutionAnalysis",
+    "CreateEnvironmentResponse",
+    "ExecuteGoalResponse",
+    "MonitorExecutionResponse",
+    "GetExecutionAnalysisResponse",
+    # Responses - Session
+    "SessionInfo",
+    "CreateSessionResponse",
+    "GetSessionResponse",
+    # Responses - Library
+    "LibraryStepInfo",
+    "AddLibraryStepResponse",
+    "GetLibraryStepResponse",
+    "AttachLibraryStepResponse",
+    "UpdateLibraryStepResponse",
+    # Responses - Templates
+    "TemplateInfo",
+    "GeneratedCommands",
+    "LoadTemplateResponse",
+    "GenerateCommandsResponse",
+    "ListTemplatesResponse",
+    # Responses - Validation
+    "ValidationResult",
+    "ValidateCommandResponse",
+    "ValidateTestResponse",
+    # Responses - Export/Import
+    "ExportResult",
+    "ImportResult",
+    "ExportTestResponse",
+    "ImportTestResponse",
+    # Responses - Streaming
+    "StreamEventType",
+    "StreamEvent",
+    # Responses - Health
+    "HealthStatus",
+    "HealthCheckResponse",
+]

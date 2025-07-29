@@ -1,0 +1,38 @@
+name: MARKET-ANALYTICS-003 - Lead Generation Dashboard - Monitor lead generation metrics
+description: 'Monitor lead generation metrics (Module: Marketing, Suite: Marketing Analytics)'
+project: D365 Test Automation
+goal: Marketing Tests
+journey: Marketing Analytics
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Dashboards
+- type: interact
+  command: click
+  target: Lead Generation Dashboard
+- type: wait
+  command: time
+  value: 3
+- type: assert
+  command: exists
+  target: New leads this month
+- type: assert
+  command: exists
+  target: Lead score distribution
+- type: interact
+  command: click
+  target: Lead sources
+- stepType: pressKey
+  key: '"ESC"'
+- type: interact
+  command: select
+  target: Time period
+  value: Last quarter
+- type: interact
+  command: click
+  target: Refresh
+- type: wait
+  command: time
+  value: 2

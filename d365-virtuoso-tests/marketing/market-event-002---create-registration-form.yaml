@@ -1,0 +1,52 @@
+name: MARKET-EVENT-002 - Create Registration Form - Build custom registration form
+description: 'Build custom registration form (Module: Marketing, Suite: Event Management)'
+project: D365 Test Automation
+goal: Marketing Tests
+journey: Event Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Registration form
+- type: interact
+  command: click
+  target: New form
+- type: interact
+  command: write
+  target: Form name
+  value: Webinar Registration
+- type: interact
+  command: click
+  target: Add field
+- type: interact
+  command: select
+  target: Field type
+  value: Single line text
+- type: interact
+  command: write
+  target: Label
+  value: Job title
+- type: interact
+  command: click
+  target: Add
+- type: interact
+  command: write
+  target: Consent text
+  value: I agree to receive marketing communications
+- type: interact
+  command: click
+  target: Submission
+- type: interact
+  command: write
+  target: Success message
+  value: Thank you for registering! You'll receive a confirmation email shortly.
+- type: interact
+  command: click
+  target: Save
+- type: interact
+  command: click
+  target: Publish
+- type: assert
+  command: exists
+  target: Form published

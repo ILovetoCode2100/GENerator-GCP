@@ -1,0 +1,25 @@
+name: PROJ-RES-001 - Resource Capacity Planning - Plan resource capacity and availability
+description: 'Plan resource capacity and availability (Module: Project Operations, Suite: Resource Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Resource Management
+- click: Capacity Planning
+- select:
+    selector: Period
+    option: Next Month
+- select:
+    selector: View
+    option: All Resources
+- assert: Resource Utilization Chart
+- comment: Look for resources with utilization over "100%"
+- comment: If found
+- click: overallocated resource
+- assert: Conflicts
+- click: John Developer
+- click: Allocations
+- comment: Find project with highest hours
+- write:
+    selector: Hours/Week
+    text: '30'
+- click: Save
+- comment: Assert that utilization is now below "100%"

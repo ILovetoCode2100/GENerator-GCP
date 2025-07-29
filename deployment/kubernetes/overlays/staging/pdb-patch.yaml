@@ -1,0 +1,16 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: virtuoso-api-cli
+spec:
+  # Allow 1 pod to be unavailable in staging
+  maxUnavailable: 1
+  minAvailable: null  # Remove minAvailable in favor of maxUnavailable
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: virtuoso-redis
+spec:
+  # Ensure Redis stays available
+  minAvailable: 1

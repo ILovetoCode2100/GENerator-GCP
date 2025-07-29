@@ -1,0 +1,87 @@
+name: PROJ-TIME-003 - Expense Report Creation - Submit project expense report
+description: 'Submit project expense report (Module: Project Operations, Suite: Time and Expense Management)'
+project: D365 Test Automation
+goal: Project Operations Tests
+journey: Time and Expense Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Expense Management
+- type: interact
+  command: click
+  target: New Expense Report
+- type: interact
+  command: write
+  target: Report Name
+  value: Project Travel - $TIMESTAMP
+- type: interact
+  command: select
+  target: Project
+  value: $projectId
+- type: interact
+  command: write
+  target: Report Date
+  value: $TODAY
+- type: interact
+  command: click
+  target: Add Expense
+- type: interact
+  command: select
+  target: Category
+  value: Airfare
+- type: interact
+  command: write
+  target: Amount
+  value: '500'
+- type: interact
+  command: select
+  target: Currency
+  value: USD
+- type: interact
+  command: write
+  target: Description
+  value: Flight to client site
+- stepType: uploadFile
+  filePath: receipt_flight.pdf
+  target: Receipt
+- type: interact
+  command: click
+  target: Save
+- type: interact
+  command: click
+  target: Add Expense
+- type: interact
+  command: select
+  target: Category
+  value: Hotel
+- type: interact
+  command: write
+  target: Amount
+  value: '150'
+- type: interact
+  command: write
+  target: Nights
+  value: '2'
+- type: interact
+  command: write
+  target: Description
+  value: Client site hotel
+- type: interact
+  command: click
+  target: Save
+- type: interact
+  command: click
+  target: Submit Report
+- type: assert
+  command: text
+  target: Total
+  expected: '800'
+- type: interact
+  command: click
+  target: Submit
+- type: assert
+  command: text
+  target: Status
+  expected: Submitted

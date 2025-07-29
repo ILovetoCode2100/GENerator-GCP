@@ -1,0 +1,29 @@
+project: 9369
+goal: 14142
+name: PROJ-FIN-003 - Revenue Recognition - Configure and process revenue recognition
+description: 'Configure and process revenue recognition (Module: Project Operations, Suite: Project Financials)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Revenue Recognition
+- click: Setup Rules
+- select:
+    selector: Method
+    option: Percentage of Completion
+- select:
+    selector: Calculation Type
+    option: Cost-based
+- write:
+    selector: Recognition Frequency
+    text: Monthly
+- click: Save
+- click: Run Recognition
+- select:
+    selector: Period
+    option: $CURRENT_MONTH
+- click: Calculate
+- wait: 5
+- assert: Recognized Revenue
+- assert: Deferred Revenue
+- comment: Assert that element "Completion %" is between "0" and "100"
+- click: Post
+- assert: Journal Created

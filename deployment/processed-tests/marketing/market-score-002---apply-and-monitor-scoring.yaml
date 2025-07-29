@@ -1,0 +1,24 @@
+name: MARKET-SCORE-002 - Apply and Monitor Scoring - Apply scoring model and monitor results
+description: 'Apply scoring model and monitor results (Module: Marketing, Suite: Lead Scoring)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Contacts
+- click: any contact
+- click: Insights
+- assert: Lead score
+- comment: Assert that element "Grade" shows letter grade
+- click: Score details
+- comment: Assert that breakdown shows points by category
+- comment: Assert that "Total score" equals sum of categories
+- click: Timeline
+- click: Add activity
+- select:
+    selector: Activity type
+    option: Website visit
+- write:
+    selector: Description
+    text: Visited pricing page
+- click: Save
+- wait: 5
+- key: '"F5"'
+- comment: Assert that "Lead score" increased by "20"

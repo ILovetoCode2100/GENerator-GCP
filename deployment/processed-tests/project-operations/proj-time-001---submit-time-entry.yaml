@@ -1,0 +1,36 @@
+name: PROJ-TIME-001 - Submit Time Entry - Record time against project task
+description: 'Record time against project task (Module: Project Operations, Suite: Time and Expense Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Time Entry
+- click: New Time Entry
+- select:
+    selector: Project
+    option: $projectId
+- select:
+    selector: Task
+    option: Conduct stakeholder interviews
+- write:
+    selector: Date
+    text: $TODAY
+- write:
+    selector: Hours
+    text: '8'
+- select:
+    selector: Billing Type
+    option: Billable
+- write:
+    selector: Description
+    text: Completed initial stakeholder interviews
+- click: Time Distribution
+- write:
+    selector: Morning (8-10)
+    text: '2'
+- write:
+    selector: Mid-Morning (10-1)
+    text: '3'
+- write:
+    selector: Afternoon (1-4)
+    text: '3'
+- click: Save
+- assert: Time entry saved

@@ -1,0 +1,35 @@
+name: SCM-SO-003 - Reserve Inventory - Reserve inventory for sales order
+description: 'Reserve inventory for sales order (Module: Supply Chain, Suite: Sales Order Processing)'
+project: D365 Test Automation
+goal: Supply Chain Tests
+journey: Sales Order Processing
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Inventory
+- type: interact
+  command: click
+  target: Reservation
+- type: interact
+  command: select
+  target: Reservation method
+  value: Automatic
+- type: interact
+  command: click
+  target: Reserve lot
+- type: wait
+  command: time
+  value: 2
+- type: assert
+  command: text
+  target: Reserved physical
+  expected: '25'
+- type: assert
+  command: text
+  target: Reservation status
+  expected: Physical reserved
+- type: interact
+  command: click
+  target: Close

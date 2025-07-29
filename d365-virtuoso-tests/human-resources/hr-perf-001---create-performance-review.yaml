@@ -1,0 +1,53 @@
+name: HR-PERF-001 - Create Performance Review - Initiate annual performance review
+description: 'Initiate annual performance review (Module: Human Resources, Suite: Performance Management)'
+project: D365 Test Automation
+goal: Human Resources Tests
+journey: Performance Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Performance
+- type: interact
+  command: click
+  target: Reviews
+- type: interact
+  command: click
+  target: New Review
+- type: interact
+  command: select
+  target: Review Type
+  value: Annual Review
+- type: interact
+  command: select
+  target: Employee
+  value: John Anderson
+- type: interact
+  command: select
+  target: Review Period
+  value: '2024'
+- type: interact
+  command: write
+  target: Review Date
+  value: $TODAY
+- type: interact
+  command: select
+  target: Reviewer
+  value: Sarah Manager
+- type: interact
+  command: click
+  target: Add Goals
+- type: interact
+  command: click
+  target: Add Selected
+- type: interact
+  command: click
+  target: Create Review
+- type: assert
+  command: exists
+  target: Review Created
+- type: store
+  command: text
+  target: Review ID
+  variable: reviewId

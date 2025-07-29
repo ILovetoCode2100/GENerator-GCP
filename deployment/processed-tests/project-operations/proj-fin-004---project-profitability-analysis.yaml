@@ -1,0 +1,25 @@
+name: PROJ-FIN-004 - Project Profitability Analysis - Analyze project profitability metrics
+description: 'Analyze project profitability metrics (Module: Project Operations, Suite: Project Financials)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Analytics
+- click: Project Profitability
+- select:
+    selector: Project
+    option: $projectId
+- click: Generate Report
+- wait: 3
+- assert: Revenue
+- assert: Costs
+- assert: Gross Margin
+- assert: Margin %
+- click: Cost Details
+- assert: Labor Costs
+- assert: Expense Costs
+- assert: Material Costs
+- click: Export
+- select:
+    selector: Format
+    option: Excel
+- click: Download
+- comment: Assert that file downloads successfully

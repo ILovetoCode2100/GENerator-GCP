@@ -1,0 +1,88 @@
+name: MARKET-EVENT-001 - Create Marketing Event - Set up webinar event with registration
+description: 'Set up webinar event with registration (Module: Marketing, Suite: Event Management)'
+project: D365 Test Automation
+goal: Marketing Tests
+journey: Event Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Events
+- type: interact
+  command: click
+  target: New
+- type: interact
+  command: write
+  target: Event name
+  value: Product Launch Webinar - $TIMESTAMP
+- type: interact
+  command: select
+  target: Format
+  value: Webinar
+- type: interact
+  command: write
+  target: Capacity
+  value: '100'
+- type: interact
+  command: write
+  target: Event start date
+  value: $DATE_PLUS_14
+- type: interact
+  command: write
+  target: Start time
+  value: 2:00 PM
+- type: interact
+  command: write
+  target: Duration (hours)
+  value: '1'
+- type: interact
+  command: select
+  target: Venue
+  value: Teams Live Event
+- type: interact
+  command: write
+  target: Streaming URL
+  value: https://teams.microsoft.com/meet/...
+- type: interact
+  command: click
+  target: Registration
+- type: interact
+  command: select
+  target: Registration requirement
+  value: Required
+- type: interact
+  command: select
+  target: Event type
+  value: Free
+- type: interact
+  command: write
+  target: Waitlist percentage
+  value: '10'
+- type: interact
+  command: click
+  target: Speakers
+- type: interact
+  command: click
+  target: Add speaker
+- type: interact
+  command: select
+  target: Speaker
+  value: Jane Smith
+- type: interact
+  command: write
+  target: Title
+  value: Product Manager
+- stepType: uploadFile
+  filePath: jane-smith.jpg
+  target: Photo
+- type: interact
+  command: click
+  target: Save
+- type: interact
+  command: click
+  target: Save
+- type: store
+  command: text
+  target: Event ID
+  variable: eventId

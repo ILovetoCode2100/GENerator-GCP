@@ -1,0 +1,61 @@
+name: FIN-AR-004 - Customer Payment - Record customer payment and apply to invoice
+description: 'Record customer payment and apply to invoice (Module: Finance Operations, Suite: Accounts Receivable)'
+project: D365 Test Automation
+goal: Finance Operations Tests
+journey: Accounts Receivable
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Accounts receivable
+- type: interact
+  command: click
+  target: Payments
+- type: interact
+  command: click
+  target: Customer payment journal
+- type: interact
+  command: click
+  target: New
+- type: interact
+  command: select
+  target: Name
+  value: CustPay
+- type: interact
+  command: click
+  target: Lines
+- type: interact
+  command: click
+  target: Enter customer payments
+- type: interact
+  command: select
+  target: Account
+  value: CUST-$TIMESTAMP
+- type: interact
+  command: write
+  target: Credit
+  value: '5000'
+- type: interact
+  command: select
+  target: Method of payment
+  value: Check
+- type: interact
+  command: write
+  target: Payment reference
+  value: CHK-98765
+- type: interact
+  command: click
+  target: Settle transactions
+- type: interact
+  command: click
+  target: checkbox for invoice
+- type: interact
+  command: click
+  target: OK
+- type: interact
+  command: click
+  target: Post
+- type: wait
+  command: time
+  value: 2

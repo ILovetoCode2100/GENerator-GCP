@@ -1,0 +1,64 @@
+name: "RocketShop NLP Purchase Test"
+project: 9409
+goal: 14581
+steps:
+  - navigate: https://rocketshop.virtuoso.qa
+
+  - assert:
+      text: "Border Not Found"
+      exists: true
+
+  - wait: 20000
+
+  - click:
+      text: "Add to Bag"
+
+  - click:
+      text: "Shopping Bag"
+
+  - assert:
+      text: "Shopping Bag"
+      exists: true
+
+  - click:
+      text: "Go to Checkout"
+
+  - write:
+      text: "John Doe"
+      label: "Full name"
+
+  - write:
+      text: "johndoe@example.com"
+      label: "Email"
+
+  - write:
+      text: "123 Elm Street"
+      label: "Address"
+
+  - write:
+      text: "555-1234"
+      label: "Phone numbers"
+
+  - write:
+      text: "90210"
+      label: "ZIP code"
+
+  - write:
+      text: "4111 1111 1111 1111"
+      label: "Card number"
+
+  - write:
+      text: "234"
+      placeholder: "xxx"
+
+  - click:
+      text: "Confirm and Pay"
+
+  - wait: 20000
+
+  - assert:
+      text: "Purchase Confirmed!"
+      exists: true
+
+  - click:
+      text: "Download Confirmation"

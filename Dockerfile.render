@@ -1,0 +1,89 @@
+# Optimized Dockerfile for Render deployment
+# Combines both CLI and API in a single container
+
+# Stage 1: Build Go CLI
+FROM golang:1.21-alpine AS cli-builder
+
+# Install build dependencies
+RUN apk add --no-cache git make
+
+# Set working directory
+WORKDIR /build
+
+# Copy go mod files
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Build the CLI binary
+RUN make build
+
+# Stage 2: Python base with CLI
+FROM python:3.11-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN useradd -m -u 1000 virtuoso
+
+# Set working directory
+WORKDIR /app
+
+# Copy CLI binary from builder
+COPY --from=cli-builder /build/bin/api-cli /app/bin/api-cli
+RUN chmod +x /app/bin/api-cli
+
+# Copy API code
+COPY api/requirements.txt /app/api/requirements.txt
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r /app/api/requirements.txt
+
+# Copy API application code
+COPY api /app/api
+
+# Copy configuration template
+COPY --chown=virtuoso:virtuoso deployment/render/virtuoso-config.yaml.template /home/virtuoso/.api-cli/virtuoso-config.yaml.template
+
+# Create necessary directories
+RUN mkdir -p /home/virtuoso/.api-cli /app/logs /app/tmp && \
+    chown -R virtuoso:virtuoso /home/virtuoso /app/logs /app/tmp
+
+# Switch to non-root user
+USER virtuoso
+
+# Expose port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    API_HOST=0.0.0.0 \
+    API_PORT=8000 \
+    CLI_BINARY_PATH=/app/bin/api-cli
+
+# Create entrypoint script
+RUN echo '#!/bin/sh\n\
+# Generate CLI config from environment\n\
+if [ ! -f /home/virtuoso/.api-cli/virtuoso-config.yaml ]; then\n\
+    sed "s|YOUR_API_TOKEN|${VIRTUOSO_API_TOKEN}|g" \\\n\
+        /home/virtuoso/.api-cli/virtuoso-config.yaml.template > /home/virtuoso/.api-cli/virtuoso-config.yaml\n\
+fi\n\
+\n\
+# Start the application\n\
+exec "$@"' > /app/entrypoint.sh && chmod +x /app/entrypoint.sh
+
+ENTRYPOINT ["/app/entrypoint.sh"]
+
+# Default command (overridden by render.yaml)
+CMD ["gunicorn", "app.main:app", "--worker-class", "uvicorn.workers.UvicornWorker", "--workers", "4", "--bind", "0.0.0.0:8000", "--chdir", "/app/api"]

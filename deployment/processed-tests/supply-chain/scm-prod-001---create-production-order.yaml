@@ -1,0 +1,28 @@
+name: SCM-PROD-001 - Create Production Order - Create production order for manufactured item
+description: 'Create production order for manufactured item (Module: Supply Chain, Suite: Production Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Production control
+- click: Production orders
+- click: All production orders
+- click: New
+- select:
+    selector: Item number
+    option: FG-001
+- write:
+    selector: Quantity
+    text: '50'
+- select:
+    selector: Warehouse
+    option: WH-001
+- write:
+    selector: Delivery date
+    text: $DATE_PLUS_3
+- click: Create
+- wait: 3
+- store:
+    type: text
+    selector: Production order
+    variable: $productionOrder
+- comment: Assert that element "BOM" is populated
+- comment: Assert that element "Route" is populated

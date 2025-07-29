@@ -1,0 +1,36 @@
+project: 9369
+goal: 14143
+name: HR-PERF-002 - Complete Self-Assessment - Employee completes self-assessment
+description: 'Employee completes self-assessment (Module: Human Resources, Suite: Performance Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- navigate: My Reviews
+- click: $reviewId
+- click: Start Self-Assessment
+- click: Q1 Project Delivery
+- select:
+    selector: Self Rating
+    option: Exceeded
+- write:
+    selector: Comments
+    text: Delivered project 2 weeks early under budget
+- click: Save
+- click: Customer Satisfaction
+- select:
+    selector: Self Rating
+    option: Met
+- write:
+    selector: Comments
+    text: Maintained 95% satisfaction score
+- click: Save
+- click: Overall Assessment
+- write:
+    selector: Accomplishments
+    text: Successfully delivered all assigned projects while maintaining quality standards. Took on additional responsibilities including mentoring new team members.
+- write:
+    selector: Development Areas
+    text: Continue developing cloud architecture skills
+- click: Submit Assessment
+- assert_text:
+    selector: Status
+    expected: Awaiting Manager Review

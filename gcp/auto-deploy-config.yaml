@@ -1,0 +1,205 @@
+# Virtuoso API CLI - Auto Deploy Configuration
+# This file contains default settings for automated GCP deployment
+
+defaults:
+  project:
+    name_prefix: "virtuoso-cli"
+    labels:
+      app: "virtuoso-api-cli"
+      environment: "production"
+      managed-by: "auto-deploy"
+
+  region: "us-central1"  # Default region, can be overridden
+
+  # Cloud Run defaults (cost-optimized)
+  cloud_run:
+    memory: "512Mi"       # Sufficient for API CLI
+    cpu: "1"              # 1 vCPU
+    min_instances: 0      # Scale to zero when idle
+    max_instances: 100    # Handle burst traffic
+    concurrency: 80       # Requests per container
+    timeout: 300          # 5 minutes
+    cpu_boost: false      # Disable for cost savings
+
+    # Auto-scaling configuration
+    autoscaling:
+      # Scale up when CPU > 60%
+      cpu_utilization: 60
+      # Scale up when concurrent requests > 80% of max
+      request_utilization: 80
+
+    # Resource limits
+    limits:
+      cpu_throttling: true
+      startup_cpu_boost: true  # Faster cold starts
+
+  # Container Registry
+  container:
+    registry: "gcr.io"
+    tag: "latest"
+
+  # Security defaults
+  security:
+    allow_unauthenticated: true  # For API access
+    service_account: "auto-created"
+
+  # Networking
+  networking:
+    ingress: "all"  # Allow all traffic
+    egress: "all"   # Allow all outbound
+
+  # Logging and monitoring
+  observability:
+    logging_level: "INFO"
+    enable_tracing: false  # Disable for cost savings
+    enable_profiling: false
+
+  # Build configuration
+  build:
+    machine_type: "E2_HIGHCPU_8"
+    timeout: "1200s"  # 20 minutes
+    disk_size: "100"  # GB
+
+# Cost optimization settings
+cost_optimization:
+  # Use preemptible instances where possible
+  use_spot_instances: true
+
+  # Aggressive scaling down
+  scale_down_delay: 60  # seconds
+
+  # Disable expensive features
+  disable_features:
+    - cloud_trace
+    - cloud_profiler
+    - cloud_debugger
+
+  # Use free tier where available
+  use_free_tier: true
+
+# Security best practices
+security:
+  # Secret management
+  secrets:
+    provider: "secret_manager"
+    auto_rotate: false  # Manual rotation for API keys
+
+  # IAM configuration
+  iam:
+    principle_of_least_privilege: true
+    service_account_permissions:
+      - "run.invoker"
+      - "secretmanager.secretAccessor"
+      - "logging.logWriter"
+
+  # Network security
+  network:
+    enable_private_ip: false  # Public access needed
+    enable_vpc_connector: false
+
+# Deployment settings
+deployment:
+  # Deployment strategy
+  strategy: "blue_green"
+  max_surge: 1
+  max_unavailable: 0
+
+  # Health checks
+  health_check:
+    initial_delay: 10
+    period: 30
+    timeout: 10
+    success_threshold: 1
+    failure_threshold: 3
+    path: "/health"
+
+  # Rollback configuration
+  rollback:
+    automatic: true
+    revision_history_limit: 10
+
+# Monitoring and alerts
+monitoring:
+  # Basic monitoring (free tier)
+  metrics:
+    - request_count
+    - request_latencies
+    - error_rate
+
+  # Alert thresholds
+  alerts:
+    error_rate_threshold: 5  # percent
+    latency_threshold: 5000  # milliseconds
+
+# Virtuoso-specific configuration
+virtuoso:
+  # API defaults
+  api:
+    base_url: "https://api-app2.virtuoso.qa/api"
+    timeout: 30  # seconds
+    retry_attempts: 3
+    retry_delay: 1000  # milliseconds
+
+  # Default organization
+  organization:
+    id: "2242"  # Default, will be overridden
+
+# Terraform configuration
+terraform:
+  backend: "gcs"  # Google Cloud Storage
+  workspace: "default"
+
+# Estimated costs (USD per month)
+estimated_costs:
+  idle: 0.00  # With scale-to-zero
+  low_usage: 5.00  # ~100k requests
+  medium_usage: 25.00  # ~1M requests
+  high_usage: 100.00  # ~10M requests
+
+  # Cost breakdown
+  breakdown:
+    cloud_run_idle: 0.00
+    cloud_run_cpu: 0.0000024  # per vCPU-second
+    cloud_run_memory: 0.0000025  # per GiB-second
+    cloud_run_requests: 0.40  # per million
+    container_registry: 0.10  # per GB
+    cloud_build: 0.003  # per minute
+
+# Quick start presets
+presets:
+  # Minimal cost preset
+  minimal:
+    cloud_run:
+      memory: "256Mi"
+      cpu: "0.5"
+      min_instances: 0
+      max_instances: 10
+
+  # Balanced preset (default)
+  balanced:
+    cloud_run:
+      memory: "512Mi"
+      cpu: "1"
+      min_instances: 0
+      max_instances: 100
+
+  # Performance preset
+  performance:
+    cloud_run:
+      memory: "2Gi"
+      cpu: "2"
+      min_instances: 1
+      max_instances: 1000
+      cpu_boost: true
+
+  # Development preset
+  development:
+    cloud_run:
+      memory: "256Mi"
+      cpu: "0.5"
+      min_instances: 0
+      max_instances: 3
+    security:
+      allow_unauthenticated: true
+    observability:
+      logging_level: "DEBUG"

@@ -1,0 +1,45 @@
+name: FIN-REP-001 - Generate Trial Balance - Run trial balance report
+description: 'Run trial balance report (Module: Finance Operations, Suite: Financial Reporting)'
+project: D365 Test Automation
+goal: Finance Operations Tests
+journey: Financial Reporting
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: General ledger
+- type: interact
+  command: click
+  target: Inquiries and reports
+- type: interact
+  command: click
+  target: Trial balance
+- type: interact
+  command: write
+  target: From date
+  value: $MONTH_START
+- type: interact
+  command: write
+  target: To date
+  value: $MONTH_END
+- type: interact
+  command: select
+  target: Primary dimension set
+  value: Summary
+- type: interact
+  command: click
+  target: OK
+- type: wait
+  command: time
+  value: 5
+- type: interact
+  command: click
+  target: Export
+- type: interact
+  command: select
+  target: Format
+  value: Excel
+- type: interact
+  command: click
+  target: OK

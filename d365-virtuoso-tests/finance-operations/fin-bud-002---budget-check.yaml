@@ -1,0 +1,41 @@
+name: FIN-BUD-002 - Budget Check - Test budget control on purchase order
+description: 'Test budget control on purchase order (Module: Finance Operations, Suite: Budget Control)'
+project: D365 Test Automation
+goal: Finance Operations Tests
+journey: Budget Control
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Procurement and sourcing
+- type: interact
+  command: click
+  target: Purchase orders
+- type: interact
+  command: click
+  target: New
+- type: interact
+  command: write
+  target: Item number
+  value: ITEM-EXPENSIVE
+- type: interact
+  command: write
+  target: Quantity
+  value: '1'
+- type: interact
+  command: write
+  target: Unit price
+  value: '100000'
+- type: interact
+  command: click
+  target: Purchase
+- type: interact
+  command: click
+  target: Confirm
+- type: wait
+  command: time
+  value: 2
+- type: interact
+  command: click
+  target: Budget check results

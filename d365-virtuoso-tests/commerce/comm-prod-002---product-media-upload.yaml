@@ -1,0 +1,49 @@
+name: COMM-PROD-002 - Product Media Upload - Add images and videos to product
+description: 'Add images and videos to product (Module: Commerce, Suite: Product Management)'
+project: D365 Test Automation
+goal: Commerce Tests
+journey: Product Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Media
+- type: interact
+  command: click
+  target: Add image
+- type: interact
+  command: write
+  target: Alt text
+  value: Surface Pro 9 front view
+- type: interact
+  command: click
+  target: Add image
+- type: interact
+  command: write
+  target: Alt text
+  value: Side view showing kickstand
+- type: interact
+  command: click
+  target: Add image
+- type: interact
+  command: write
+  target: Alt text
+  value: With Type Cover keyboard attached
+- type: interact
+  command: click
+  target: Add video
+- type: interact
+  command: write
+  target: Title
+  value: Surface Pro 9 Demo
+- type: interact
+  command: write
+  target: Description
+  value: See Surface Pro 9 in action
+- type: interact
+  command: click
+  target: Save all media
+- type: assert
+  command: exists
+  target: 4 media items

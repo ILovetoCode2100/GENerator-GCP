@@ -1,0 +1,49 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: virtuoso-api-staging
+
+bases:
+- ../../base
+
+namePrefix: staging-
+
+commonLabels:
+  environment: staging
+  app.kubernetes.io/managed-by: kustomize
+
+patchesStrategicMerge:
+- deployment-patch.yaml
+- configmap-patch.yaml
+- ingress-patch.yaml
+- pdb-patch.yaml
+
+resources:
+- |-
+  apiVersion: v1
+  kind: Namespace
+  metadata:
+    name: virtuoso-api-staging
+    labels:
+      environment: staging
+
+images:
+- name: virtuoso-api-cli
+  newTag: staging-latest
+
+# Add resource quotas for staging
+resources:
+- |-
+  apiVersion: v1
+  kind: ResourceQuota
+  metadata:
+    name: staging-quota
+    namespace: virtuoso-api-staging
+  spec:
+    hard:
+      requests.cpu: "4"
+      requests.memory: "8Gi"
+      limits.cpu: "8"
+      limits.memory: "16Gi"
+      persistentvolumeclaims: "5"
+      services: "10"

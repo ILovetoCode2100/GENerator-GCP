@@ -1,0 +1,47 @@
+name: PROJ-RES-003 - Resource Request Workflow - Request and approve resource allocation
+description: 'Request and approve resource allocation (Module: Project Operations, Suite: Resource Management)'
+project: D365 Test Automation
+goal: Project Operations Tests
+journey: Resource Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: first matching resource
+- type: interact
+  command: click
+  target: Request Resource
+- type: interact
+  command: write
+  target: Justification
+  value: Need senior developer for integration work
+- type: interact
+  command: select
+  target: Priority
+  value: High
+- type: interact
+  command: click
+  target: Submit Request
+- type: navigate
+  target: Resource Requests
+- type: interact
+  command: click
+  target: Pending Requests
+- type: interact
+  command: click
+  target: Senior .NET Developer
+- type: interact
+  command: click
+  target: Approve
+- type: interact
+  command: select
+  target: Decision
+  value: Approved with Conditions
+- type: interact
+  command: write
+  target: Comments
+  value: Approved for 30 hours/week
+- type: interact
+  command: click
+  target: Approve

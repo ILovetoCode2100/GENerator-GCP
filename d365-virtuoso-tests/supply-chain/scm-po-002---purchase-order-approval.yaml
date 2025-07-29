@@ -1,0 +1,54 @@
+name: SCM-PO-002 - Purchase Order Approval - Submit PO through approval workflow
+description: 'Submit PO through approval workflow (Module: Supply Chain, Suite: Purchase Order Processing)'
+project: D365 Test Automation
+goal: Supply Chain Tests
+journey: Purchase Order Processing
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Workflow
+- type: interact
+  command: click
+  target: Submit
+- type: interact
+  command: write
+  target: Comment
+  value: Standard procurement request
+- type: interact
+  command: click
+  target: Submit
+- type: wait
+  command: time
+  value: 3
+- type: assert
+  command: text
+  target: Workflow status
+  expected: Submitted
+- type: navigate
+  target: Workflow work items
+- type: interact
+  command: click
+  target: $purchaseOrder
+- type: interact
+  command: click
+  target: Actions
+- type: interact
+  command: click
+  target: Approve
+- type: interact
+  command: write
+  target: Comment
+  value: Approved for procurement
+- type: interact
+  command: click
+  target: Approve
+- type: assert
+  command: text
+  target: Workflow status
+  expected: Approved
+- type: assert
+  command: text
+  target: Approval status
+  expected: Approved

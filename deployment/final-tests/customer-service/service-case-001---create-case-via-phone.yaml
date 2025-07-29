@@ -1,0 +1,43 @@
+project: 9369
+goal: 14138
+name: SERVICE-CASE-001 - Create Case via Phone - Create a new case from phone interaction
+description: 'Create a new case from phone interaction (Module: Customer Service, Suite: Case Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- navigate: https://virtuoso-test.crm.dynamics.com
+- wait: 3
+- click: Customer Service Hub
+- wait: 2
+- click: Cases
+- click: New Case
+- write:
+    selector: Case Title
+    text: Unable to login to portal - $TIMESTAMP
+- click: Customer
+- comment: Write "Contoso" in search field
+- key: '"ENTER"'
+- wait: 2
+- click: first result
+- select:
+    selector: Origin
+    option: Phone
+- select:
+    selector: Case Type
+    option: Problem
+- select:
+    selector: Priority
+    option: High
+- write:
+    selector: Description
+    text: Customer reports unable to access customer portal since this morning. Getting error 'Invalid credentials' despite using correct password.
+- click: Product
+- comment: Write "Customer Portal" in search field
+- key: '"ENTER"'
+- click: first result
+- click: Save
+- wait: 3
+- assert: Case saved
+- store:
+    type: text
+    selector: Case Number
+    variable: $caseNumber

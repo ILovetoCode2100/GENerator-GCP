@@ -1,0 +1,32 @@
+name: MARKET-EVENT-003 - Test Registration Process - Test event registration flow
+description: 'Test event registration flow (Module: Marketing, Suite: Event Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Registration URL
+- comment: Store element text in $registrationUrl
+- navigate: $registrationUrl
+- write:
+    selector: First name
+    text: Test
+- write:
+    selector: Last name
+    text: Attendee
+- write:
+    selector: Email
+    text: test.attendee@example.com
+- write:
+    selector: Company
+    text: Contoso Ltd
+- write:
+    selector: Job title
+    text: Marketing Manager
+- click: I agree to receive marketing communications
+- click: Register
+- wait: 3
+- comment: Assert that element contains "Thank you for registering"
+- switch_tab: previous
+- click: Registrations
+- comment: Assert that "Test Attendee" appears in list
+- assert_text:
+    selector: Status
+    expected: Registered

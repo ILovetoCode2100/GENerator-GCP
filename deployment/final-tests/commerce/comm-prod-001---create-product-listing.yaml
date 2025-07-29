@@ -1,0 +1,39 @@
+project: 9369
+goal: 14145
+name: COMM-PROD-001 - Create Product Listing - Create new product for online sale
+description: 'Create new product for online sale (Module: Commerce, Suite: Product Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Product information management
+- click: Products
+- click: Released products
+- comment: Search for "SURF-001"
+- click: product
+- click: Sell
+- click: E-commerce
+- comment: Toggle "Available online" to on
+- write:
+    selector: Display name
+    text: Surface Pro 9 - Latest Model
+- write:
+    selector: Short description
+    text: The most versatile 2-in-1 laptop with tablet flexibility
+- click: Edit
+- comment: Write comprehensive product description with features
+- comment: Add bullet points for key features
+- click: Save
+- write:
+    selector: SEO URL
+    text: surface-pro-9-laptop-tablet
+- write:
+    selector: Meta keywords
+    text: Surface Pro 9, 2-in-1 laptop, Windows tablet
+- write:
+    selector: Meta description
+    text: Shop Surface Pro 9 - The versatile 2-in-1 laptop with tablet portability
+- click: Attributes
+- comment: Set "Screen size" to "13 inch"
+- comment: Set "Processor" to "Intel Core i7"
+- comment: Set "RAM" to "16GB"
+- comment: Set "Storage" to "512GB SSD"
+- click: Save

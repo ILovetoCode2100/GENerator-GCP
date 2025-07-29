@@ -1,0 +1,20 @@
+project: 9369
+goal: 14137
+name: SALES-ORDER-001 - Create Order from Quote - Convert accepted quote to order
+description: 'Convert accepted quote to order (Module: Sales Module, Suite: Order Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- navigate: https://virtuoso-test.crm.dynamics.com/main.aspx?pagetype=entitylist&etn=quote
+- click: first "Active" quote
+- click: Create Order
+- wait: 2
+- click: OK
+- wait: 3
+- assert: Order
+- store:
+    type: text
+    selector: Order Number
+    variable: $orderNumber
+- assert_text:
+    selector: Total Amount
+    expected: $quoteAmount

@@ -1,0 +1,53 @@
+name: HR-EMP-003 - Position and Compensation Setup - Configure position details and compensation
+description: 'Configure position details and compensation (Module: Human Resources, Suite: Employee Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Position
+- click: Position Details
+- select:
+    selector: Job
+    option: Software Engineer III
+- select:
+    selector: Level
+    option: IC3
+- select:
+    selector: FLSA Status
+    option: Exempt
+- select:
+    selector: Job Family
+    option: Technology
+- write:
+    selector: Position Description
+    text: Design and develop software applications
+- click: Compensation
+- click: New Compensation
+- select:
+    selector: Compensation Type
+    option: Base Salary
+- write:
+    selector: Annual Amount
+    text: '120000'
+- select:
+    selector: Currency
+    option: USD
+- write:
+    selector: Effective Date
+    text: $MONDAY
+- write:
+    selector: Reason
+    text: New hire compensation
+- click: Save
+- click: Add Compensation
+- select:
+    selector: Compensation Type
+    option: Annual Bonus
+- write:
+    selector: Target Percentage
+    text: '15'
+- select:
+    selector: Bonus Type
+    option: Performance-based
+- click: Save
+- assert_text:
+    selector: Total Compensation
+    expected: '138000'

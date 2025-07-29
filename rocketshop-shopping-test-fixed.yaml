@@ -1,0 +1,95 @@
+name: "RocketShop Shopping Cart Test"
+description: "Test adding multiple stickers to cart and proceeding to checkout"
+steps:
+  - action: navigate
+    url: "https://rocketshop.virtuoso.qa/"
+    description: "Navigate to RocketShop"
+
+  - action: click
+    hint: "Add to Bag"
+    description: "Add Blank Exploration sticker to bag"
+
+  - action: assert
+    hint: "Added to bag!"
+    description: "Verify first item added"
+
+  - action: click
+    hint: "Border Not Found"
+    description: "Click on Border Not Found sticker"
+
+  - action: click
+    hint: "Add to Bag"
+    description: "Add Border Not Found sticker to bag"
+
+  - action: assert
+    hint: "Added to bag!"
+    description: "Verify second item added"
+
+  - action: click
+    hint: "5"
+    description: "Click shopping bag with 5 items"
+
+  - action: assert
+    hint: "Shopping Bag"
+    description: "Verify on shopping bag page"
+
+  - action: assert
+    hint: "Blank Exploration"
+    description: "Verify Blank Exploration in bag"
+
+  - action: assert
+    hint: "12.00 €"
+    description: "Verify Blank Exploration subtotal"
+
+  - action: assert
+    hint: "Border Not Found"
+    description: "Verify Border Not Found in bag"
+
+  - action: assert
+    hint: "8.00 €"
+    description: "Verify Border Not Found subtotal"
+
+  - action: assert
+    hint: "20.00 €"
+    description: "Verify total amount"
+
+  - action: click
+    hint: "Go to Checkout"
+    description: "Proceed to checkout"
+
+  - action: assert
+    hint: "Guest Checkout"
+    description: "Verify on checkout page"
+
+  - action: write
+    hint: "Email"
+    text: "test@example.com"
+    description: "Enter email"
+
+  - action: write
+    hint: "Full name"
+    text: "Test User"
+    description: "Enter full name"
+
+  - action: write
+    hint: "Phone numbers"
+    text: "555-0123"
+    description: "Enter phone number"
+
+  - action: write
+    hint: "Address"
+    text: "123 Test Street"
+    description: "Enter address"
+
+  - action: write
+    hint: "ZIP code"
+    text: "12345"
+    description: "Enter ZIP code"
+
+  - action: assert
+    hint: "20.00 €"
+    description: "Verify checkout total"
+
+  - action: assert
+    hint: "Confirm and Pay"
+    description: "Verify payment button present"

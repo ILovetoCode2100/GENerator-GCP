@@ -1,0 +1,26 @@
+name: HR-BEN-003 - Annual Benefits Review - Annual open enrollment process
+description: 'Annual open enrollment process (Module: Human Resources, Suite: Benefits Administration)'
+starting_url: https://[instance].crm.dynamics.com
+steps:
+- navigate: Open Enrollment
+- comment: Assert that element "Enrollment Period" shows dates
+- click: Start Enrollment
+- comment: Assert that element "Current Benefits" shows all active benefits
+- click: Make Changes
+- click: Medical Insurance
+- select:
+    selector: New Plan
+    option: HSA Plan
+- comment: 'Assert that element shows "Annual Savings: $1,200"'
+- click: Flexible Spending Account
+- comment: Toggle "Enroll in FSA" to on
+- write:
+    selector: Annual Contribution
+    text: '2500'
+- assert_text:
+    selector: Per Paycheck
+    expected: '96.15'
+- click: Review Changes
+- comment: Assert that element "Summary of Changes" shows all modifications
+- click: Confirm Enrollment
+- comment: Print confirmation for records

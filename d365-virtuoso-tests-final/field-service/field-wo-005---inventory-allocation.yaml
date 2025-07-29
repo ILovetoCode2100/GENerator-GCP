@@ -1,0 +1,36 @@
+name: FIELD-WO-005 - Inventory Allocation - Allocate parts for work order
+description: 'Allocate parts for work order (Module: Field Service, Suite: Work Order Management)'
+starting_url: https://[instance].crm.dynamics.com
+steps:
+- click: Products
+- click: Add Product
+- select:
+    selector: Line Type
+    option: Product
+- click: Product
+- comment: Write "Printer Toner" in search
+- key: '"ENTER"'
+- click: first result
+- write:
+    selector: Quantity
+    text: '1'
+- select:
+    selector: Warehouse
+    option: Main Warehouse
+- click: Save
+- click: Add Product
+- select:
+    selector: Line Type
+    option: Service
+- select:
+    selector: Product
+    option: Onsite Service Fee
+- write:
+    selector: Quantity
+    text: '1'
+- write:
+    selector: Unit Price
+    text: '150'
+- click: Save
+- assert: Products (2)
+- comment: Assert that element "Total Amount" is greater than "0"

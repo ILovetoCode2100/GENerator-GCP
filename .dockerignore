@@ -1,0 +1,58 @@
+# Git files
+.git
+.gitignore
+
+# Documentation
+*.md
+LICENSE
+docs/
+
+# Test files
+test-*
+*_test.go
+test-scripts/
+test-commands/
+test-yaml-files/
+test-yaml-suite/
+test-all-commands/
+test-reports/
+
+# Log files
+*.log
+
+# Environment files
+.env
+.env.*
+*.env
+
+# Build artifacts
+# Note: bin/ is needed for the CLI binary
+dist/
+build/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker files (avoid recursion)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Examples (we'll copy only what's needed)
+examples/
+
+# Deployment files
+deployment/

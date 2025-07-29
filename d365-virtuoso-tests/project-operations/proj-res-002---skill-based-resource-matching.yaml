@@ -1,0 +1,43 @@
+name: PROJ-RES-002 - Skill-Based Resource Matching - Find resources based on required skills
+description: 'Find resources based on required skills (Module: Project Operations, Suite: Resource Management)'
+project: D365 Test Automation
+goal: Project Operations Tests
+journey: Resource Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Resource Requirements
+- type: interact
+  command: click
+  target: New Requirement
+- type: interact
+  command: write
+  target: Position
+  value: Senior .NET Developer
+- type: interact
+  command: select
+  target: Project
+  value: $projectId
+- type: interact
+  command: write
+  target: Start Date
+  value: $DATE_PLUS_7
+- type: interact
+  command: write
+  target: End Date
+  value: $DATE_PLUS_60
+- type: interact
+  command: write
+  target: Hours/Week
+  value: '40'
+- type: interact
+  command: click
+  target: Required Skills
+- type: interact
+  command: click
+  target: Find Matching Resources
+- type: wait
+  command: time
+  value: 3

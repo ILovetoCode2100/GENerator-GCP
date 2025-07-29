@@ -1,0 +1,78 @@
+name: HR-EMP-001 - Create New Employee - Onboard new employee with complete profile
+description: 'Onboard new employee with complete profile (Module: Human Resources, Suite: Employee Management)'
+starting_url: https://[instance].crm.dynamics.com
+steps:
+- navigate: https://[instance].hr.dynamics.com
+- wait: 3
+- click: Employees
+- click: New Employee
+- write:
+    selector: First Name
+    text: John
+- write:
+    selector: Middle Name
+    text: Michael
+- write:
+    selector: Last Name
+    text: Anderson
+- write:
+    selector: Employee Number
+    text: EMP-$TIMESTAMP
+- write:
+    selector: SSN
+    text: 123-45-6789
+- write:
+    selector: Birth Date
+    text: $DATE_MINUS_30YEARS
+- select:
+    selector: Gender
+    option: Male
+- select:
+    selector: Marital Status
+    option: Single
+- write:
+    selector: Work Email
+    text: john.anderson@contoso.com
+- write:
+    selector: Work Phone
+    text: 425-555-0150
+- write:
+    selector: Mobile Phone
+    text: 206-555-0151
+- write:
+    selector: Address Line 1
+    text: 789 Oak Street
+- write:
+    selector: City
+    text: Seattle
+- select:
+    selector: State
+    option: WA
+- write:
+    selector: ZIP Code
+    text: '98101'
+- select:
+    selector: Employment Type
+    option: Full Time
+- write:
+    selector: Start Date
+    text: $MONDAY
+- select:
+    selector: Position
+    option: Software Engineer
+- select:
+    selector: Department
+    option: Information Technology
+- select:
+    selector: Reports To
+    option: Sarah Manager
+- select:
+    selector: Location
+    option: Seattle Office
+- click: Save
+- wait: 3
+- assert: Employee created
+- store:
+    type: text
+    selector: Personnel Number
+    variable: $personnelNumber

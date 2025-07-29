@@ -1,0 +1,47 @@
+name: FIN-REP-002 - Financial Statements - Generate financial statements
+description: 'Generate financial statements (Module: Finance Operations, Suite: Financial Reporting)'
+project: D365 Test Automation
+goal: Finance Operations Tests
+journey: Financial Reporting
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Financial reporting
+- type: interact
+  command: click
+  target: Financial statements
+- type: interact
+  command: click
+  target: Income statement
+- type: interact
+  command: select
+  target: Period
+  value: $CURRENT_MONTH
+- type: interact
+  command: select
+  target: Scenario
+  value: Actual
+- type: interact
+  command: click
+  target: Generate
+- type: wait
+  command: time
+  value: 10
+- stepType: storeElementValue
+  target: Net income
+  variable: $netIncome
+- type: interact
+  command: click
+  target: Balance sheet
+- type: interact
+  command: select
+  target: As of date
+  value: $MONTH_END_DATE
+- type: interact
+  command: click
+  target: Generate
+- type: wait
+  command: time
+  value: 10

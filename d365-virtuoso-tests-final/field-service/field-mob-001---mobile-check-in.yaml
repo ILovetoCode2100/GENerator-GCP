@@ -1,0 +1,23 @@
+name: FIELD-MOB-001 - Mobile Check-in - Field technician check-in process
+description: 'Field technician check-in process (Module: Field Service, Suite: Mobile Field Service)'
+starting_url: https://[instance].crm.dynamics.com
+steps:
+- navigate: https://[instance].crm.dynamics.com/apps/mobileapp
+- wait: 3
+- click: My Schedule
+- click: 2:00 PM - Contoso Corporation
+- click: Check In
+- comment: Wait for GPS location
+- click: Confirm Location
+- assert_text:
+    selector: Status
+    expected: Traveling
+- wait: 2
+- click: Arrived
+- assert_text:
+    selector: Status
+    expected: In Progress
+- store:
+    type: value
+    value: $CURRENT_TIME
+    variable: $arrivalTime

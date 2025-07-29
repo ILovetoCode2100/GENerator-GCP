@@ -1,0 +1,45 @@
+name: Rocketshop Purchase Journey - NLP Version
+url: https://rocketshop.virtuoso.qa
+description: Complete e-commerce purchase flow using natural language commands
+steps:
+  # Start shopping journey
+  - navigate to the rocketshop homepage
+
+  # Verify page loaded
+  - verify that "Border Not Found" text is visible on the page
+
+  # Browse and add to cart
+  - wait for 20 seconds
+  - click on the "Add to Bag" button
+
+  # Navigate to cart
+  - click on the "Shopping Bag" link in the header
+
+  # Verify cart page
+  - verify that the page heading shows "Shopping Bag"
+
+  # Proceed with purchase
+  - click the "Go to Checkout" button
+
+  # Fill customer information
+  - enter "John Doe" in the Full name field
+  - enter "johndoe@example.com" in the Email field
+  - enter "123 Elm Street" in the Address field
+  - enter "555-1234" in the Phone numbers field
+  - enter "90210" in the ZIP code field
+
+  # Enter payment details
+  - enter "4111 1111 1111 1111" in the Card number field
+  - enter "234" in the CVV field
+
+  # Complete the purchase
+  - click the "Confirm and Pay" button
+
+  # Wait for processing
+  - wait for 20 seconds
+
+  # Verify successful purchase
+  - verify that "Purchase Confirmed!" message appears
+
+  # Get confirmation
+  - click the "Download Confirmation" button

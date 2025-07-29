@@ -1,0 +1,59 @@
+# VerticalPodAutoscaler - Optional, provides recommendations for resource requests/limits
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: virtuoso-api-cli
+  namespace: virtuoso-api
+  labels:
+    app: virtuoso-api-cli
+    component: vpa
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: virtuoso-api-cli
+  updatePolicy:
+    updateMode: "Auto"  # Can be "Off", "Initial", or "Auto"
+    minReplicas: 5      # Don't update if less than 5 replicas
+  resourcePolicy:
+    containerPolicies:
+    - containerName: api
+      minAllowed:
+        cpu: 250m
+        memory: 512Mi
+      maxAllowed:
+        cpu: 4
+        memory: 8Gi
+      controlledResources: ["cpu", "memory"]
+      # Controlled values: RequestsOnly, RequestsAndLimits
+      controlledValues: RequestsAndLimits
+  recommenders:
+    - name: default
+---
+# VPA for Redis
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: virtuoso-redis
+  namespace: virtuoso-api
+  labels:
+    app: virtuoso-redis
+    component: vpa
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: virtuoso-redis
+  updatePolicy:
+    updateMode: "Initial"  # Only set on pod creation for stateful sets
+  resourcePolicy:
+    containerPolicies:
+    - containerName: redis
+      minAllowed:
+        cpu: 100m
+        memory: 256Mi
+      maxAllowed:
+        cpu: 2
+        memory: 4Gi
+      controlledResources: ["cpu", "memory"]
+      controlledValues: RequestsOnly  # Don't set limits for Redis

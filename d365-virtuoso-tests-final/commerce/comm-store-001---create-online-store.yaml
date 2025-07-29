@@ -1,0 +1,53 @@
+name: COMM-STORE-001 - Create Online Store - Set up new e-commerce channel
+description: 'Set up new e-commerce channel (Module: Commerce, Suite: E-Commerce Store Setup)'
+starting_url: https://[instance].crm.dynamics.com
+steps:
+- navigate: https://[instance].commerce.dynamics.com
+- wait: 3
+- click: Retail and commerce
+- click: Channels
+- click: Online stores
+- click: New
+- write:
+    selector: Name
+    text: Contoso Online Store - $TIMESTAMP
+- write:
+    selector: Store number
+    text: ONLINE-001
+- select:
+    selector: Legal entity
+    option: Default
+- select:
+    selector: Currency
+    option: USD
+- select:
+    selector: Default language
+    option: en-us
+- select:
+    selector: Time zone
+    option: Pacific Time
+- select:
+    selector: Customer creation mode
+    option: Email required
+- comment: Toggle "Guest checkout allowed" to on
+- write:
+    selector: Cart expiration (days)
+    text: '30'
+- comment: Toggle "Save cart for registered users" to on
+- select:
+    selector: Inventory lookup mode
+    option: ATP
+- comment: Toggle "Show out of stock items" to on
+- select:
+    selector: Default warehouse
+    option: WH-001
+- select:
+    selector: Fulfillment group
+    option: All warehouses
+- click: Save
+- wait: 3
+- assert: Store created
+- store:
+    type: text
+    selector: Channel ID
+    variable: $channelId

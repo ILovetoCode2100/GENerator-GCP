@@ -1,0 +1,27 @@
+name: Sales Lead Creation Test
+project: D365 Test Automation
+goal: Sales Module Tests
+journey: Lead Management
+steps:
+  - step-navigate to "https://[instance].crm.dynamics.com"
+  - step-wait 3000
+  - step-interact click "Sales Hub"
+  - step-wait 2000
+  - step-interact click "Leads"
+  - step-interact click "New"
+  - step-wait 2000
+  - step-interact write "Topic" "Test Lead - $TIMESTAMP"
+  - step-interact write "First Name" "John"
+  - step-interact write "Last Name" "Smith"
+  - step-interact write "Company Name" "Contoso Corporation"
+  - step-interact write "Email" "john.smith@contoso.com"
+  - step-interact write "Business Phone" "+1-425-555-0100"
+  - step-interact select "Lead Source" "Employee Referral"
+  - step-interact select "Rating" "Hot"
+  - step-interact write "Budget Amount" "50000"
+  - step-interact select "Purchase Timeframe" "This Quarter"
+  - step-interact click "Save"
+  - step-wait 3000
+  - step-assert element "Lead saved" exists
+  - step-store text "Lead Number" as leadNumber
+  - echo "Created lead: $leadNumber"

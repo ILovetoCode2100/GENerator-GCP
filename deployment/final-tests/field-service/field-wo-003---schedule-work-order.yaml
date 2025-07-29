@@ -1,0 +1,22 @@
+project: 9369
+goal: 14139
+name: FIELD-WO-003 - Schedule Work Order - Schedule work order using schedule board
+description: 'Schedule work order using schedule board (Module: Field Service, Suite: Work Order Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Schedule Board
+- wait: 3
+- comment: Look for element "$workOrderNumber" in "Unscheduled Work Orders"
+- drag:
+    from: $workOrderNumber
+    to: John Smith
+- wait: 2
+- assert: Booking created
+- click: booking block
+- assert_text:
+    selector: Resource
+    expected: John Smith
+- comment: Assert that element "Start Time" contains "2:00 PM"
+- assert_text:
+    selector: Duration
+    expected: 2 hours

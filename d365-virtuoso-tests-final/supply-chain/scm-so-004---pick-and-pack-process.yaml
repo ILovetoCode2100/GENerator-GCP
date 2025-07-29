@@ -1,0 +1,34 @@
+name: SCM-SO-004 - Pick and Pack Process - Generate picking list and packing slip
+description: 'Generate picking list and packing slip (Module: Supply Chain, Suite: Sales Order Processing)'
+starting_url: https://[instance].crm.dynamics.com
+steps:
+- click: Warehouse
+- click: Release to warehouse
+- click: OK
+- wait: 3
+- assert: Released to warehouse
+- navigate: Warehouse management
+- click: Work
+- click: All work
+- comment: Find work for "$salesOrder"
+- click: work ID
+- assert_text:
+    selector: Work status
+    expected: Open
+- comment: Assert that pick location is specified
+- click: Complete work
+- write:
+    selector: User ID
+    text: USER01
+- select:
+    selector: Put location
+    option: PACK-01
+- click: Complete
+- comment: Navigate back to sales order
+- click: Pick and pack
+- click: Post packing slip
+- write:
+    selector: Packing slip ID
+    text: PACK-$TIMESTAMP
+- click: OK
+- comment: Assert that element "Packing slip journal" posted

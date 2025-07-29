@@ -1,0 +1,41 @@
+project: 9369
+goal: 14139
+name: FIELD-PM-002 - Configure Booking Setup - Define recurring maintenance schedule
+description: 'Define recurring maintenance schedule (Module: Field Service, Suite: Preventive Maintenance)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Booking Setups
+- click: New Booking Setup
+- write:
+    selector: Name
+    text: Monthly HVAC Inspection
+- select:
+    selector: Recurrence Pattern
+    option: Monthly
+- select:
+    selector: Day of Month
+    option: 1st Monday
+- select:
+    selector: Preferred Time
+    option: 9:00 AM
+- select:
+    selector: Duration
+    option: 2 hours
+- select:
+    selector: Generate Work Order Days in Advance
+    option: 30 days
+- select:
+    selector: Preferred Resource
+    option: HVAC Team
+- click: Save
+- click: New Booking Setup
+- write:
+    selector: Name
+    text: Quarterly Deep Service
+- select:
+    selector: Recurrence
+    option: Every 3 Months
+- select:
+    selector: Duration
+    option: 4 hours
+- click: Save

@@ -1,0 +1,56 @@
+name: FIELD-SCHED-001 - Schedule Optimization - Use Resource Scheduling Optimization
+description: 'Use Resource Scheduling Optimization (Module: Field Service, Suite: Scheduling and Dispatch)'
+project: D365 Test Automation
+goal: Field Service Tests
+journey: Scheduling and Dispatch
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Resource Scheduling
+- type: interact
+  command: click
+  target: Optimization
+- type: interact
+  command: click
+  target: New Schedule
+- type: interact
+  command: write
+  target: Name
+  value: Daily Route Optimization - $DATE
+- type: interact
+  command: select
+  target: Schedule Date
+  value: Today
+- type: interact
+  command: select
+  target: Territory
+  value: Seattle Metro
+- type: interact
+  command: select
+  target: Optimization Goal
+  value: Minimize Travel Time
+- type: interact
+  command: click
+  target: Add Constraint
+- type: interact
+  command: select
+  target: Constraint Type
+  value: Technician Skills
+- type: interact
+  command: click
+  target: Run Optimization
+- type: wait
+  command: time
+  value: 10
+- type: assert
+  command: exists
+  target: Optimization Complete
+- stepType: assertValue
+  target: Travel Time Saved
+  operator: greaterThan
+  expectedValue: '"0"'
+- type: interact
+  command: click
+  target: Apply Schedule

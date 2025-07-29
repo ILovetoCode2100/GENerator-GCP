@@ -1,0 +1,44 @@
+name: PROJ-RES-001 - Resource Capacity Planning - Plan resource capacity and availability
+description: 'Plan resource capacity and availability (Module: Project Operations, Suite: Resource Management)'
+project: D365 Test Automation
+goal: Project Operations Tests
+journey: Resource Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Resource Management
+- type: interact
+  command: click
+  target: Capacity Planning
+- type: interact
+  command: select
+  target: Period
+  value: Next Month
+- type: interact
+  command: select
+  target: View
+  value: All Resources
+- type: assert
+  command: exists
+  target: Resource Utilization Chart
+- type: interact
+  command: click
+  target: overallocated resource
+- type: assert
+  command: exists
+  target: Conflicts
+- type: interact
+  command: click
+  target: John Developer
+- type: interact
+  command: click
+  target: Allocations
+- type: interact
+  command: write
+  target: Hours/Week
+  value: '30'
+- type: interact
+  command: click
+  target: Save

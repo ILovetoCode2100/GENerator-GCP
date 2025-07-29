@@ -1,0 +1,43 @@
+name: SCM-PROD-003 - Release Production Order - Release order to production floor
+description: 'Release order to production floor (Module: Supply Chain, Suite: Production Management)'
+project: D365 Test Automation
+goal: Supply Chain Tests
+journey: Production Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Release
+- type: wait
+  command: time
+  value: 2
+- type: interact
+  command: click
+  target: OK
+- type: assert
+  command: text
+  target: Status
+  expected: Released
+- type: interact
+  command: click
+  target: Picking list
+- type: interact
+  command: click
+  target: Generate picking list
+- type: interact
+  command: select
+  target: Lines to include
+  value: All lines
+- type: interact
+  command: click
+  target: OK
+- type: interact
+  command: click
+  target: Print
+- type: interact
+  command: click
+  target: Route card
+- type: interact
+  command: click
+  target: OK

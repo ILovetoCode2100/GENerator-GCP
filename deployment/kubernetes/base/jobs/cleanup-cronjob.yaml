@@ -1,0 +1,203 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: virtuoso-cleanup
+  namespace: virtuoso-api
+  labels:
+    app: virtuoso-api-cli
+    component: cleanup
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: virtuoso-cleanup
+  namespace: virtuoso-api
+  labels:
+    app: virtuoso-api-cli
+    component: cleanup
+rules:
+- apiGroups: [""]
+  resources: ["pods", "pods/log"]
+  verbs: ["get", "list", "delete"]
+- apiGroups: ["batch"]
+  resources: ["jobs"]
+  verbs: ["get", "list", "delete"]
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["list", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: virtuoso-cleanup
+  namespace: virtuoso-api
+  labels:
+    app: virtuoso-api-cli
+    component: cleanup
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: virtuoso-cleanup
+subjects:
+- kind: ServiceAccount
+  name: virtuoso-cleanup
+  namespace: virtuoso-api
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: virtuoso-cleanup
+  namespace: virtuoso-api
+  labels:
+    app: virtuoso-api-cli
+    component: cleanup
+spec:
+  schedule: "0 3 * * *"  # Daily at 3 AM
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app: virtuoso-api-cli
+        component: cleanup
+    spec:
+      backoffLimit: 3
+      activeDeadlineSeconds: 1800  # 30 minutes timeout
+      template:
+        metadata:
+          labels:
+            app: virtuoso-api-cli
+            component: cleanup
+        spec:
+          serviceAccountName: virtuoso-cleanup
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            fsGroup: 1000
+          containers:
+          - name: cleanup
+            image: bitnami/kubectl:1.28
+            imagePullPolicy: IfNotPresent
+            command: ["/bin/bash", "-c"]
+            args:
+            - |
+              set -e
+
+              echo "Starting cleanup job..."
+
+              # Configuration
+              LOG_RETENTION_DAYS=${LOG_RETENTION_DAYS:-7}
+              JOB_RETENTION_DAYS=${JOB_RETENTION_DAYS:-3}
+              EVENT_RETENTION_DAYS=${EVENT_RETENTION_DAYS:-1}
+
+              # Function to calculate timestamp
+              get_timestamp() {
+                  days=$1
+                  date -u -d "${days} days ago" +%s
+              }
+
+              # Clean up completed pods older than retention period
+              echo "Cleaning up completed pods..."
+              CUTOFF_TIMESTAMP=$(get_timestamp ${LOG_RETENTION_DAYS})
+
+              kubectl get pods -n virtuoso-api \
+                  --field-selector=status.phase=Succeeded \
+                  -o json | jq -r '.items[] | select(.metadata.creationTimestamp | fromdateiso8601 < '${CUTOFF_TIMESTAMP}') | .metadata.name' | \
+                  while read pod; do
+                      echo "Deleting pod: $pod"
+                      kubectl delete pod "$pod" -n virtuoso-api --grace-period=0 || true
+                  done
+
+              # Clean up failed pods older than retention period
+              echo "Cleaning up failed pods..."
+              kubectl get pods -n virtuoso-api \
+                  --field-selector=status.phase=Failed \
+                  -o json | jq -r '.items[] | select(.metadata.creationTimestamp | fromdateiso8601 < '${CUTOFF_TIMESTAMP}') | .metadata.name' | \
+                  while read pod; do
+                      echo "Deleting failed pod: $pod"
+                      kubectl delete pod "$pod" -n virtuoso-api --grace-period=0 || true
+                  done
+
+              # Clean up completed jobs
+              echo "Cleaning up completed jobs..."
+              JOB_CUTOFF=$(get_timestamp ${JOB_RETENTION_DAYS})
+
+              kubectl get jobs -n virtuoso-api \
+                  -o json | jq -r '.items[] | select(.status.succeeded == 1 and (.metadata.creationTimestamp | fromdateiso8601 < '${JOB_CUTOFF}')) | .metadata.name' | \
+                  while read job; do
+                      echo "Deleting job: $job"
+                      kubectl delete job "$job" -n virtuoso-api || true
+                  done
+
+              # Clean up old events
+              echo "Cleaning up old events..."
+              EVENT_CUTOFF=$(get_timestamp ${EVENT_RETENTION_DAYS})
+
+              kubectl get events -n virtuoso-api \
+                  -o json | jq -r '.items[] | select(.lastTimestamp | fromdateiso8601 < '${EVENT_CUTOFF}') | .metadata.name' | \
+                  while read event; do
+                      echo "Deleting event: $event"
+                      kubectl delete event "$event" -n virtuoso-api || true
+                  done
+
+              # Clean up Redis expired keys (if Redis is accessible)
+              if [ -n "${REDIS_HOST}" ]; then
+                  echo "Cleaning up Redis expired keys..."
+                  redis-cli -h "${REDIS_HOST}" -p "${REDIS_PORT:-6379}" -a "${REDIS_PASSWORD}" \
+                      --scan --pattern "*" | while read key; do
+                      TTL=$(redis-cli -h "${REDIS_HOST}" -p "${REDIS_PORT:-6379}" -a "${REDIS_PASSWORD}" TTL "$key")
+                      if [ "$TTL" = "-1" ]; then
+                          # Key has no expiration, check if it's old session data
+                          if echo "$key" | grep -q "session:"; then
+                              redis-cli -h "${REDIS_HOST}" -p "${REDIS_PORT:-6379}" -a "${REDIS_PASSWORD}" DEL "$key"
+                          fi
+                      fi
+                  done || echo "Redis cleanup skipped (connection failed)"
+              fi
+
+              # Report cleanup summary
+              REMAINING_PODS=$(kubectl get pods -n virtuoso-api --no-headers | wc -l)
+              REMAINING_JOBS=$(kubectl get jobs -n virtuoso-api --no-headers | wc -l)
+
+              echo "Cleanup completed!"
+              echo "Remaining pods: ${REMAINING_PODS}"
+              echo "Remaining jobs: ${REMAINING_JOBS}"
+
+              # Send notification if webhook is configured
+              if [ -n "${NOTIFICATION_WEBHOOK_URL}" ]; then
+                  curl -X POST "${NOTIFICATION_WEBHOOK_URL}" \
+                      -H 'Content-Type: application/json' \
+                      -d "{\"text\":\"Virtuoso cleanup completed. Pods: ${REMAINING_PODS}, Jobs: ${REMAINING_JOBS}\"}" || true
+              fi
+            env:
+            - name: LOG_RETENTION_DAYS
+              value: "7"
+            - name: JOB_RETENTION_DAYS
+              value: "3"
+            - name: EVENT_RETENTION_DAYS
+              value: "1"
+            - name: REDIS_HOST
+              value: "virtuoso-redis"
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: virtuoso-api-secret
+                  key: REDIS_PASSWORD
+                  optional: true
+            - name: NOTIFICATION_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: virtuoso-api-secret
+                  key: SLACK_WEBHOOK_URL
+                  optional: true
+            resources:
+              requests:
+                memory: "128Mi"
+                cpu: "50m"
+              limits:
+                memory: "256Mi"
+                cpu: "200m"

@@ -1,0 +1,39 @@
+name: PROJ-TEMP-002 - Create Project from Template - Use template to create new project
+description: 'Use template to create new project (Module: Project Operations, Suite: Project Templates and Automation)'
+project: D365 Test Automation
+goal: Project Operations Tests
+journey: Project Templates and Automation
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Projects
+- type: interact
+  command: click
+  target: New from Template
+- type: interact
+  command: select
+  target: Template
+  value: D365 Implementation Template
+- type: interact
+  command: click
+  target: Next
+- type: interact
+  command: write
+  target: Project Name
+  value: CRM Implementation - $TIMESTAMP
+- type: interact
+  command: select
+  target: Customer
+  value: Fabrikam Inc
+- type: interact
+  command: write
+  target: Start Date
+  value: $DATE_PLUS_7
+- type: interact
+  command: click
+  target: Create Project
+- type: wait
+  command: time
+  value: 5

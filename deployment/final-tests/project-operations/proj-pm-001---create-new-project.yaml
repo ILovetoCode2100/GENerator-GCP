@@ -1,0 +1,45 @@
+project: 9369
+goal: 14142
+name: PROJ-PM-001 - Create New Project - Create a new project with tasks and team members
+description: 'Create a new project with tasks and team members (Module: Project Operations, Suite: Project Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- navigate: https://virtuoso-test.operations.dynamics.com
+- wait: 3
+- click: Projects
+- click: New Project
+- write:
+    selector: Project Name
+    text: Digital Transformation Phase 1 - $TIMESTAMP
+- select:
+    selector: Contract Type
+    option: Fixed Price
+- select:
+    selector: Project Type
+    option: Implementation
+- write:
+    selector: Start Date
+    text: $TODAY
+- write:
+    selector: End Date
+    text: $DATE_PLUS_90
+- select:
+    selector: Customer
+    option: Contoso Corporation
+- write:
+    selector: Contract Amount
+    text: '500000'
+- write:
+    selector: Description
+    text: Implement D365 Sales and Marketing modules
+- click: Project Manager
+- comment: Write "Sarah Johnson" in search
+- key: '"ENTER"'
+- click: first result
+- click: Save
+- wait: 3
+- assert: Project created
+- store:
+    type: text
+    selector: Project ID
+    variable: $projectId

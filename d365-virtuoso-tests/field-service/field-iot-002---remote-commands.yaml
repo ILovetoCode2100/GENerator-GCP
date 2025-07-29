@@ -1,0 +1,39 @@
+name: FIELD-IOT-002 - Remote Commands - Send remote commands to IoT device
+description: 'Send remote commands to IoT device (Module: Field Service, Suite: Connected Field Service (IoT))'
+project: D365 Test Automation
+goal: Field Service Tests
+journey: Connected Field Service (IoT)
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: IoT Devices
+- type: interact
+  command: click
+  target: HVAC-Unit-101
+- type: interact
+  command: click
+  target: Send Command
+- type: interact
+  command: select
+  target: Command
+  value: Reset to Default
+- type: interact
+  command: write
+  target: Notes
+  value: Customer authorized remote reset
+- type: interact
+  command: click
+  target: Send
+- type: wait
+  command: time
+  value: 5
+- type: assert
+  command: text
+  target: Command Status
+  expected: Executed
+- type: assert
+  command: text
+  target: Device Status
+  expected: Normal

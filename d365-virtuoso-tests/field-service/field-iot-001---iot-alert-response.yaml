@@ -1,0 +1,39 @@
+name: FIELD-IOT-001 - IoT Alert Response - Respond to IoT device alert
+description: 'Respond to IoT device alert (Module: Field Service, Suite: Connected Field Service (IoT))'
+project: D365 Test Automation
+goal: Field Service Tests
+journey: Connected Field Service (IoT)
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: navigate
+  target: https://[instance].crm.dynamics.com/main.aspx?pagetype=entitylist&etn=msdyn_iotalert
+- type: interact
+  command: click
+  target: alert
+- type: assert
+  command: text
+  target: Device
+  expected: HVAC-Unit-101
+- type: assert
+  command: text
+  target: Reading
+  expected: 'Temperature: 85°F'
+- type: assert
+  command: text
+  target: Threshold
+  expected: 80°F
+- type: assert
+  command: text
+  target: Customer
+  expected: Contoso Corporation
+- type: interact
+  command: click
+  target: Create Work Order
+- type: assert
+  command: text
+  target: Work Order Type
+  expected: IoT Alert Response
+- type: interact
+  command: click
+  target: Save & Route

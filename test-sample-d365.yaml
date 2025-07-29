@@ -1,0 +1,8 @@
+name: Sample D365 Test
+project: 9369
+goal:
+journey: Lead Management Test
+steps:
+  - navigate: https://virtuoso-test.crm.dynamics.com
+  - wait: 2
+  - assert: Dynamics 365

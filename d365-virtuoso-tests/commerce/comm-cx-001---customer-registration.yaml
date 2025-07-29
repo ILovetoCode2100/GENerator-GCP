@@ -1,0 +1,49 @@
+name: COMM-CX-001 - Customer Registration - Test customer account creation flow
+description: 'Test customer account creation flow (Module: Commerce, Suite: Customer Experience)'
+project: D365 Test Automation
+goal: Commerce Tests
+journey: Customer Experience
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: navigate
+  target: https://contoso-online.commerce.com
+- type: interact
+  command: click
+  target: Sign up
+- type: wait
+  command: time
+  value: 2
+- type: interact
+  command: write
+  target: First name
+  value: Test
+- type: interact
+  command: write
+  target: Last name
+  value: Customer
+- type: interact
+  command: write
+  target: Email
+  value: test.customer_$TIMESTAMP@email.com
+- type: interact
+  command: write
+  target: Password
+  value: SecurePass123!
+- type: interact
+  command: write
+  target: Confirm password
+  value: SecurePass123!
+- type: interact
+  command: write
+  target: Phone
+  value: 425-555-0199
+- type: interact
+  command: click
+  target: Create account
+- type: wait
+  command: time
+  value: 3
+- type: assert
+  command: exists
+  target: Welcome Test

@@ -1,0 +1,20 @@
+name: SALES-LEAD-004 - Bulk Lead Import - Import multiple leads from CSV
+description: 'Import multiple leads from CSV (Module: Sales Module, Suite: Lead Management)'
+starting_url: https://[instance].crm.dynamics.com
+steps:
+- click: Data Management
+- click: Import Data
+- upload:
+    file: test_leads.csv
+    selector: Choose File
+- click: Next
+- select:
+    selector: Entity
+    option: Leads
+- click: Next
+- click: Auto Map
+- wait: 2
+- click: Next
+- click: Submit
+- wait: 10
+- assert: Import completed

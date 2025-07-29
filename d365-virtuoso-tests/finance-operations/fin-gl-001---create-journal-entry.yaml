@@ -1,0 +1,111 @@
+name: FIN-GL-001 - Create Journal Entry - Create and post a general journal entry
+description: 'Create and post a general journal entry (Module: Finance Operations, Suite: General Ledger)'
+project: D365 Test Automation
+goal: Finance Operations Tests
+journey: General Ledger
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: navigate
+  target: https://[instance].operations.dynamics.com
+- type: wait
+  command: time
+  value: 3
+- type: interact
+  command: click
+  target: General ledger
+- type: interact
+  command: click
+  target: Journal entries
+- type: interact
+  command: click
+  target: General journal
+- type: interact
+  command: click
+  target: New
+- type: interact
+  command: select
+  target: Name
+  value: GenJrn
+- type: interact
+  command: write
+  target: Description
+  value: Monthly Accrual - $MONTH
+- type: store
+  command: text
+  target: Journal batch number
+  variable: journalNumber
+- type: interact
+  command: click
+  target: Lines
+- type: wait
+  command: time
+  value: 2
+- type: interact
+  command: click
+  target: New
+- type: interact
+  command: write
+  target: Date
+  value: $TODAY
+- type: interact
+  command: select
+  target: Account type
+  value: Ledger
+- type: interact
+  command: write
+  target: Account
+  value: '606100'
+- type: interact
+  command: write
+  target: Description
+  value: Rent expense accrual
+- type: interact
+  command: write
+  target: Debit
+  value: '5000'
+- type: interact
+  command: select
+  target: Financial dimensions - Department
+  value: '001'
+- type: interact
+  command: select
+  target: Financial dimensions - Cost center
+  value: CORP
+- type: interact
+  command: click
+  target: New line
+- type: interact
+  command: select
+  target: Account type
+  value: Ledger
+- type: interact
+  command: write
+  target: Account
+  value: '201100'
+- type: interact
+  command: write
+  target: Description
+  value: Accrued rent payable
+- type: interact
+  command: write
+  target: Credit
+  value: '5000'
+- type: interact
+  command: select
+  target: Financial dimensions - Department
+  value: '001'
+- type: interact
+  command: select
+  target: Financial dimensions - Cost center
+  value: CORP
+- type: interact
+  command: click
+  target: Validate
+- type: wait
+  command: time
+  value: 2
+- type: assert
+  command: text
+  target: Journal validation
+  expected: Passed

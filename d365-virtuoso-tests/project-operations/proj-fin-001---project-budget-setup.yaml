@@ -1,0 +1,74 @@
+name: PROJ-FIN-001 - Project Budget Setup - Configure project budget and cost categories
+description: 'Configure project budget and cost categories (Module: Project Operations, Suite: Project Financials)'
+project: D365 Test Automation
+goal: Project Operations Tests
+journey: Project Financials
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Projects
+- type: interact
+  command: click
+  target: $projectId
+- type: interact
+  command: click
+  target: Budget
+- type: interact
+  command: click
+  target: Setup Budget
+- type: interact
+  command: click
+  target: Add Budget Line
+- type: interact
+  command: select
+  target: Category
+  value: Labor
+- type: interact
+  command: write
+  target: Budget Amount
+  value: '200000'
+- type: interact
+  command: write
+  target: Budget Hours
+  value: '2000'
+- type: interact
+  command: select
+  target: Distribution
+  value: Monthly
+- type: interact
+  command: click
+  target: Save
+- type: interact
+  command: click
+  target: Add Budget Line
+- type: interact
+  command: select
+  target: Category
+  value: Travel & Expenses
+- type: interact
+  command: write
+  target: Budget Amount
+  value: '50000'
+- type: interact
+  command: click
+  target: Save
+- type: interact
+  command: click
+  target: Add Budget Line
+- type: interact
+  command: select
+  target: Category
+  value: Materials
+- type: interact
+  command: write
+  target: Budget Amount
+  value: '100000'
+- type: interact
+  command: click
+  target: Save
+- type: assert
+  command: text
+  target: Total Budget
+  expected: '350000'

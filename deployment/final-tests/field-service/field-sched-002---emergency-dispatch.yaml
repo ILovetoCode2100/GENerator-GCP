@@ -1,0 +1,31 @@
+project: 9369
+goal: 14139
+name: FIELD-SCHED-002 - Emergency Dispatch - Handle emergency work order scheduling
+description: 'Handle emergency work order scheduling (Module: Field Service, Suite: Scheduling and Dispatch)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Work Orders
+- click: New
+- select:
+    selector: Priority
+    option: Emergency
+- write:
+    selector: Instructions
+    text: 'URGENT: No heating - $TIMESTAMP'
+- select:
+    selector: Work Order Type
+    option: HVAC Repair
+- select:
+    selector: Service Account
+    option: Contoso HQ
+- click: Save
+- click: Book
+- click: Emergency Dispatch
+- wait: 2
+- comment: Assert that element "Available Now" lists technicians
+- click: nearest technician
+- click: Dispatch
+- assert: SMS Sent
+- assert_text:
+    selector: Status
+    expected: Scheduled

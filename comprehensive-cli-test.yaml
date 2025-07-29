@@ -1,0 +1,230 @@
+name: "Comprehensive CLI Test - All Step Variations"
+description: "Complete test demonstrating all Virtuoso CLI commands and step variations"
+infrastructure:
+  organization_id: "2242"
+  project:
+    name: "CLI Test Full Coverage"
+    description: "Testing all step variations through run-test command"
+  starting_url: "https://www.example.com"
+steps:
+  # ========== NAVIGATION COMMANDS ==========
+  - navigate: "https://www.example.com"
+  - navigate:
+      url: "https://www.example.com/about"
+      new_tab: true
+  - scroll:
+      to: "top"
+  - scroll:
+      to: "bottom"
+  - scroll:
+      to: "#main-content"
+  - scroll:
+      position: "500,1000"
+  - scroll:
+      by: "0,500"
+  - scroll:
+      direction: "down"
+  - scroll:
+      direction: "up"
+  - scroll: "div.scrollable-content"
+
+  # ========== INTERACTION COMMANDS ==========
+  - click: "button.primary"
+  - double-click: "div.expandable"
+  - right-click: "div.context-menu"
+  - hover: "span.tooltip-trigger"
+  - write:
+      selector: "input#username"
+      text: "testuser123"
+  - write:
+      into: "textarea#message"
+      value: "This is a test message with multiple lines\nSecond line here"
+  - key: "Tab"
+  - key: "Enter"
+  - mouse:
+      action: "move-to"
+      selector: "div.hover-target"
+  - mouse:
+      action: "move-by"
+      offset: "100,50"
+  - mouse:
+      action: "move"
+      position: "400,300"
+  - mouse:
+      action: "down"
+  - mouse:
+      action: "up"
+  - mouse:
+      action: "enter"
+  - select:
+      selector: "select#category"
+      option: "Electronics"
+  - select:
+      selector: "select#sort-by"
+      index: 2
+  - select:
+      selector: "select#display"
+      last: true
+
+  # ========== ASSERTION COMMANDS ==========
+  - assert: "h1"  # Simple exists check
+  - assert:
+      type: "exists"
+      selector: "div.main-content"
+  - assert:
+      type: "not-exists"
+      selector: "div.error-message"
+  - assert:
+      type: "equals"
+      selector: "h1"
+      value: "Welcome to Example"
+  - assert:
+      type: "not-equals"
+      selector: "span.status"
+      value: "Offline"
+  - assert:
+      type: "checked"
+      selector: "input#terms"
+  - assert:
+      type: "selected"
+      selector: "option[value='us']"
+  - assert:
+      type: "gt"
+      selector: "span.product-count"
+      value: "0"
+  - assert:
+      type: "gte"
+      selector: "span.total-items"
+      value: "1"
+  - assert:
+      type: "lt"
+      selector: "span.remaining"
+      value: "100"
+  - assert:
+      type: "lte"
+      selector: "span.available"
+      value: "50"
+  - assert:
+      type: "matches"
+      selector: "span.email-display"
+      pattern: "^[\\w.-]+@[\\w.-]+\\.\\w+$"
+  - assert:
+      type: "variable"
+      variable: "storedTitle"
+      value: "Expected Title"
+
+  # ========== WINDOW COMMANDS ==========
+  - window:
+      action: "resize"
+      size: "1280x720"
+  - window:
+      action: "maximize"
+  - window:
+      action: "switch"
+      to: "next"
+  - window:
+      action: "switch"
+      to: "prev"
+  - window:
+      action: "switch"
+      to: "tab-1"
+  - window:
+      action: "switch"
+      iframe: "iframe.embedded-content"
+  - window:
+      action: "switch"
+      parent: true
+
+  # ========== DATA COMMANDS ==========
+  - store:
+      selector: "h1"
+      as: "mainTitle"
+  - store:
+      type: "text"
+      selector: "span.username"
+      as: "currentUsername"
+  - store:
+      type: "attribute"
+      selector: "img.logo"
+      attribute: "src"
+      as: "logoUrl"
+  - store:
+      type: "literal"
+      value: "TestValue123"
+      as: "testConstant"
+  - cookie:
+      action: "create"
+      name: "testCookie"
+      value: "cookieValue123"
+  - cookie:
+      action: "delete"
+      name: "testCookie"
+  - cookie:
+      action: "clear"
+
+  # ========== WAIT COMMANDS ==========
+  - wait: "div.dynamic-content"  # Wait for element
+  - wait: 3000  # Wait time in milliseconds
+  - wait:
+      for: "img.lazy-loaded"
+  - wait:
+      time: 1500
+
+  # ========== DIALOG COMMANDS ==========
+  - alert: "accept"
+  - alert: "dismiss"
+  - dialog:
+      type: "confirm"
+      action: "accept"
+  - dialog:
+      type: "confirm"
+      action: "reject"
+  - dialog:
+      type: "prompt"
+      text: "Test input for prompt"
+  - dialog:
+      type: "prompt"
+      action: "reject"
+
+  # ========== FILE COMMANDS ==========
+  - file:
+      selector: "input[type='file']"
+      url: "https://www.example.com/sample.pdf"
+  - upload:
+      selector: "input#document-upload"
+      url: "https://www.example.com/test-document.docx"
+
+  # ========== MISC COMMANDS ==========
+  - comment: "Test checkpoint - verifying all commands work correctly"
+  - execute: "return window.location.href;"
+  - javascript: "document.querySelector('body').style.backgroundColor = 'lightblue';"
+
+  # ========== ADDITIONAL VARIATIONS ==========
+  # Testing alternative syntax forms
+  - assert:
+      element: "footer"
+      exists: true
+  - assert:
+      element: "div.hidden"
+      not_exists: true
+  - store:
+      from: "h2.subtitle"
+      in: "subtitleText"
+      type: "text"
+  - select:
+      from: "select#region"
+      text: "North America"
+  - write:
+      text: "Alternative write syntax"
+      into: "input#search"
+  - navigate:
+      to: "https://www.example.com/contact"
+  - wait:
+      element: "div.loaded"
+  - cookie:
+      set:
+        name: "userPref"
+        value: "darkMode"
+  - assert:
+      variable: "currentUsername"
+      equals: "testuser123"

@@ -1,0 +1,37 @@
+name: COMM-CX-002 - Product Search and Browse - Test search functionality and filters
+description: 'Test search functionality and filters (Module: Commerce, Suite: Customer Experience)'
+project: D365 Test Automation
+goal: Commerce Tests
+journey: Customer Experience
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Search
+- stepType: pressKey
+  key: '"ENTER"'
+- type: wait
+  command: time
+  value: 2
+- type: assert
+  command: exists
+  target: Results (15)
+- type: interact
+  command: click
+  target: Filter
+- type: interact
+  command: select
+  target: Price range
+  value: $500-$1000
+- type: interact
+  command: select
+  target: Rating
+  value: 4 stars & up
+- type: interact
+  command: click
+  target: Apply filters
+- type: interact
+  command: select
+  target: Sort by
+  value: 'Price: Low to High'

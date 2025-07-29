@@ -1,0 +1,20 @@
+name: SALES-PIPE-001 - Pipeline Review - Verify pipeline visibility and metrics
+description: 'Verify pipeline visibility and metrics (Module: Sales Module, Suite: Pipeline and Forecasting)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Dashboards
+- select:
+    selector: Dashboard Selector
+    option: Sales Pipeline
+- wait: 3
+- assert: Pipeline Funnel
+- assert: Revenue by Stage
+- assert: Opportunity Metrics
+- select:
+    selector: Time Period
+    option: This Quarter
+- select:
+    selector: View
+    option: My Team
+- click: Refresh
+- wait: 2

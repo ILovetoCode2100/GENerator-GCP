@@ -1,0 +1,45 @@
+name: PROJ-TEMP-001 - Create Project Template - Create reusable project template
+description: 'Create reusable project template (Module: Project Operations, Suite: Project Templates and Automation)'
+project: D365 Test Automation
+goal: Project Operations Tests
+journey: Project Templates and Automation
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Project Templates
+- type: interact
+  command: click
+  target: New Template
+- type: interact
+  command: write
+  target: Template Name
+  value: D365 Implementation Template
+- type: interact
+  command: select
+  target: Category
+  value: Implementation
+- type: interact
+  command: write
+  target: Description
+  value: Standard template for D365 module implementations
+- type: interact
+  command: click
+  target: Copy from Project
+- type: interact
+  command: select
+  target: Source Project
+  value: $projectId
+- type: interact
+  command: click
+  target: Copy
+- type: interact
+  command: click
+  target: Edit Template
+- type: interact
+  command: click
+  target: Save Template
+- type: assert
+  command: exists
+  target: Template saved

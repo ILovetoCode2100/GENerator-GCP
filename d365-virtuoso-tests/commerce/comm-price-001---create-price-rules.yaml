@@ -1,0 +1,80 @@
+name: COMM-PRICE-001 - Create Price Rules - Set up dynamic pricing rules
+description: 'Set up dynamic pricing rules (Module: Commerce, Suite: Pricing and Promotions)'
+project: D365 Test Automation
+goal: Commerce Tests
+journey: Pricing and Promotions
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Pricing and discounts
+- type: interact
+  command: click
+  target: Price rules
+- type: interact
+  command: click
+  target: New price rule
+- type: interact
+  command: write
+  target: Name
+  value: Member Pricing - $TIMESTAMP
+- type: interact
+  command: select
+  target: Price rule type
+  value: Customer group
+- type: interact
+  command: select
+  target: Customer group
+  value: Online members
+- type: interact
+  command: write
+  target: Valid from
+  value: $TODAY
+- type: interact
+  command: write
+  target: Valid to
+  value: $DATE_PLUS_90
+- type: interact
+  command: click
+  target: Lines
+- type: interact
+  command: click
+  target: Add
+- type: interact
+  command: select
+  target: Product selection
+  value: Category
+- type: interact
+  command: select
+  target: Category
+  value: Electronics
+- type: interact
+  command: select
+  target: Discount method
+  value: Percentage off
+- type: interact
+  command: write
+  target: Discount percentage
+  value: '10'
+- type: interact
+  command: click
+  target: Save
+- type: interact
+  command: click
+  target: Add
+- type: interact
+  command: select
+  target: Product selection
+  value: Specific product
+- type: interact
+  command: select
+  target: Product
+  value: SURF-001
+- type: interact
+  command: select
+  target: Price method
+  value: Quantity break
+- type: interact
+  command: click
+  target: Save

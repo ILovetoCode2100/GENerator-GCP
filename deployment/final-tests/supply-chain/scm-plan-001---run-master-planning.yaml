@@ -1,0 +1,34 @@
+project: 9369
+goal: 14144
+name: SCM-PLAN-001 - Run Master Planning - Execute master planning run
+description: 'Execute master planning run (Module: Supply Chain, Suite: Master Planning)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Master planning
+- click: Master planning
+- click: Run
+- click: Master planning
+- select:
+    selector: Planning method
+    option: Regeneration
+- select:
+    selector: Master plan
+    option: MasterPlan
+- comment: Toggle "Track processing time" to on
+- write:
+    selector: Number of threads
+    text: '2'
+- select:
+    selector: Scheduling method
+    option: Finite capacity
+- write:
+    selector: Coverage time fence (days)
+    text: '30'
+- write:
+    selector: Forecast time fence (days)
+    text: '60'
+- click: OK
+- comment: Wait for planning to complete
+- assert: Master planning completed
+- click: View log
+- comment: Assert that no errors in log

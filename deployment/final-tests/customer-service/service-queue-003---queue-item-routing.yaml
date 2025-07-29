@@ -1,0 +1,18 @@
+project: 9369
+goal: 14138
+name: SERVICE-QUEUE-003 - Queue Item Routing - Route item to different queue
+description: 'Route item to different queue (Module: Customer Service, Suite: Queue Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Route
+- select:
+    selector: Route To
+    option: Technical Support Queue
+- write:
+    selector: Routing Note
+    text: Requires technical expertise
+- click: Route
+- wait: 2
+- assert_text:
+    selector: Queue
+    expected: Technical Support Queue

@@ -1,0 +1,34 @@
+project: 9369
+goal: 14142
+name: PROJ-FIN-002 - Project Invoice Generation - Generate project invoice based on actuals
+description: 'Generate project invoice based on actuals (Module: Project Operations, Suite: Project Financials)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Billing
+- click: Create Invoice
+- select:
+    selector: Billing Period
+    option: Current Month
+- click: Calculate
+- wait: 3
+- comment: Assert that element "Labor" amount exists
+- comment: Assert that element "Expenses" amount exists
+- comment: Assert that element "Total" is greater than "0"
+- write:
+    selector: Invoice Number
+    text: INV-PROJ-$TIMESTAMP
+- write:
+    selector: Description
+    text: Project billing for $CURRENT_MONTH
+- select:
+    selector: Payment Terms
+    option: Net 30
+- click: Generate Invoice
+- wait: 3
+- assert_text:
+    selector: Invoice Status
+    expected: Draft
+- click: Send to Customer
+- assert_text:
+    selector: Status
+    expected: Sent

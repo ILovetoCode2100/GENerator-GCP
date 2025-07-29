@@ -1,0 +1,45 @@
+name: MARKET-JOURNEY-002 - Configure Journey Settings - Set journey parameters and goals
+description: 'Set journey parameters and goals (Module: Marketing, Suite: Customer Journeys)'
+starting_url: https://[instance].crm.dynamics.com
+steps:
+- click: General
+- select:
+    selector: Target
+    option: Marketing segment
+- select:
+    selector: Segment
+    option: New Customers This Month
+- write:
+    selector: Start date
+    text: $TODAY
+- write:
+    selector: End date
+    text: $DATE_PLUS_30
+- select:
+    selector: Start time
+    option: Immediate
+- click: Goals
+- click: Add goal
+- select:
+    selector: Goal type
+    option: Email clicked
+- write:
+    selector: Target percentage
+    text: '20'
+- click: Save
+- click: Schedule
+- select:
+    selector: Contact frequency
+    option: Allow re-entry
+- write:
+    selector: Days between re-entry
+    text: '7'
+- select:
+    selector: Execution schedule
+    option: Business days only
+- click: Exit conditions
+- click: Add condition
+- select:
+    selector: Condition
+    option: Unsubscribed
+- click: Save

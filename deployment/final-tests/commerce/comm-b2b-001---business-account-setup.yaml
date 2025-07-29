@@ -1,0 +1,44 @@
+project: 9369
+goal: 14145
+name: COMM-B2B-001 - Business Account Setup - Create B2B customer account
+description: 'Create B2B customer account (Module: Commerce, Suite: B2B Commerce)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- navigate: Commerce headquarters
+- click: Customers
+- click: All customers
+- click: New
+- select:
+    selector: Account type
+    option: Organization
+- write:
+    selector: Name
+    text: Northwind Traders - $TIMESTAMP
+- write:
+    selector: Account number
+    text: NW-$TIMESTAMP
+- write:
+    selector: Tax ID
+    text: 12-3456789
+- select:
+    selector: Payment terms
+    option: Net 30
+- write:
+    selector: Credit limit
+    text: '500000'
+- click: Contacts
+- click: Add contact
+- write:
+    selector: Name
+    text: Sarah Buyer
+- write:
+    selector: Email
+    text: buyer@northwind.com
+- write:
+    selector: Phone
+    text: 425-555-0200
+- select:
+    selector: Title
+    option: Purchasing Manager
+- comment: Toggle "Can place orders" to on
+- click: Save

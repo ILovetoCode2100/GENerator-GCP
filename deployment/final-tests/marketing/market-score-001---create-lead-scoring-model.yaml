@@ -1,0 +1,81 @@
+project: 9369
+goal: 14140
+name: MARKET-SCORE-001 - Create Lead Scoring Model - Build automated lead scoring model
+description: 'Build automated lead scoring model (Module: Marketing, Suite: Lead Scoring)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Lead scoring
+- click: New
+- write:
+    selector: Name
+    text: Engagement Score Model - $TIMESTAMP
+- select:
+    selector: Target entity
+    option: Contact
+- click: Conditions
+- click: Add condition
+- write:
+    selector: Name
+    text: Job Title Score
+- select:
+    selector: Field
+    option: Job Title
+- select:
+    selector: Operator
+    option: contains
+- write:
+    selector: Value
+    text: Manager,Director,VP
+- write:
+    selector: Points
+    text: '10'
+- click: Save
+- click: Add condition
+- write:
+    selector: Name
+    text: Email Engagement
+- select:
+    selector: Interaction type
+    option: Email opened
+- select:
+    selector: Time frame
+    option: Last 30 days
+- write:
+    selector: Points per interaction
+    text: '5'
+- write:
+    selector: Maximum points
+    text: '25'
+- click: Save
+- click: Add condition
+- write:
+    selector: Name
+    text: Website Visits
+- select:
+    selector: Interaction type
+    option: Website visited
+- select:
+    selector: Specific page
+    option: Pricing page
+- write:
+    selector: Points
+    text: '20'
+- click: Save
+- click: Grades
+- write:
+    selector: Grade D minimum
+    text: '0'
+- write:
+    selector: Grade C minimum
+    text: '25'
+- write:
+    selector: Grade B minimum
+    text: '50'
+- write:
+    selector: Grade A minimum
+    text: '75'
+- click: Save
+- click: Go live
+- assert_text:
+    selector: Status
+    expected: Live

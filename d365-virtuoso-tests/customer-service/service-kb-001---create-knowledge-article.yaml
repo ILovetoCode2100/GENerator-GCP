@@ -1,0 +1,36 @@
+name: SERVICE-KB-001 - Create Knowledge Article - Create new knowledge article
+description: 'Create new knowledge article (Module: Customer Service, Suite: Knowledge Management)'
+project: D365 Test Automation
+goal: Customer Service Tests
+journey: Knowledge Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Knowledge Base
+- type: interact
+  command: click
+  target: New Article
+- type: wait
+  command: time
+  value: 2
+- type: interact
+  command: write
+  target: Title
+  value: How to Reset Customer Portal Password
+- type: interact
+  command: select
+  target: Article Type
+  value: How-to
+- type: interact
+  command: select
+  target: Subject
+  value: Password Issues
+- type: interact
+  command: write
+  target: Summary
+  value: This article explains how to reset customer portal password
+- type: interact
+  command: click
+  target: Content

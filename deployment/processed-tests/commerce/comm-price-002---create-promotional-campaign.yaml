@@ -1,0 +1,53 @@
+name: COMM-PRICE-002 - Create Promotional Campaign - Set up multi-channel promotion
+description: 'Set up multi-channel promotion (Module: Commerce, Suite: Pricing and Promotions)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Promotions
+- click: Discounts
+- click: New
+- write:
+    selector: Name
+    text: Spring Sale 2024 - $TIMESTAMP
+- write:
+    selector: Coupon code
+    text: SPRING24
+- select:
+    selector: Discount type
+    option: Percentage discount
+- write:
+    selector: Discount percentage
+    text: '20'
+- select:
+    selector: Apply to
+    option: Order
+- write:
+    selector: Minimum purchase
+    text: '100'
+- write:
+    selector: Valid from date
+    text: $TODAY
+- write:
+    selector: Valid to date
+    text: $DATE_PLUS_30
+- select:
+    selector: Valid days
+    option: All days
+- select:
+    selector: Valid hours
+    option: All hours
+- click: Channels
+- comment: Check "Contoso Online Store"
+- comment: Check "All retail stores"
+- click: Save
+- click: Exclusions
+- select:
+    selector: Exclude type
+    option: Category
+- select:
+    selector: Category
+    option: Clearance
+- click: Add
+- click: Activate
+- assert_text:
+    selector: Status
+    expected: Active

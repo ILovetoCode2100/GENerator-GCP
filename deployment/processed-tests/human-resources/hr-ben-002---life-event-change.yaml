@@ -1,0 +1,26 @@
+name: HR-BEN-002 - Life Event Change - Process benefits change due to life event
+description: 'Process benefits change due to life event (Module: Human Resources, Suite: Benefits Administration)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Life Events
+- click: Report Life Event
+- select:
+    selector: Event Type
+    option: Marriage
+- write:
+    selector: Event Date
+    text: $DATE_MINUS_30
+- upload:
+    file: marriage_certificate.pdf
+    selector: Documentation
+- click: Submit
+- comment: Assert that element "Benefit Change Window" opens
+- click: Update Benefits
+- comment: Change "Medical Insurance" coverage to "Employee + Spouse"
+- comment: Add spouse to "Dental Insurance"
+- click: Save Changes
+- assert_text:
+    selector: Change Effective Date
+    expected: $FIRST_OF_MONTH
+- click: Confirm Changes
+- assert: Benefits Updated

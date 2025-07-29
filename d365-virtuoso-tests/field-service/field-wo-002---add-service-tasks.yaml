@@ -1,0 +1,63 @@
+name: FIELD-WO-002 - Add Service Tasks - Define service tasks for work order
+description: 'Define service tasks for work order (Module: Field Service, Suite: Work Order Management)'
+project: D365 Test Automation
+goal: Field Service Tests
+journey: Work Order Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Service Tasks
+- type: interact
+  command: click
+  target: New Service Task
+- type: interact
+  command: write
+  target: Name
+  value: Diagnose printer issue
+- type: interact
+  command: select
+  target: Task Type
+  value: Diagnosis
+- type: interact
+  command: write
+  target: Estimated Duration (Minutes)
+  value: '30'
+- type: interact
+  command: select
+  target: Task Status
+  value: Required
+- type: interact
+  command: write
+  target: Description
+  value: Check power, connections, error messages
+- type: interact
+  command: click
+  target: Save & New
+- type: interact
+  command: write
+  target: Name
+  value: Replace printer components
+- type: interact
+  command: select
+  target: Task Type
+  value: Repair
+- type: interact
+  command: write
+  target: Estimated Duration (Minutes)
+  value: '60'
+- type: interact
+  command: select
+  target: Task Status
+  value: Required
+- type: interact
+  command: write
+  target: Description
+  value: Replace toner, rollers if needed
+- type: interact
+  command: click
+  target: Save & Close
+- type: assert
+  command: exists
+  target: Service Tasks (2)

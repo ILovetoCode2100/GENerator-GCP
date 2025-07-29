@@ -1,0 +1,16 @@
+name: SCM-QM-003 - Close Quality Order - Complete quality order processing
+description: 'Complete quality order processing (Module: Supply Chain, Suite: Quality Management)'
+starting_url: https://[instance].crm.dynamics.com
+steps:
+- click: Close
+- select:
+    selector: Disposition
+    option: Accept
+- write:
+    selector: Notes
+    text: All tests passed
+- click: OK
+- navigate: On-hand inventory
+- comment: Search for "$itemNumber"
+- comment: Assert that "Inventory status" changed from "Inspection" to "Available"
+- comment: Assert that quantity is available for use

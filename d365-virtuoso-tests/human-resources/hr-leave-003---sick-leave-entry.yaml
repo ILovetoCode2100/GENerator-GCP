@@ -1,0 +1,36 @@
+name: HR-LEAVE-003 - Sick Leave Entry - Record unplanned sick leave
+description: 'Record unplanned sick leave (Module: Human Resources, Suite: Leave and Absence Management)'
+project: D365 Test Automation
+goal: Human Resources Tests
+journey: Leave and Absence Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Time Off
+- type: interact
+  command: click
+  target: Report Sick Leave
+- type: interact
+  command: write
+  target: Date
+  value: $TODAY
+- type: interact
+  command: select
+  target: Duration
+  value: Full Day
+- type: interact
+  command: select
+  target: Reason
+  value: Illness
+- type: interact
+  command: write
+  target: Notes
+  value: Flu symptoms
+- type: interact
+  command: click
+  target: Submit
+- type: assert
+  command: exists
+  target: Sick Leave Recorded

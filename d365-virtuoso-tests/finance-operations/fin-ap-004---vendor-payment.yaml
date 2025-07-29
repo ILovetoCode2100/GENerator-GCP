@@ -1,0 +1,77 @@
+name: FIN-AP-004 - Vendor Payment - Generate and process vendor payments
+description: 'Generate and process vendor payments (Module: Finance Operations, Suite: Accounts Payable)'
+project: D365 Test Automation
+goal: Finance Operations Tests
+journey: Accounts Payable
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Accounts payable
+- type: interact
+  command: click
+  target: Payments
+- type: interact
+  command: click
+  target: Vendor payment journal
+- type: interact
+  command: click
+  target: New
+- type: interact
+  command: select
+  target: Name
+  value: VendPay
+- type: interact
+  command: click
+  target: Lines
+- type: interact
+  command: click
+  target: Payment proposal
+- type: interact
+  command: click
+  target: Create payment proposal
+- type: interact
+  command: select
+  target: Method
+  value: Due date
+- type: interact
+  command: write
+  target: To date
+  value: $TODAY
+- type: interact
+  command: click
+  target: OK
+- type: wait
+  command: time
+  value: 5
+- type: interact
+  command: click
+  target: Create payments
+- type: interact
+  command: click
+  target: Generate payments
+- type: interact
+  command: select
+  target: Method of payment
+  value: Check
+- type: interact
+  command: select
+  target: Bank account
+  value: Bank account 01
+- type: interact
+  command: click
+  target: OK
+- type: interact
+  command: click
+  target: Print
+- type: interact
+  command: click
+  target: Check
+- type: interact
+  command: write
+  target: From check number
+  value: '1001'
+- type: interact
+  command: click
+  target: OK

@@ -1,0 +1,9 @@
+project: 9369
+goal: 14137
+name: Test Sales Lead Creation
+description: Quick test to verify deployment
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+  - navigate: https://virtuoso-test.crm.dynamics.com
+  - wait: 2
+  - click: Sales Hub

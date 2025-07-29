@@ -1,0 +1,46 @@
+name: FIN-BUD-001 - Create Budget - Create and activate budget
+description: 'Create and activate budget (Module: Finance Operations, Suite: Budget Control)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Budgeting
+- click: Budget register entries
+- click: New
+- select:
+    selector: Budget model
+    option: Original budget
+- select:
+    selector: Budget code
+    option: Operating
+- write:
+    selector: Description
+    text: FY2024 Operating Budget
+- click: Budget account entries
+- click: Add line
+- write:
+    selector: Ledger account
+    text: 606100-001-CORP
+- write:
+    selector: Amount
+    text: '60000'
+- write:
+    selector: Description
+    text: Annual rent budget
+- click: Add line
+- write:
+    selector: Ledger account
+    text: 606200-001-CORP
+- write:
+    selector: Amount
+    text: '24000'
+- write:
+    selector: Description
+    text: Utilities budget
+- click: Workflow
+- click: Submit
+- write:
+    selector: Comment
+    text: Please approve FY2024 budget
+- click: Submit
+- assert_text:
+    selector: Workflow status
+    expected: Submitted

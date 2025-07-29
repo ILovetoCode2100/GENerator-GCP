@@ -1,0 +1,28 @@
+name: SALES-OPP-002 - Opportunity Stage Progression - Progress opportunity through sales stages
+description: 'Progress opportunity through sales stages (Module: Sales Module, Suite: Opportunity Management)'
+starting_url: https://[instance].crm.dynamics.com
+steps:
+- click: Next Stage
+- wait: 2
+- comment: Assert that element "Develop" is selected
+- select:
+    selector: Probability %
+    option: '20'
+- click: Save
+- click: Product Line Items
+- click: Add Products
+- select:
+    selector: Add Products
+    option: Existing Products
+- click: D365 Sales License
+- write:
+    selector: Quantity
+    text: '10'
+- click: Add
+- click: Save
+- click: Next Stage
+- comment: Assert that element "Propose" is selected
+- select:
+    selector: Probability %
+    option: '40'
+- click: Save

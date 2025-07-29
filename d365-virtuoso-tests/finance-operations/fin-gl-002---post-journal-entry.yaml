@@ -1,0 +1,35 @@
+name: FIN-GL-002 - Post Journal Entry - Post validated journal entry
+description: 'Post validated journal entry (Module: Finance Operations, Suite: General Ledger)'
+project: D365 Test Automation
+goal: Finance Operations Tests
+journey: General Ledger
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Post
+- type: wait
+  command: time
+  value: 2
+- type: assert
+  command: text
+  target: Ready to post
+  expected: 'Yes'
+- type: interact
+  command: click
+  target: OK
+- type: wait
+  command: time
+  value: 3
+- type: assert
+  command: text
+  target: Posting status
+  expected: Posted
+- type: interact
+  command: click
+  target: Voucher
+- type: store
+  command: text
+  target: Voucher
+  variable: voucherNumber

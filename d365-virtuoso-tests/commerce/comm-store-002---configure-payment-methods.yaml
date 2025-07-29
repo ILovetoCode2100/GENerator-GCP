@@ -1,0 +1,54 @@
+name: COMM-STORE-002 - Configure Payment Methods - Set up payment processing for online store
+description: 'Set up payment processing for online store (Module: Commerce, Suite: E-Commerce Store Setup)'
+project: D365 Test Automation
+goal: Commerce Tests
+journey: E-Commerce Store Setup
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Payment methods
+- type: interact
+  command: click
+  target: Add
+- type: interact
+  command: select
+  target: Payment method
+  value: Credit card
+- type: interact
+  command: select
+  target: Payment connector
+  value: Contoso Payments
+- type: interact
+  command: write
+  target: Merchant ID
+  value: Test Merchant ID
+- type: interact
+  command: write
+  target: API Key
+  value: '***API-KEY***'
+- type: interact
+  command: write
+  target: Authorization expiry (days)
+  value: '7'
+- type: interact
+  command: click
+  target: Save
+- type: interact
+  command: click
+  target: Add
+- type: interact
+  command: select
+  target: Payment method
+  value: PayPal
+- type: interact
+  command: write
+  target: PayPal account
+  value: paypal@contoso.com
+- type: interact
+  command: click
+  target: Save
+- type: assert
+  command: exists
+  target: Payment methods (2)

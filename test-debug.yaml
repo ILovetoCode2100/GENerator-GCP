@@ -1,0 +1,6 @@
+name: Debug Test
+steps:
+  - navigate: https://example.com
+  - wait: 2
+  - click: Login Button
+  - assert: Welcome

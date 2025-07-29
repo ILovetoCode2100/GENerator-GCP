@@ -1,0 +1,29 @@
+name: SERVICE-QUEUE-003 - Queue Item Routing - Route item to different queue
+description: 'Route item to different queue (Module: Customer Service, Suite: Queue Management)'
+project: D365 Test Automation
+goal: Customer Service Tests
+journey: Queue Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Route
+- type: interact
+  command: select
+  target: Route To
+  value: Technical Support Queue
+- type: interact
+  command: write
+  target: Routing Note
+  value: Requires technical expertise
+- type: interact
+  command: click
+  target: Route
+- type: wait
+  command: time
+  value: 2
+- type: assert
+  command: text
+  target: Queue
+  expected: Technical Support Queue

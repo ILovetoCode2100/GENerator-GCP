@@ -1,0 +1,32 @@
+name: SCM-PLAN-002 - Review Planned Orders - Review and firm planned orders
+description: 'Review and firm planned orders (Module: Supply Chain, Suite: Master Planning)'
+project: D365 Test Automation
+goal: Supply Chain Tests
+journey: Master Planning
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Planned orders
+- type: interact
+  command: click
+  target: first planned purchase order
+- type: interact
+  command: click
+  target: Firm
+- type: interact
+  command: click
+  target: OK
+- type: interact
+  command: click
+  target: first planned production order
+- type: interact
+  command: click
+  target: View
+- type: interact
+  command: click
+  target: Pegging
+- type: interact
+  command: click
+  target: Firm

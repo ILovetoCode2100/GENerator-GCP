@@ -1,0 +1,51 @@
+name: PROJ-PM-002 - Create Work Breakdown Structure - Build WBS with tasks and dependencies
+description: 'Build WBS with tasks and dependencies (Module: Project Operations, Suite: Project Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Work Breakdown Structure
+- click: Add Task
+- write:
+    selector: Task Name
+    text: 'Phase 1: Requirements Gathering'
+- write:
+    selector: Effort (Hours)
+    text: '40'
+- write:
+    selector: Start Date
+    text: $TODAY
+- write:
+    selector: End Date
+    text: $DATE_PLUS_14
+- click: Save
+- click: Add Subtask
+- write:
+    selector: Task Name
+    text: Conduct stakeholder interviews
+- write:
+    selector: Effort (Hours)
+    text: '16'
+- select:
+    selector: Status
+    option: In Progress
+- click: Save
+- click: Add Subtask
+- write:
+    selector: Task Name
+    text: Document current processes
+- write:
+    selector: Effort (Hours)
+    text: '24'
+- select:
+    selector: Status
+    option: Not Started
+- click: Save
+- click: Document current processes
+- click: Predecessors
+- select:
+    selector: Predecessor Task
+    option: Conduct stakeholder interviews
+- select:
+    selector: Dependency Type
+    option: Finish-to-Start
+- click: Save
+- assert: Tasks (3)

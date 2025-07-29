@@ -1,0 +1,30 @@
+project: 9369
+goal: 14139
+name: FIELD-MOB-002 - Complete Service Tasks - Execute service tasks on mobile
+description: 'Execute service tasks on mobile (Module: Field Service, Suite: Mobile Field Service)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Service Tasks
+- click: Diagnose printer issue
+- click: Start Task
+- wait: 2
+- select:
+    selector: Result
+    option: Completed
+- write:
+    selector: Notes
+    text: Found paper jam and worn rollers
+- upload:
+    file: printer_diagnosis_photo.jpg
+    selector: Attachments
+- click: Complete Task
+- click: Replace printer components
+- click: Start Task
+- select:
+    selector: Result
+    option: Completed
+- write:
+    selector: Notes
+    text: Replaced rollers and cleared jam
+- click: Complete Task
+- assert: All Tasks Completed

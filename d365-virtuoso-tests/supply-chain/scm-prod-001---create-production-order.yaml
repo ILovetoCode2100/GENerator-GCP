@@ -1,0 +1,46 @@
+name: SCM-PROD-001 - Create Production Order - Create production order for manufactured item
+description: 'Create production order for manufactured item (Module: Supply Chain, Suite: Production Management)'
+project: D365 Test Automation
+goal: Supply Chain Tests
+journey: Production Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Production control
+- type: interact
+  command: click
+  target: Production orders
+- type: interact
+  command: click
+  target: All production orders
+- type: interact
+  command: click
+  target: New
+- type: interact
+  command: select
+  target: Item number
+  value: FG-001
+- type: interact
+  command: write
+  target: Quantity
+  value: '50'
+- type: interact
+  command: select
+  target: Warehouse
+  value: WH-001
+- type: interact
+  command: write
+  target: Delivery date
+  value: $DATE_PLUS_3
+- type: interact
+  command: click
+  target: Create
+- type: wait
+  command: time
+  value: 3
+- type: store
+  command: text
+  target: Production order
+  variable: productionOrder

@@ -1,0 +1,36 @@
+project: 9369
+goal: 14137
+name: SALES-OPP-003 - Create and Send Quote - Generate quote from opportunity
+description: 'Generate quote from opportunity (Module: Sales Module, Suite: Opportunity Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Quotes
+- click: New Quote
+- wait: 2
+- assert_text:
+    selector: Customer
+    expected: $accountName
+- comment: Assert that element "Price List" is not empty
+- write:
+    selector: Quote Expiration (Days)
+    text: '30'
+- write:
+    selector: Discount %
+    text: '10'
+- write:
+    selector: Description
+    text: Standard terms apply
+- click: Save
+- click: Activate Quote
+- wait: 2
+- assert_text:
+    selector: Status
+    expected: Active
+- click: Email Quote
+- write:
+    selector: To
+    text: customer@contoso.com
+- write:
+    selector: Subject
+    text: Your Quote for D365 Implementation
+- click: Send

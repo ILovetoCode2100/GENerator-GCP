@@ -1,0 +1,39 @@
+name: FIELD-MOB-004 - Customer Signature - Capture customer signature and complete work
+description: 'Capture customer signature and complete work (Module: Field Service, Suite: Mobile Field Service)'
+project: D365 Test Automation
+goal: Field Service Tests
+journey: Mobile Field Service
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Complete Work Order
+- type: interact
+  command: write
+  target: Resolution
+  value: Printer fully functional. Cleaned unit and replaced worn parts.
+- type: interact
+  command: write
+  target: Total Duration (Minutes)
+  value: '90'
+- type: interact
+  command: click
+  target: Get Signature
+- type: interact
+  command: write
+  target: Print Name
+  value: John Doe
+- type: interact
+  command: click
+  target: Accept
+- type: interact
+  command: click
+  target: Complete
+- type: wait
+  command: time
+  value: 3
+- type: assert
+  command: text
+  target: Status
+  expected: Completed

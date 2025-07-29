@@ -1,0 +1,181 @@
+# Production environment overrides
+
+## Replica count for production
+replicaCount: 3
+
+## Image configuration
+image:
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+## Resource limits - production sizing
+resources:
+  limits:
+    cpu: 1000m
+    memory: 2Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+## Ingress enabled for production
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+  hosts:
+    - host: api-cli.virtuoso.qa
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: virtuoso-api-cli-prod-tls
+      hosts:
+        - api-cli.virtuoso.qa
+
+## Production configuration
+config:
+  ## Organization for production
+  organization:
+    id: "2242"
+
+  ## Logging - production settings
+  logging:
+    level: "info"
+    caller: false
+
+  ## Rate limiting - strict for production
+  rateLimit:
+    enabled: true
+    requestsPerMinute: 60
+    burst: 10
+
+  ## CORS - restricted for production
+  cors:
+    allowedOrigins: "https://app.virtuoso.qa,https://virtuoso.qa"
+
+  ## Features - production settings
+  features:
+    sessionManagement: true
+    asyncExecution: true
+    webhookNotifications: false
+
+## Redis - production configuration
+redis:
+  auth:
+    password: ""  # Use external secret
+  master:
+    persistence:
+      enabled: true
+      size: 16Gi
+      storageClass: fast-ssd
+    resources:
+      limits:
+        memory: 512Mi
+        cpu: 500m
+      requests:
+        memory: 256Mi
+        cpu: 250m
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      labels:
+        prometheus: kube-prometheus
+
+## Autoscaling for production
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+  metrics:
+    - type: Pods
+      pods:
+        metric:
+          name: http_requests_per_second
+        target:
+          type: AverageValue
+          averageValue: "1000"
+
+## PDB for production
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+## Service monitor for production
+serviceMonitor:
+  enabled: true
+  labels:
+    environment: production
+    prometheus: kube-prometheus
+
+## Priority class for production
+priorityClassName: "high-priority"
+
+## Node selector for production nodes
+nodeSelector:
+  node-role.kubernetes.io/production: "true"
+
+## Tolerations for production
+tolerations:
+  - key: "production-only"
+    operator: "Equal"
+    value: "true"
+    effect: "NoSchedule"
+
+## Anti-affinity - required for production
+affinity:
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+    - labelSelector:
+        matchExpressions:
+        - key: app.kubernetes.io/name
+          operator: In
+          values:
+          - virtuoso-api-cli
+      topologyKey: kubernetes.io/hostname
+
+## External secrets for production
+externalSecrets:
+  enabled: true
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  data:
+    - secretKey: api-token
+      remoteRef:
+        key: virtuoso/prod/api-cli
+        property: token
+    - secretKey: redis-password
+      remoteRef:
+        key: virtuoso/prod/api-cli
+        property: redis-password
+
+## Extra env vars for production
+extraEnvVars:
+  - name: ENVIRONMENT
+    value: "production"
+  - name: DD_AGENT_HOST
+    valueFrom:
+      fieldRef:
+        fieldPath: status.hostIP
+  - name: DD_TRACE_ENABLED
+    value: "true"
+
+## Topology spread for better distribution
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: topology.kubernetes.io/zone
+    whenUnsatisfiable: DoNotSchedule
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: virtuoso-api-cli

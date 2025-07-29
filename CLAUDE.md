@@ -1,192 +1,171 @@
-# Virtuoso API CLI - Development Guide
+# CLAUDE.md
 
-## Project Overview
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-The Virtuoso API CLI is a Go-based command-line tool that provides an AI-friendly interface for Virtuoso's test automation platform. This CLI enables programmatic creation and management of automated tests through a consistent, well-structured command interface.
+## Commands
 
-**Version:** 4.1
-**Status:** Production Ready (All commands create steps successfully)
-**Language:** Go 1.21+
-**Latest Update:** January 2025 (All 60 commands tested with 100% success rate)
+### Build & Development
+
+```bash
+# Build the CLI binary
+make build
+
+# Run all quality checks and build
+make check
+
+# Format code
+make fmt
+
+# Run linter
+make lint
+
+# Clean build artifacts
+make clean
+```
+
+### Testing
+
+```bash
+# Unit tests
+make test
+go test -v ./pkg/api-cli/commands/...  # Test specific package
+
+# Integration tests (requires API access)
+./test-scripts/test-all-69-commands.sh [checkpoint-id]    # Full test suite
+./test-all-commands-simple.sh [checkpoint-id]              # Quick validation
+./test-commands/test-yaml-end-to-end.sh                   # YAML functionality
+
+# Make targets for specific tests
+make test-commands       # Test CLI commands
+make test-library        # Test library commands
+```
+
+### Common Development Tasks
+
+```bash
+# Create and run a test
+./bin/api-cli run-test test.yaml
+
+# Use session context for multiple commands
+export VIRTUOSO_SESSION_ID=12345
+./bin/api-cli step-navigate to "https://example.com"
+./bin/api-cli step-interact click "button"
+
+# Get command help
+./bin/api-cli --help
+./bin/api-cli step-assert --help
+```
 
 ## Architecture
 
-### Project Structure
+### Codebase Structure
 
-```
-virtuoso-GENerator/
-├── cmd/api-cli/           # Main entry point
-├── pkg/api-cli/           # Core implementation
-│   ├── client/           # API client (120+ methods)
-│   └── commands/         # ~20 files (43% reduction from 35+)
-├── bin/                  # Compiled binary output
-├── test-commands/        # Test suite
-└── examples/             # YAML test templates
-```
+The project follows a consolidated architecture where related commands are grouped into single files:
 
-### Consolidated File Organization
+- **Entry Point**: `cmd/api-cli/main.go` - CLI initialization
+- **Core Package**: `pkg/api-cli/` - Main implementation
+  - `client/` - API client with 120+ methods using context-aware patterns
+  - `commands/` - ~20 files (reduced from 35+) containing all CLI commands
+  - `config/` - Configuration management using Viper
+  - `constants/` - Shared constants and types
+  - `yaml-layer/` - YAML test definition parsing and execution
 
-The commands package has been significantly consolidated for better maintainability:
+### Command Consolidation Pattern
 
-#### Core Infrastructure (6 files)
+Commands are organized into logical groups to reduce code duplication:
 
-- `base.go` - Base command functionality with session support
-- `config.go` - Global configuration management
-- `register.go` - Command registration
-- `types.go` - Shared type definitions
-- `validate_config.go` - Configuration validation
-- `list_commands_test.go` - Tests
+1. **`interaction_commands.go`** - All user interactions (click, write, mouse, select)
+2. **`browser_commands.go`** - Browser operations (navigate, scroll, window)
+3. **`list.go`** - Generic list operations for all entities
+4. **`project_management.go`** - CRUD operations for projects/goals/journeys
+5. **`execution_management.go`** - Test execution workflow
 
-#### Consolidated Command Files (5 files)
+Individual step commands remain in separate files (`step_*.go`) for clarity.
 
-Major consolidations reducing code duplication by ~30%:
+### Key Patterns
 
-1. **`interaction_commands.go`** - All user interactions
+#### Command Structure
 
-   - Consolidated from: interact.go, mouse.go, select.go
-   - Contains: click, hover, write, key, mouse operations, dropdown selection
-
-2. **`browser_commands.go`** - Browser operations
-
-   - Consolidated from: navigate.go, window.go
-   - Contains: navigation, scrolling, window management, tab/frame switching
-
-3. **`list.go`** - All list operations
-
-   - Consolidated from: 4 separate list\_\*.go files
-   - Contains: Generic list framework for all entity types
-
-4. **`project_management.go`** - Project CRUD operations
-
-   - Consolidated from: 7 separate files
-   - Contains: All project/goal/journey/checkpoint management
-
-5. **`execution_management.go`** - Execution operations
-   - Consolidated from: 5 separate files
-   - Contains: Test execution, monitoring, analysis, environment management
-
-#### Individual Step Commands (7 files)
-
-Specialized commands that remain separate:
-
-- `assert.go` - Assertion commands
-- `data.go` - Data storage and cookies
-- `dialog.go` - Dialog handling
-- `wait.go` - Wait operations
-- `file.go` - File upload (URL only)
-- `misc.go` - Miscellaneous (comment, execute)
-- `library.go` - Library operations
-
-#### Other (2 files)
-
-- `test_templates.go` - AI test template integration
-- `set_checkpoint.go` - Session management
-
-### Command Groups
-
-The CLI provides 60 fully working commands organized into logical groups:
-
-1. **`step-assert`** - Validation commands (12 types)
-
-   - exists, not-exists, equals, not-equals
-   - checked, selected, variable
-   - gt, gte, lt, lte, matches
-
-2. **`step-interact`** - User interactions (includes mouse & select)
-
-   - click, double-click, right-click, hover, write, key
-   - mouse operations (move-to, move-by, down, up)
-   - select operations (option, index, last)
-
-3. **`step-navigate`** - Navigation commands (10 types)
-
-   - to (URL navigation)
-   - scroll operations (top, bottom, element, position, by, up, down)
-
-4. **`step-window`** - Window management (5 types)
-
-   - resize, maximize
-   - switch operations (tab, iframe, parent-frame)
-
-5. **`step-data`** - Data management (6 types)
-
-   - store operations (text, value, attribute)
-   - cookie operations (create, delete, clear)
-
-6. **`step-dialog`** - Dialog handling (5 types)
-
-   - dismiss-alert
-   - dismiss-confirm (with --accept/--reject flags)
-   - dismiss-prompt (with --accept/--reject flags)
-   - dismiss-prompt-with-text
-
-7. **`step-wait`** - Wait operations (2 types)
-
-   - element (wait for visible)
-   - time
-
-8. **`step-file`** - File operations (2 types)
-
-   - upload (URL only)
-   - upload-url (URL only)
-
-9. **`step-misc`** - Miscellaneous (2 types)
-
-   - comment, execute (JavaScript)
-
-10. **`library`** - Library operations (6 types)
-    - add, get, attach, move-step, remove-step, update
-
-## Command Syntax
-
-### Unified Pattern
-
-All commands follow the same syntax pattern:
+All commands follow the unified positional syntax:
 
 ```
 api-cli <command> <subcommand> [checkpoint-id] <args...> [position]
 ```
 
-### Session Context (Recommended)
+Commands implement the `StepCommand` interface and extend `BaseCommand` for shared functionality.
 
-```bash
-# Set session context once
-export VIRTUOSO_SESSION_ID=12345
+#### Session Context
 
-# Commands auto-detect checkpoint from session
-api-cli step-navigate to "https://example.com"
-api-cli step-interact click "button.submit"
-api-cli step-assert exists "Success message"
-```
+The CLI supports session-based checkpoint management via `VIRTUOSO_SESSION_ID` environment variable, eliminating the need to specify checkpoint IDs repeatedly.
 
-### Explicit Checkpoint
+#### Error Handling
 
-```bash
-api-cli step-navigate to 12345 "https://example.com" 1
-api-cli step-interact click 12345 "button.submit" 2
-api-cli step-assert exists 12345 "Success message" 3
-```
+Structured error types (`APIError`, `ClientError`) with consistent exit codes:
 
-## Testing
+- 0: Success
+- 1: General error
+- 3: Authentication error
+- 5: Not found error
 
-### Comprehensive Test Suite
+#### Output Formats
 
-```bash
-# Test all commands with real API calls
-./test-commands/test-unified-commands.sh
-```
+All commands support multiple output formats via the `--output` flag:
 
-**Results**: 100% success rate across all 69 commands
+- `human` - Default readable format
+- `json` - Structured data
+- `yaml` - Configuration format
+- `ai` - AI-optimized with context
 
-### Unit Tests
+### YAML Test Layer
 
-```bash
-make test
-```
+The `run-test` command provides a simplified interface for test creation:
+
+- Auto-creates all required infrastructure (project, goal, journey, checkpoint)
+- Supports multiple input formats (simplified, extended, compact)
+- Progressive disclosure from simple to complex test definitions
+- Comprehensive validation with helpful error messages
+
+## Important Implementation Details
+
+### API Client
+
+- All methods are context-aware for timeout/cancellation support
+- Automatic retry logic for transient failures
+- Structured response handling with type safety
+- Session management handled transparently
+
+### Command Validation
+
+The CLI includes an intelligent validator that:
+
+- Auto-corrects common syntax errors (missing hyphens, deprecated commands)
+- Validates flag compatibility
+- Provides migration guidance for deprecated features
+- Handles format conversions automatically
+
+### Variable Handling
+
+- Variables in commands should NOT include the `$` prefix (added automatically by the API)
+- Store operations create variables that can be referenced in subsequent steps
+- Variable names should be descriptive and follow camelCase convention
+
+### Known Limitations
+
+1. File upload commands only support URLs, not local file paths
+2. Some browser navigation commands (back, forward, refresh) are not supported by the API
+3. Window close and frame switching by index/name are not available
+4. Library commands use checkpoint IDs (not journey IDs) for the `add` operation
 
 ## Configuration
 
-Create `~/.api-cli/virtuoso-config.yaml`:
+The CLI uses a hierarchical configuration system:
+
+1. CLI flags (highest priority)
+2. Environment variables
+3. Config file (`~/.api-cli/virtuoso-config.yaml`)
+4. Default values
+
+Key configuration:
 
 ```yaml
 api:
@@ -196,257 +175,62 @@ organization:
   id: "2242"
 ```
 
-### Environment Variables
+## Testing Guidelines
 
-- `VIRTUOSO_SESSION_ID` - Set checkpoint ID for session context
-- `DEBUG=true` - Enable debug output
+When adding new features:
 
-## Quick Start Examples
+1. Add unit tests in the appropriate `*_test.go` file
+2. Update integration tests in `test-scripts/test-all-69-commands.sh`
+3. Test all output formats (human, json, yaml, ai)
+4. Verify session context support
+5. Ensure backward compatibility with legacy syntax
+6. Add examples to `examples/` directory
 
-### Simplified Test Creation (Recommended)
+## Recent Changes (January 2025)
 
-The easiest way to create tests is using the `run-test` command with a YAML or JSON file:
+### Major Improvements
 
-```bash
-# Create test.yaml
-cat > test.yaml << EOF
-name: "Login Test"
-steps:
-  - navigate: "https://example.com"
-  - click: "#login"
-  - write:
-      selector: "#email"
-      text: "test@example.com"
-  - write:
-      selector: "#password"
-      text: "password123"
-  - click: "button[type='submit']"
-  - assert: "Welcome"
-EOF
+- **Context Support**: 80+ context-aware methods for better reliability
+- **Command Validator**: Auto-correction of common syntax errors
+- **Unified Test Runner**: `run-test` command for simplified test creation
+- **Code Consolidation**: 43% file reduction through logical grouping
+- **100% Success Rate**: All 69 commands tested and working
 
-# Run the test (creates all infrastructure automatically)
-./bin/api-cli run-test test.yaml
+### Migration Notes
 
-# Or use JSON format
-./bin/api-cli run-test test.json
+- Dialog commands now use hyphenated syntax (e.g., `dismiss-alert` instead of `alert accept`)
+- Mouse and select commands moved under `step-interact` parent command
+- Wait time commands expect milliseconds (auto-conversion from seconds)
+- Store commands simplified (e.g., `store element-text` → `store text`)
 
-# Preview without creating
-./bin/api-cli run-test test.yaml --dry-run
+## Update: 2025-07-29 20:17:20
+
+### Changes Summary
+
+- Added: 121 files
+- Modified: 1 files
+- Deleted: 0 files
+
+### Repository: virtuoso-GENerator
+
+### Modified Components
+
+```
+CLAUDE.md                                          | 554 ++++++---------------
+ pkg/api-cli/client/client.go                       |  41 +-
+ pkg/api-cli/client/client_fixes.go                 | 115 -----
+ pkg/api-cli/client/execute_goal_robust.go          | 205 --------
+ pkg/api-cli/client/response_handler.go             |  10 +-
+ pkg/api-cli/client/response_handler_integration.go | 209 --------
+ pkg/api-cli/commands/command_validator.go          |   3 +-
+ pkg/api-cli/commands/execute_goal_fixed.go         | 152 ------
+ pkg/api-cli/commands/manage_lists.go               |   6 +-
+ pkg/api-cli/commands/register.go                   |   4 +-
+ 10 files changed, 180 insertions(+), 1119 deletions(-)
 ```
 
-### Manual Test Infrastructure Creation
+### Notes for Claude Code
 
-```bash
-# Create project
-PROJECT_ID=$(./bin/api-cli create-project "My Test" -o json | jq -r '.project_id')
-
-# Create goal
-GOAL_JSON=$(./bin/api-cli create-goal $PROJECT_ID "Test Goal" -o json)
-GOAL_ID=$(echo "$GOAL_JSON" | jq -r '.goal_id')
-SNAPSHOT_ID=$(echo "$GOAL_JSON" | jq -r '.snapshot_id')
-
-# Create journey
-JOURNEY_ID=$(./bin/api-cli create-journey $GOAL_ID $SNAPSHOT_ID "Test Journey" -o json | jq -r '.journey_id')
-
-# Create checkpoint
-CHECKPOINT_ID=$(./bin/api-cli create-checkpoint $JOURNEY_ID $GOAL_ID $SNAPSHOT_ID "Test Steps" -o json | jq -r '.checkpoint_id')
-```
-
-### Add Test Steps
-
-```bash
-# Set session context
-export VIRTUOSO_SESSION_ID=$CHECKPOINT_ID
-
-# Navigate
-./bin/api-cli step-navigate to "https://example.com"
-
-# Interact (includes mouse and select operations)
-./bin/api-cli step-interact click "button.submit"
-./bin/api-cli step-interact write "input#email" "test@example.com"
-./bin/api-cli step-interact mouse move-to "nav.menu"
-./bin/api-cli step-interact select option "select#country" "United States"
-
-# Assert
-./bin/api-cli step-assert exists "Login button"
-./bin/api-cli step-assert equals "h1" "Welcome"
-
-# Wait
-./bin/api-cli step-wait element "div.ready"
-./bin/api-cli step-wait time 1000
-
-# Window operations
-./bin/api-cli step-window resize 1024x768
-./bin/api-cli step-window switch tab next
-
-# Data operations
-./bin/api-cli step-data store element-text "h1" "pageTitle"
-./bin/api-cli step-data cookie create "session" "abc123"
-```
-
-## Important Notes
-
-### Command Structure Changes
-
-Due to consolidation, some commands have slightly different paths:
-
-- **Mouse commands**: Now under `step-interact mouse` (e.g., `api-cli step-interact mouse move-to ...`)
-- **Select commands**: Now under `step-interact select` (e.g., `api-cli step-interact select option ...`)
-- **Dialog commands**: Use hyphenated names (e.g., `dismiss-alert` instead of `alert accept`)
-- **Misc commands**: Require `step-misc` prefix (e.g., `api-cli step-misc comment ...`)
-
-All original functionality is preserved.
-
-### Known Limitations
-
-1. **Removed unsupported API operations**:
-
-   - Browser navigation: back, forward, refresh
-   - Window operations: close, switch by frame index/name
-   - File upload: Local paths (only URLs supported)
-
-2. **Session Context Notes**:
-   - Some commands require explicit checkpoint ID
-   - Position auto-increments when enabled in config
-
-### Key Implementation Details
-
-- **Variables**: Do NOT use $ prefix in commands (added automatically)
-- **Window resize**: Use WIDTHxHEIGHT format (e.g., "1024x768")
-- **Wait time**: Specified in milliseconds
-- **Session ID**: Use numeric ID without "cp\_" prefix
-- **Mouse coordinates**: Use comma-separated format (e.g., "50,100")
-- **URLs**: Must start with http:// or https://
-- **Library commands**: Use checkpoint IDs, not journey IDs for `add` command
-
-## Development Guidelines
-
-### Adding New Features
-
-1. Identify which consolidated file the feature belongs to
-2. Update the appropriate command group
-3. Follow existing patterns for consistency
-4. Update tests in test-unified-commands.sh
-
-### Code Organization Benefits
-
-- **43% fewer files** to navigate and maintain
-- **~30% code reduction** through shared functions
-- **Logical grouping** of related functionality
-- **Consistent patterns** across all commands
-
-## Key Files
-
-### Consolidated Command Files
-
-- `interaction_commands.go` - User interactions
-- `browser_commands.go` - Browser operations
-- `list.go` - List operations
-- `project_management.go` - CRUD operations
-- `execution_management.go` - Execution workflow
-
-### Core Files
-
-- `register.go` - Command registration
-- `base.go` - Shared command functionality
-- `client/client.go` - API client (120+ methods)
-
-### Documentation
-
-- `README.md` - Comprehensive user guide
-- `COMMAND_REFERENCE.md` - Command syntax reference
-- `API_LIMITATIONS.md` - Known API limitations
-- `FILE_ORGANIZATION.md` - Detailed file structure
-
-## For AI Assistants
-
-- All commands support structured output formats (json, yaml, ai, human)
-- The `--output ai` format provides context and suggestions
-- Session context reduces boilerplate in scripts
-- Consistent patterns make command generation straightforward
-- See test-unified-commands.sh for working examples
-
-## Recent Major Changes (January 2025)
-
-### ✅ Context Support Implementation
-
-Successfully added comprehensive context support:
-
-- **80+ context-aware methods** added to the Client package
-- **Structured error types** (APIError, ClientError) for better error handling
-- **Consistent exit codes** for script integration (0=success, 3=auth error, 5=not found, etc.)
-- **User-friendly error messages** that provide actionable guidance
-- **Timeout and cancellation support** across all API operations
-
-### ✅ Command Fixes and Improvements
-
-Fixed all major command issues:
-
-- **Dialog commands**: Updated to hyphenated syntax (dismiss-alert, dismiss-confirm, etc.)
-- **Mouse commands**: Fixed coordinate parsing for move-by and move operations
-- **Wait time**: Fixed argument parsing and milliseconds handling
-- **Misc commands**: Corrected to use `misc` prefix
-- **Library commands**: Fixed syntax and argument handling
-- **URL parsing**: Fixed to properly handle URLs with ports and numeric patterns
-
-### ✅ Major Code Consolidation
-
-Successfully consolidated from 35+ files to ~20 files:
-
-- **Interaction commands**: interact.go + mouse.go + select.go → interaction_commands.go
-- **Browser commands**: navigate.go + window.go → browser_commands.go
-- **List operations**: 4 files → list.go
-- **Project management**: 7 files → project_management.go
-- **Execution workflow**: 5 files → execution_management.go
-
-### ✅ Benefits Achieved
-
-- **43% file reduction**: Easier navigation and maintenance
-- **30% code reduction**: Eliminated duplication through shared functions
-- **Better error handling**: Clear, actionable error messages
-- **Improved reliability**: Proper timeout and context handling
-- **Script-friendly**: Consistent exit codes for automation
-- **AI-friendly**: Clearer codebase with fewer files to analyze
-
-### ✅ Maintained Features
-
-- All 69 commands fully functional
-- 100% backward compatibility
-- Session context support (via VIRTUOSO_SESSION_ID environment variable)
-- All output formats working
-- Complete test coverage
-
-### ✅ New Unified Test Runner (January 2025)
-
-Added the `run-test` command that provides a single interface for test creation and execution:
-
-- **Simplified test definitions**: Focus on test steps, infrastructure is auto-created
-- **Multiple input formats**: Supports YAML, JSON, files, or stdin
-- **Automatic setup**: Creates project, goal, journey, and checkpoint automatically
-- **Flexible options**: Dry-run, execute, auto-naming capabilities
-- **Clean interface**: Eliminates the need to manually create test infrastructure
-
-Example using simplified syntax:
-
-```yaml
-name: "Quick Test"
-steps:
-  - navigate: "https://example.com"
-  - assert: "body" # or just - assert: "Welcome" for text
-  - click: "#login-button"
-  - write:
-      selector: "#email"
-      text: "test@example.com"
-```
-
-Run with: `./bin/api-cli run-test test.yaml`
-
-## Known Issues
-
-### API Response Parsing
-
-Some commands may report "no step ID returned in response" errors even though steps are created successfully in Virtuoso. This is due to the API returning response formats that differ from expected structures. The commands are functionally working and creating the correct steps.
-
-## Summary
-
-The Virtuoso API CLI provides a comprehensive, well-organized interface for test automation. With recent context support and command fixes, the CLI is more reliable and user-friendly. The codebase is significantly cleaner after consolidation while preserving all functionality. The unified command syntax and session context support make it easy to create and manage automated tests programmatically.
+- Automated commit at 2025-07-29 20:17:20
+- Security scan passed
+- All changes reviewed

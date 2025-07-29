@@ -1,0 +1,14 @@
+name: FIELD-IOT-003 - Predictive Maintenance - Review predictive maintenance recommendations
+description: 'Review predictive maintenance recommendations (Module: Field Service, Suite: Connected Field Service (IoT))'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: IoT Analytics
+- click: Predictive Maintenance
+- comment: Look for devices with "Maintenance Recommended"
+- click: HVAC-Unit-102
+- comment: Assert that element shows "Belt replacement recommended within 30 days"
+- click: Create Preventive Work Order
+- select:
+    selector: Schedule Window
+    option: Within 2 Weeks
+- click: Create

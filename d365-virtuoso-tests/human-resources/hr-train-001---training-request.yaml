@@ -1,0 +1,39 @@
+name: HR-TRAIN-001 - Training Request - Employee requests training approval
+description: 'Employee requests training approval (Module: Human Resources, Suite: Training and Development)'
+project: D365 Test Automation
+goal: Human Resources Tests
+journey: Training and Development
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Learning
+- type: interact
+  command: click
+  target: Training Catalog
+- type: interact
+  command: click
+  target: 'AZ-104: Azure Administrator'
+- type: interact
+  command: click
+  target: Request Training
+- type: interact
+  command: write
+  target: Business Justification
+  value: Need Azure skills for cloud migration project
+- type: interact
+  command: select
+  target: Preferred Timeframe
+  value: Q2 2024
+- type: assert
+  command: text
+  target: Cost
+  expected: $3,500
+- type: interact
+  command: click
+  target: Submit Request
+- type: assert
+  command: text
+  target: Status
+  expected: Pending Approval

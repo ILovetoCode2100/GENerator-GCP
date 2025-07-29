@@ -1,0 +1,31 @@
+name: SERVICE-CASE-003 - SLA Timer Validation - Verify SLA timers are applied correctly
+description: 'Verify SLA timers are applied correctly (Module: Customer Service, Suite: Case Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Cases
+- click: New Case
+- write:
+    selector: Case Title
+    text: 'Urgent: System Down - $TIMESTAMP'
+- select:
+    selector: Customer
+    option: Contoso Premium
+- select:
+    selector: Priority
+    option: Critical
+- select:
+    selector: Case Type
+    option: System Outage
+- click: Save
+- wait: 3
+- assert_text:
+    selector: SLA
+    expected: Premium SLA
+- assert: First Response By
+- assert: Resolve By
+- store:
+    type: text
+    selector: First Response By
+    variable: $firstResponseSLA
+- wait: 5
+- comment: Assert that element "SLA Timer" is not equal to "0:00"

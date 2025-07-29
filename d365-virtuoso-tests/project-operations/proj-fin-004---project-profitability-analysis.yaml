@@ -1,0 +1,58 @@
+name: PROJ-FIN-004 - Project Profitability Analysis - Analyze project profitability metrics
+description: 'Analyze project profitability metrics (Module: Project Operations, Suite: Project Financials)'
+project: D365 Test Automation
+goal: Project Operations Tests
+journey: Project Financials
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Analytics
+- type: interact
+  command: click
+  target: Project Profitability
+- type: interact
+  command: select
+  target: Project
+  value: $projectId
+- type: interact
+  command: click
+  target: Generate Report
+- type: wait
+  command: time
+  value: 3
+- type: assert
+  command: exists
+  target: Revenue
+- type: assert
+  command: exists
+  target: Costs
+- type: assert
+  command: exists
+  target: Gross Margin
+- type: assert
+  command: exists
+  target: Margin %
+- type: interact
+  command: click
+  target: Cost Details
+- type: assert
+  command: exists
+  target: Labor Costs
+- type: assert
+  command: exists
+  target: Expense Costs
+- type: assert
+  command: exists
+  target: Material Costs
+- type: interact
+  command: click
+  target: Export
+- type: interact
+  command: select
+  target: Format
+  value: Excel
+- type: interact
+  command: click
+  target: Download

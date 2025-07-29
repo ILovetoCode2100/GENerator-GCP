@@ -1,0 +1,27 @@
+project: 9369
+goal: 14139
+name: FIELD-IOT-001 - IoT Alert Response - Respond to IoT device alert
+description: 'Respond to IoT device alert (Module: Field Service, Suite: Connected Field Service (IoT))'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- navigate: https://virtuoso-test.crm.dynamics.com/main.aspx?pagetype=entitylist&etn=msdyn_iotalert
+- comment: Look for element "Temperature Threshold Exceeded"
+- click: alert
+- assert_text:
+    selector: Device
+    expected: HVAC-Unit-101
+- assert_text:
+    selector: Reading
+    expected: 'Temperature: 85°F'
+- assert_text:
+    selector: Threshold
+    expected: 80°F
+- assert_text:
+    selector: Customer
+    expected: Contoso Corporation
+- click: Create Work Order
+- assert_text:
+    selector: Work Order Type
+    expected: IoT Alert Response
+- comment: Assert that element "Instructions" contains alert details
+- click: Save & Route

@@ -1,0 +1,59 @@
+# Multi-stage build for Go CLI
+# Build stage
+FROM golang:1.23-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache git ca-certificates
+
+# Set working directory
+WORKDIR /build
+
+# Copy go mod files
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy source code
+COPY cmd/ ./cmd/
+COPY pkg/ ./pkg/
+
+# Build the binary with optimizations
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -ldflags="-w -s -X main.version=$(git describe --tags --always --dirty) -X main.buildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+    -a -installsuffix cgo \
+    -o api-cli \
+    ./cmd/api-cli
+
+# Runtime stage
+FROM alpine:3.19
+
+# Install runtime dependencies
+RUN apk add --no-cache ca-certificates tzdata
+
+# Create non-root user
+RUN addgroup -g 1000 -S virtuoso && \
+    adduser -u 1000 -S virtuoso -G virtuoso
+
+# Set working directory
+WORKDIR /app
+
+# Copy binary from builder
+COPY --from=builder /build/api-cli /app/api-cli
+
+# Create config directory
+RUN mkdir -p /home/virtuoso/.api-cli && \
+    chown -R virtuoso:virtuoso /home/virtuoso/.api-cli
+
+# Switch to non-root user
+USER virtuoso
+
+# Set environment variables
+ENV VIRTUOSO_CONFIG_PATH=/home/virtuoso/.api-cli/virtuoso-config.yaml
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD ["/app/api-cli", "list-commands"]
+
+# Entry point
+ENTRYPOINT ["/app/api-cli"]

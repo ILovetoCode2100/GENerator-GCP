@@ -1,0 +1,19 @@
+name: SALES-LEAD-002 - Lead Qualification Process - Qualify a lead and convert to opportunity
+description: 'Qualify a lead and convert to opportunity (Module: Sales Module, Suite: Lead Management)'
+starting_url: https://[instance].crm.dynamics.com
+steps:
+- click: Qualify
+- wait: 2
+- comment: Assert that element "Create Account" is checked
+- comment: Assert that element "Create Contact" is checked
+- comment: Assert that element "Create Opportunity" is checked
+- click: button "OK"
+- wait: 5
+- assert: Opportunity
+- store:
+    type: text
+    selector: Opportunity Name
+    variable: $opportunityName
+- assert_text:
+    selector: Estimated Revenue
+    expected: '50000'

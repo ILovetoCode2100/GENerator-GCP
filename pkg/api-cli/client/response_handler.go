@@ -300,11 +300,8 @@ func (h *ResponseHandler) ParseExecutionResponse(response []byte) (*Execution, e
 	// Try different response locations
 	candidates := []*Execution{resp.Item, resp.Execution, resp.Data}
 	for _, exec := range candidates {
-		if exec != nil && (exec.ID != "" || exec.ExecutionID != "") {
+		if exec != nil && exec.ID != "" {
 			// Normalize the execution ID
-			if exec.ID == "" && exec.ExecutionID != "" {
-				exec.ID = exec.ExecutionID
-			}
 			// Handle both string and numeric IDs
 			exec.ID = h.normalizeExecutionID(exec.ID)
 			return exec, nil
@@ -314,10 +311,7 @@ func (h *ResponseHandler) ParseExecutionResponse(response []byte) (*Execution, e
 	// Try parsing as direct execution object
 	var directExec Execution
 	if err := json.Unmarshal(response, &directExec); err == nil {
-		if directExec.ID != "" || directExec.ExecutionID != "" {
-			if directExec.ID == "" && directExec.ExecutionID != "" {
-				directExec.ID = directExec.ExecutionID
-			}
+		if directExec.ID != "" {
 			directExec.ID = h.normalizeExecutionID(directExec.ID)
 			return &directExec, nil
 		}

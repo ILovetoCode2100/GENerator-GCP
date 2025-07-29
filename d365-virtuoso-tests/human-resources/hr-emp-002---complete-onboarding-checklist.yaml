@@ -1,0 +1,71 @@
+name: HR-EMP-002 - Complete Onboarding Checklist - Process new employee onboarding tasks
+description: 'Process new employee onboarding tasks (Module: Human Resources, Suite: Employee Management)'
+project: D365 Test Automation
+goal: Human Resources Tests
+journey: Employee Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Onboarding
+- type: assert
+  command: exists
+  target: Onboarding Checklist
+- type: interact
+  command: click
+  target: I-9 Verification
+- type: interact
+  command: select
+  target: Document Type
+  value: US Passport
+- type: interact
+  command: write
+  target: Document Number
+  value: '123456789'
+- type: interact
+  command: write
+  target: Expiration Date
+  value: $DATE_PLUS_5YEARS
+- stepType: uploadFile
+  filePath: passport_scan.pdf
+  target: Document
+- type: interact
+  command: click
+  target: Verify
+- type: interact
+  command: click
+  target: Equipment Assignment
+- type: interact
+  command: click
+  target: Add Equipment
+- type: interact
+  command: select
+  target: Equipment Type
+  value: Laptop
+- type: interact
+  command: write
+  target: Asset Tag
+  value: DELL-7490-$RANDOM
+- type: interact
+  command: write
+  target: Assigned Date
+  value: $TODAY
+- type: interact
+  command: click
+  target: Assign
+- type: interact
+  command: click
+  target: System Access
+- type: interact
+  command: click
+  target: Request Access
+- type: assert
+  command: exists
+  target: Access Requested
+- type: interact
+  command: click
+  target: Benefits Enrollment
+- type: interact
+  command: click
+  target: Send Reminder

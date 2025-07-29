@@ -1,0 +1,103 @@
+# Staging environment overrides
+
+## Replica count for staging
+replicaCount: 2
+
+## Image configuration
+image:
+  pullPolicy: IfNotPresent
+  tag: "staging"
+
+## Resource limits - moderate for staging
+resources:
+  limits:
+    cpu: 750m
+    memory: 1Gi
+  requests:
+    cpu: 250m
+    memory: 512Mi
+
+## Ingress enabled for staging
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+  hosts:
+    - host: api-cli-staging.virtuoso.qa
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: virtuoso-api-cli-staging-tls
+      hosts:
+        - api-cli-staging.virtuoso.qa
+
+## Staging configuration
+config:
+  ## Organization for staging
+  organization:
+    id: "2242-staging"
+
+  ## Logging - info for staging
+  logging:
+    level: "info"
+    caller: false
+
+  ## Rate limiting - moderate for staging
+  rateLimit:
+    enabled: true
+    requestsPerMinute: 120
+    burst: 20
+
+  ## Features - production-like
+  features:
+    sessionManagement: true
+    asyncExecution: true
+    webhookNotifications: false
+
+## Redis - persistent for staging
+redis:
+  master:
+    persistence:
+      enabled: true
+      size: 4Gi
+    resources:
+      limits:
+        memory: 256Mi
+        cpu: 200m
+      requests:
+        memory: 128Mi
+        cpu: 100m
+  metrics:
+    enabled: true
+
+## Autoscaling enabled for staging
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 75
+  targetMemoryUtilizationPercentage: 80
+
+## PDB enabled for staging
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+## Service monitor for staging
+serviceMonitor:
+  enabled: true
+  labels:
+    environment: staging
+
+## Node selector for staging nodes
+nodeSelector:
+  node-role.kubernetes.io/staging: "true"
+
+## Extra env vars
+extraEnvVars:
+  - name: ENVIRONMENT
+    value: "staging"

@@ -1,0 +1,18 @@
+name: COMM-CX-005 - Order Tracking - Track order status and shipment
+description: 'Track order status and shipment (Module: Commerce, Suite: Customer Experience)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: My orders
+- comment: Assert that order "$orderNumber" appears
+- click: order number
+- assert_text:
+    selector: Order status
+    expected: Processing
+- comment: Assert that all items listed
+- comment: Assert that tracking not yet available
+- wait: 2
+- comment: Refresh page
+- comment: Assert that element "Status" updated to "Shipped"
+- assert: Tracking number
+- click: Track package
+- comment: Assert that tracking link works

@@ -1,0 +1,41 @@
+name: FIELD-MOB-003 - Parts Usage Recording - Record parts used during service
+description: 'Record parts used during service (Module: Field Service, Suite: Mobile Field Service)'
+project: D365 Test Automation
+goal: Field Service Tests
+journey: Mobile Field Service
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Products Used
+- type: interact
+  command: click
+  target: Printer Rollers
+- type: interact
+  command: write
+  target: Quantity Used
+  value: '2'
+- type: interact
+  command: click
+  target: Update
+- type: interact
+  command: click
+  target: Add Product
+- type: interact
+  command: click
+  target: result
+- type: interact
+  command: write
+  target: Quantity
+  value: '1'
+- type: interact
+  command: write
+  target: Notes
+  value: Belt was worn, replaced preventively
+- type: interact
+  command: click
+  target: Add
+- type: assert
+  command: exists
+  target: Products Used (2)

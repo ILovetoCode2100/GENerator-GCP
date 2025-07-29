@@ -1,0 +1,57 @@
+name: "RocketShop Shopping Cart Test"
+description: "Test adding multiple stickers to cart and proceeding to checkout"
+steps:
+  - nav: "https://rocketshop.virtuoso.qa/"
+
+  - c: "Add to Bag"
+    desc: "Add Blank Exploration sticker"
+
+  - assert: "Added to bag!"
+
+  - c: "Border Not Found"
+    desc: "Click on Border Not Found sticker"
+
+  - c: "Add to Bag"
+    desc: "Add Border Not Found sticker"
+
+  - assert: "Added to bag!"
+
+  - c: "5"
+    desc: "Click shopping bag counter"
+
+  - assert: "Shopping Bag"
+
+  - assert: "Blank Exploration"
+
+  - assert: "12.00 €"
+
+  - assert: "Border Not Found"
+
+  - assert: "8.00 €"
+
+  - assert: "20.00 €"
+    desc: "Verify total"
+
+  - c: "Go to Checkout"
+
+  - assert: "Guest Checkout"
+
+  - t: "test@example.com"
+    in: "Email"
+
+  - t: "Test User"
+    in: "Full name"
+
+  - t: "555-0123"
+    in: "Phone numbers"
+
+  - t: "123 Test Street"
+    in: "Address"
+
+  - t: "12345"
+    in: "ZIP code"
+
+  - assert: "20.00 €"
+    desc: "Verify checkout total"
+
+  - assert: "Confirm and Pay"

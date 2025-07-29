@@ -1,0 +1,27 @@
+name: COMM-CX-005 - Order Tracking - Track order status and shipment
+description: 'Track order status and shipment (Module: Commerce, Suite: Customer Experience)'
+project: D365 Test Automation
+goal: Commerce Tests
+journey: Customer Experience
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: My orders
+- type: interact
+  command: click
+  target: order number
+- type: assert
+  command: text
+  target: Order status
+  expected: Processing
+- type: wait
+  command: time
+  value: 2
+- type: assert
+  command: exists
+  target: Tracking number
+- type: interact
+  command: click
+  target: Track package

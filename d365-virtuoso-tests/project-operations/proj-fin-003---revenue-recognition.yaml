@@ -1,0 +1,54 @@
+name: PROJ-FIN-003 - Revenue Recognition - Configure and process revenue recognition
+description: 'Configure and process revenue recognition (Module: Project Operations, Suite: Project Financials)'
+project: D365 Test Automation
+goal: Project Operations Tests
+journey: Project Financials
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Revenue Recognition
+- type: interact
+  command: click
+  target: Setup Rules
+- type: interact
+  command: select
+  target: Method
+  value: Percentage of Completion
+- type: interact
+  command: select
+  target: Calculation Type
+  value: Cost-based
+- type: interact
+  command: write
+  target: Recognition Frequency
+  value: Monthly
+- type: interact
+  command: click
+  target: Save
+- type: interact
+  command: click
+  target: Run Recognition
+- type: interact
+  command: select
+  target: Period
+  value: $CURRENT_MONTH
+- type: interact
+  command: click
+  target: Calculate
+- type: wait
+  command: time
+  value: 5
+- type: assert
+  command: exists
+  target: Recognized Revenue
+- type: assert
+  command: exists
+  target: Deferred Revenue
+- type: interact
+  command: click
+  target: Post
+- type: assert
+  command: exists
+  target: Journal Created

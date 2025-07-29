@@ -1,0 +1,254 @@
+# Main Cloud Build configuration for Virtuoso API CLI
+# This configuration handles the full CI/CD pipeline for production deployments
+
+# Global timeout
+timeout: 3600s
+
+# Build options
+options:
+  machineType: 'E2_HIGHCPU_8'
+  logging: CLOUD_LOGGING_ONLY
+  substitutionOption: 'ALLOW_LOOSE'
+
+# Substitutions with defaults
+substitutions:
+  _REGION: 'us-central1'
+  _SERVICE_NAME: 'virtuoso-api-cli'
+  _ARTIFACT_REGISTRY: 'virtuoso-artifacts'
+  _GO_VERSION: '1.21'
+  _ENVIRONMENT: 'prod'
+  _ENABLE_APPROVAL: 'true'
+
+steps:
+  # Step 1: Restore Go module cache
+  - name: 'gcr.io/cloud-builders/gsutil'
+    id: 'restore-go-cache'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gsutil -m cp -r gs://${PROJECT_ID}-build-cache/go-mod-cache/* /go/pkg/mod/ || exit 0
+    volumes:
+      - name: 'go-modules'
+        path: '/go/pkg/mod'
+
+  # Step 2: Build Go CLI binary
+  - name: 'golang:${_GO_VERSION}'
+    id: 'build-cli'
+    env:
+      - 'CGO_ENABLED=0'
+      - 'GOOS=linux'
+      - 'GOARCH=amd64'
+    args:
+      - 'go'
+      - 'build'
+      - '-ldflags=-X main.version=${TAG_NAME:-${SHORT_SHA}} -X main.buildTime=$(date -u +%Y%m%d-%H%M%S)'
+      - '-o'
+      - 'bin/api-cli'
+      - './cmd/api-cli'
+    volumes:
+      - name: 'go-modules'
+        path: '/go/pkg/mod'
+
+  # Step 3: Run unit tests
+  - name: 'golang:${_GO_VERSION}'
+    id: 'unit-tests'
+    env:
+      - 'GO111MODULE=on'
+    args:
+      - 'go'
+      - 'test'
+      - '-v'
+      - '-race'
+      - '-coverprofile=coverage.out'
+      - './...'
+    volumes:
+      - name: 'go-modules'
+        path: '/go/pkg/mod'
+
+  # Step 4: Run integration tests
+  - name: 'golang:${_GO_VERSION}'
+    id: 'integration-tests'
+    env:
+      - 'INTEGRATION_TEST=true'
+    args:
+      - 'bash'
+      - './gcp/cloudbuild/scripts/test.sh'
+    volumes:
+      - name: 'go-modules'
+        path: '/go/pkg/mod'
+
+  # Step 5: Build Docker image with multi-stage build
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-docker'
+    args:
+      - 'build'
+      - '--cache-from'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/${_SERVICE_NAME}:latest'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/${_SERVICE_NAME}:${SHORT_SHA}'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/${_SERVICE_NAME}:latest'
+      - '-f'
+      - 'Dockerfile'
+      - '.'
+
+  # Step 6: Push Docker image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-docker'
+    args:
+      - 'push'
+      - '--all-tags'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/${_SERVICE_NAME}'
+
+  # Step 7: Deploy to Cloud Run (Blue-Green deployment)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-cloud-run'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        # Deploy new revision with no traffic
+        gcloud run deploy ${_SERVICE_NAME} \
+          --image ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/${_SERVICE_NAME}:${SHORT_SHA} \
+          --region ${_REGION} \
+          --platform managed \
+          --no-traffic \
+          --tag green-${SHORT_SHA} \
+          --set-env-vars "VERSION=${TAG_NAME:-${SHORT_SHA}}" \
+          --set-env-vars "ENVIRONMENT=${_ENVIRONMENT}" \
+          --max-instances 100 \
+          --min-instances 1 \
+          --memory 512Mi \
+          --cpu 1 \
+          --timeout 300 \
+          --service-account ${_SERVICE_NAME}@${PROJECT_ID}.iam.gserviceaccount.com
+
+  # Step 8: Run smoke tests against green deployment
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'smoke-tests'
+    entrypoint: 'bash'
+    args:
+      - './gcp/cloudbuild/scripts/smoke-test.sh'
+    env:
+      - 'TARGET_URL=https://green-${SHORT_SHA}---${_SERVICE_NAME}-${PROJECT_ID}.${_REGION}.run.app'
+      - 'ENVIRONMENT=${_ENVIRONMENT}'
+
+  # Step 9: Approval step for production (conditional)
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'approval-gate'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if [ "${_ENABLE_APPROVAL}" = "true" ] && [ "${_ENVIRONMENT}" = "prod" ]; then
+          echo "Waiting for manual approval..."
+          # In practice, this would integrate with Cloud Build Approval API
+          # For now, we'll simulate with a timeout
+          sleep 30
+        else
+          echo "Skipping approval for ${_ENVIRONMENT} environment"
+        fi
+
+  # Step 10: Promote green to blue (traffic shift)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'promote-deployment'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        # Gradually shift traffic to green deployment
+        for PERCENTAGE in 10 25 50 75 100; do
+          gcloud run services update-traffic ${_SERVICE_NAME} \
+            --region ${_REGION} \
+            --to-tags green-${SHORT_SHA}=${PERCENTAGE}
+
+          # Wait and monitor metrics
+          sleep 30
+
+          # Check error rate (simplified - would use actual monitoring)
+          ERROR_RATE=$(gcloud logging read "resource.type=\"cloud_run_revision\" AND severity>=ERROR" \
+            --limit 10 --format json | jq length)
+
+          if [ $ERROR_RATE -gt 5 ]; then
+            echo "High error rate detected, rolling back..."
+            gcloud run services update-traffic ${_SERVICE_NAME} \
+              --region ${_REGION} \
+              --to-latest
+            exit 1
+          fi
+        done
+
+  # Step 11: Update Cloud Functions
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-functions'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        # Deploy webhook handler function
+        gcloud functions deploy virtuoso-webhook-handler \
+          --gen2 \
+          --runtime go121 \
+          --region ${_REGION} \
+          --source ./functions/webhook \
+          --entry-point HandleWebhook \
+          --trigger-http \
+          --allow-unauthenticated \
+          --set-env-vars VERSION=${SHORT_SHA}
+
+  # Step 12: Update Go module cache
+  - name: 'gcr.io/cloud-builders/gsutil'
+    id: 'save-go-cache'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gsutil -m rsync -r /go/pkg/mod/ gs://${PROJECT_ID}-build-cache/go-mod-cache/
+    volumes:
+      - name: 'go-modules'
+        path: '/go/pkg/mod'
+
+  # Step 13: Create release notes
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'create-release'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if [ -n "${TAG_NAME}" ]; then
+          # Generate changelog
+          git log $(git describe --tags --abbrev=0 HEAD^)..HEAD --pretty=format:"- %s" > changelog.txt
+
+          # Create GitHub release (if using GitHub integration)
+          # gh release create ${TAG_NAME} --notes-file changelog.txt
+
+          # Store in GCS
+          gsutil cp changelog.txt gs://${PROJECT_ID}-releases/${TAG_NAME}/changelog.txt
+        fi
+
+  # Step 14: Notify deployment status
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'notify-status'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        # Send notification (integrate with your notification system)
+        echo "Deployment completed successfully!"
+        echo "Version: ${TAG_NAME:-${SHORT_SHA}}"
+        echo "Environment: ${_ENVIRONMENT}"
+        echo "Service URL: https://${_SERVICE_NAME}-${PROJECT_ID}.${_REGION}.run.app"
+
+# Build artifacts
+artifacts:
+  objects:
+    location: 'gs://${PROJECT_ID}-build-artifacts/${BUILD_ID}'
+    paths:
+      - 'bin/api-cli'
+      - 'coverage.out'
+
+# Build images
+images:
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/${_SERVICE_NAME}:${SHORT_SHA}'
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/${_SERVICE_NAME}:latest'

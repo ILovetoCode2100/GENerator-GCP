@@ -1,0 +1,40 @@
+name: SALES-OPP-004 - Close Opportunity as Won - Complete opportunity closure process
+description: 'Complete opportunity closure process (Module: Sales Module, Suite: Opportunity Management)'
+project: D365 Test Automation
+goal: Sales Module Tests
+journey: Opportunity Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Close as Won
+- type: wait
+  command: time
+  value: 2
+- type: interact
+  command: write
+  target: Actual Revenue
+  value: '250000'
+- type: interact
+  command: write
+  target: Description
+  value: Customer signed contract
+- type: interact
+  command: select
+  target: Competitor
+  value: Price
+- type: interact
+  command: click
+  target: OK
+- type: wait
+  command: time
+  value: 3
+- type: assert
+  command: text
+  target: Status
+  expected: Won
+- type: assert
+  command: text
+  target: Status Reason
+  expected: Won

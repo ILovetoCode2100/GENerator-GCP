@@ -1,0 +1,25 @@
+project: 9369
+goal: 14137
+name: SALES-OPP-004 - Close Opportunity as Won - Complete opportunity closure process
+description: 'Complete opportunity closure process (Module: Sales Module, Suite: Opportunity Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Close as Won
+- wait: 2
+- write:
+    selector: Actual Revenue
+    text: '250000'
+- write:
+    selector: Description
+    text: Customer signed contract
+- select:
+    selector: Competitor
+    option: Price
+- click: OK
+- wait: 3
+- assert_text:
+    selector: Status
+    expected: Won
+- assert_text:
+    selector: Status Reason
+    expected: Won

@@ -1,0 +1,26 @@
+project: 9369
+goal: 14138
+name: SERVICE-CASE-006 - Case Resolution - Resolve case with knowledge article
+description: 'Resolve case with knowledge article (Module: Customer Service, Suite: Case Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Resolve Case
+- wait: 2
+- select:
+    selector: Resolution Type
+    option: Problem Solved
+- write:
+    selector: Resolution
+    text: Reset customer password following KB001234 procedure. Verified customer can now access portal successfully.
+- write:
+    selector: Total Time
+    text: '15'
+- select:
+    selector: Resolution Source
+    option: Knowledge Base
+- comment: Assert that element "Send Survey" is checked
+- click: Resolve
+- wait: 3
+- assert_text:
+    selector: Status
+    expected: Resolved

@@ -1,0 +1,66 @@
+name: FIELD-WO-005 - Inventory Allocation - Allocate parts for work order
+description: 'Allocate parts for work order (Module: Field Service, Suite: Work Order Management)'
+project: D365 Test Automation
+goal: Field Service Tests
+journey: Work Order Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Products
+- type: interact
+  command: click
+  target: Add Product
+- type: interact
+  command: select
+  target: Line Type
+  value: Product
+- type: interact
+  command: click
+  target: Product
+- stepType: pressKey
+  key: '"ENTER"'
+- type: interact
+  command: click
+  target: first result
+- type: interact
+  command: write
+  target: Quantity
+  value: '1'
+- type: interact
+  command: select
+  target: Warehouse
+  value: Main Warehouse
+- type: interact
+  command: click
+  target: Save
+- type: interact
+  command: click
+  target: Add Product
+- type: interact
+  command: select
+  target: Line Type
+  value: Service
+- type: interact
+  command: select
+  target: Product
+  value: Onsite Service Fee
+- type: interact
+  command: write
+  target: Quantity
+  value: '1'
+- type: interact
+  command: write
+  target: Unit Price
+  value: '150'
+- type: interact
+  command: click
+  target: Save
+- type: assert
+  command: exists
+  target: Products (2)
+- stepType: assertValue
+  target: Total Amount
+  operator: greaterThan
+  expectedValue: '"0"'

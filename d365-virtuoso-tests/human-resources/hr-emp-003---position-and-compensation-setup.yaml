@@ -1,0 +1,85 @@
+name: HR-EMP-003 - Position and Compensation Setup - Configure position details and compensation
+description: 'Configure position details and compensation (Module: Human Resources, Suite: Employee Management)'
+project: D365 Test Automation
+goal: Human Resources Tests
+journey: Employee Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Position
+- type: interact
+  command: click
+  target: Position Details
+- type: interact
+  command: select
+  target: Job
+  value: Software Engineer III
+- type: interact
+  command: select
+  target: Level
+  value: IC3
+- type: interact
+  command: select
+  target: FLSA Status
+  value: Exempt
+- type: interact
+  command: select
+  target: Job Family
+  value: Technology
+- type: interact
+  command: write
+  target: Position Description
+  value: Design and develop software applications
+- type: interact
+  command: click
+  target: Compensation
+- type: interact
+  command: click
+  target: New Compensation
+- type: interact
+  command: select
+  target: Compensation Type
+  value: Base Salary
+- type: interact
+  command: write
+  target: Annual Amount
+  value: '120000'
+- type: interact
+  command: select
+  target: Currency
+  value: USD
+- type: interact
+  command: write
+  target: Effective Date
+  value: $MONDAY
+- type: interact
+  command: write
+  target: Reason
+  value: New hire compensation
+- type: interact
+  command: click
+  target: Save
+- type: interact
+  command: click
+  target: Add Compensation
+- type: interact
+  command: select
+  target: Compensation Type
+  value: Annual Bonus
+- type: interact
+  command: write
+  target: Target Percentage
+  value: '15'
+- type: interact
+  command: select
+  target: Bonus Type
+  value: Performance-based
+- type: interact
+  command: click
+  target: Save
+- type: assert
+  command: text
+  target: Total Compensation
+  expected: '138000'

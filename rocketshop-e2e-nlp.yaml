@@ -1,0 +1,82 @@
+name: "RocketShop E2E Purchase Flow"
+description: "Complete purchase flow from product selection to order confirmation using NLP selectors"
+starting_url: "https://rocketshop.virtuoso.qa"
+project: 9409
+steps:
+  # Navigate to the shop
+  - navigate: "https://rocketshop.virtuoso.qa"
+  - comment: "Starting RocketShop purchase flow"
+
+  # Verify page loaded
+  - wait: 3000
+  - assert: "Border Not Found"  # Verify a product is visible
+
+  # Add product to bag
+  - wait: 20000  # Wait for page to fully load as per original test
+  - click: "Add to Bag"  # Click the first Add to Bag button found
+
+  # Go to shopping bag
+  - click: "Shopping Bag"
+  - wait: 2000
+
+  # Verify we're on the shopping bag page
+  - assert: "Shopping Bag"
+
+  # Proceed to checkout
+  - click: "Go to Checkout"
+  - wait: 2000
+
+  # Fill in customer information
+  - comment: "Filling in customer details"
+
+  # Full name field
+  - write:
+      text: "John Doe"
+      into: "Full name"
+
+  # Email field
+  - write:
+      text: "johndoe@example.com"
+      into: "Email"
+
+  # Address field
+  - write:
+      text: "123 Elm Street"
+      into: "Address"
+
+  # Phone number field
+  - write:
+      text: "555-1234"
+      into: "Phone numbers"
+
+  # ZIP code field
+  - write:
+      text: "90210"
+      into: "ZIP code"
+
+  # Fill in payment information
+  - comment: "Entering payment details"
+
+  # Card number field
+  - write:
+      text: "4111 1111 1111 1111"
+      into: "Card number"
+
+  # CVV field - using placeholder text as selector
+  - write:
+      text: "234"
+      into: "xxx"
+
+  # Complete the purchase
+  - click: "Confirm and Pay"
+  - wait: 20000  # Wait for confirmation as per original test
+
+  # Verify purchase confirmation
+  - assert: "Purchase Confirmed!"
+  - comment: "Purchase completed successfully"
+
+  # Download confirmation
+  - click: "Download Confirmation"
+  - wait: 2000
+
+  - comment: "Test completed - order placed and confirmation downloaded"

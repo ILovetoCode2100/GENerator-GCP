@@ -1,0 +1,85 @@
+name: FIN-AP-001 - Create Vendor - Create new vendor with complete details
+description: 'Create new vendor with complete details (Module: Finance Operations, Suite: Accounts Payable)'
+project: D365 Test Automation
+goal: Finance Operations Tests
+journey: Accounts Payable
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Accounts payable
+- type: interact
+  command: click
+  target: Vendors
+- type: interact
+  command: click
+  target: All vendors
+- type: interact
+  command: click
+  target: New
+- type: interact
+  command: write
+  target: Vendor account
+  value: VEND-$TIMESTAMP
+- type: interact
+  command: write
+  target: Name
+  value: Test Vendor Corporation
+- type: interact
+  command: select
+  target: Vendor group
+  value: Domestic
+- type: interact
+  command: write
+  target: Street
+  value: 123 Vendor Street
+- type: interact
+  command: write
+  target: City
+  value: Seattle
+- type: interact
+  command: select
+  target: State
+  value: WA
+- type: interact
+  command: write
+  target: ZIP/postal code
+  value: '98101'
+- type: interact
+  command: write
+  target: Phone
+  value: 425-555-0200
+- type: interact
+  command: write
+  target: Email
+  value: vendor@testcorp.com
+- type: interact
+  command: click
+  target: Payment
+- type: interact
+  command: select
+  target: Terms of payment
+  value: Net30
+- type: interact
+  command: select
+  target: Method of payment
+  value: Check
+- type: interact
+  command: write
+  target: Tax exempt number
+  value: '123456789'
+- type: interact
+  command: click
+  target: Financial dimensions
+- type: interact
+  command: select
+  target: Department
+  value: '100'
+- type: interact
+  command: select
+  target: Cost center
+  value: VEND
+- type: interact
+  command: click
+  target: Save

@@ -1,0 +1,9 @@
+# Python dependencies for Cloud Functions
+functions-framework==3.5.0
+google-cloud-firestore==2.14.0
+google-cloud-storage==2.13.0
+google-cloud-pubsub==2.19.0
+google-cloud-bigquery==3.14.1
+google-cloud-monitoring==2.18.0
+redis==5.0.1
+requests==2.31.0

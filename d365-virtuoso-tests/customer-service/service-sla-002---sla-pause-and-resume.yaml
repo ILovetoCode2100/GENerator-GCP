@@ -1,0 +1,38 @@
+name: SERVICE-SLA-002 - SLA Pause and Resume - Test SLA timer pause functionality
+description: 'Test SLA timer pause functionality (Module: Customer Service, Suite: Service Level Agreements)'
+project: D365 Test Automation
+goal: Customer Service Tests
+journey: Service Level Agreements
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Cases
+- type: interact
+  command: click
+  target: case with running SLA
+- type: interact
+  command: select
+  target: Status Reason
+  value: On Hold
+- type: interact
+  command: click
+  target: Save
+- type: wait
+  command: time
+  value: 5
+- type: assert
+  command: text
+  target: SLA Timer
+  expected: Paused
+- type: interact
+  command: select
+  target: Status Reason
+  value: In Progress
+- type: interact
+  command: click
+  target: Save
+- type: wait
+  command: time
+  value: 2

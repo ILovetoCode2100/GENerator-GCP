@@ -1,0 +1,22 @@
+name: SERVICE-QUEUE-001 - Add Case to Queue - Route case to appropriate queue
+description: 'Route case to appropriate queue (Module: Customer Service, Suite: Queue Management)'
+starting_url: https://[instance].crm.dynamics.com
+steps:
+- click: Cases
+- click: New Case
+- write:
+    selector: Case Title
+    text: Billing inquiry - $TIMESTAMP
+- select:
+    selector: Subject
+    option: Finance
+- click: Save
+- click: Add to Queue
+- select:
+    selector: Queue
+    option: Billing Queue
+- click: Add
+- wait: 2
+- assert_text:
+    selector: Queue
+    expected: Billing Queue

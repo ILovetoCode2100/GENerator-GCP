@@ -1,0 +1,62 @@
+name: SALES-OPP-001 - Create Opportunity from Account - Create new opportunity linked to existing account
+description: 'Create new opportunity linked to existing account (Module: Sales Module, Suite: Opportunity Management)'
+project: D365 Test Automation
+goal: Sales Module Tests
+journey: Opportunity Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: navigate
+  target: https://[instance].crm.dynamics.com/main.aspx?pagetype=entitylist&etn=account
+- type: interact
+  command: click
+  target: first "Account Name"
+- type: wait
+  command: time
+  value: 2
+- type: interact
+  command: click
+  target: Related
+- type: interact
+  command: click
+  target: Opportunities
+- type: interact
+  command: click
+  target: New Opportunity
+- type: interact
+  command: write
+  target: Topic
+  value: Enterprise Software Upgrade - $TIMESTAMP
+- type: interact
+  command: write
+  target: Est. Revenue
+  value: '250000'
+- type: interact
+  command: select
+  target: Probability %
+  value: '10'
+- type: interact
+  command: write
+  target: Est. Close Date
+  value: $DATE_PLUS_30
+- type: interact
+  command: write
+  target: Current Situation
+  value: Customer needs to modernize their legacy systems
+- type: interact
+  command: write
+  target: Customer Need
+  value: Complete digital transformation
+- type: interact
+  command: write
+  target: Proposed Solution
+  value: D365 full suite implementation
+- type: interact
+  command: click
+  target: Save
+- type: wait
+  command: time
+  value: 2
+- type: assert
+  command: exists
+  target: Opportunity saved

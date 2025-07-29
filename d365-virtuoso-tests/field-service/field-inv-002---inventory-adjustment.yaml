@@ -1,0 +1,47 @@
+name: FIELD-INV-002 - Inventory Adjustment - Adjust inventory after physical count
+description: 'Adjust inventory after physical count (Module: Field Service, Suite: Inventory Management)'
+project: D365 Test Automation
+goal: Field Service Tests
+journey: Inventory Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Inventory
+- type: interact
+  command: click
+  target: Adjustments
+- type: interact
+  command: click
+  target: New Adjustment
+- type: interact
+  command: select
+  target: Warehouse
+  value: North Truck 01
+- type: interact
+  command: select
+  target: Reason
+  value: Physical Count
+- type: interact
+  command: click
+  target: Add Product
+- type: interact
+  command: select
+  target: Product
+  value: HVAC Belt A50
+- type: interact
+  command: write
+  target: Quantity
+  value: '-2'
+- type: interact
+  command: write
+  target: Notes
+  value: Physical count shows 2 less than system
+- type: interact
+  command: click
+  target: Post
+- type: assert
+  command: text
+  target: Status
+  expected: Posted

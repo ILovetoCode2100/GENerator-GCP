@@ -1,0 +1,31 @@
+name: HR-LEAVE-002 - Manager Leave Approval - Manager approves leave request
+description: 'Manager approves leave request (Module: Human Resources, Suite: Leave and Absence Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- navigate: Manager Self Service
+- click: Team Leave Requests
+- comment: Look for request "$leaveRequestId"
+- click: request
+- assert_text:
+    selector: Employee
+    expected: John Anderson
+- assert_text:
+    selector: Leave Type
+    expected: Vacation
+- assert_text:
+    selector: Total Days
+    expected: '6'
+- click: View Team Calendar
+- comment: Assert that no conflicts exist for requested dates
+- click: Back to Request
+- click: Approve
+- write:
+    selector: Manager Comments
+    text: Enjoy your vacation!
+- click: Confirm Approval
+- wait: 2
+- assert_text:
+    selector: Status
+    expected: Approved
+- click: Team Calendar
+- comment: Assert that approved leave appears on calendar

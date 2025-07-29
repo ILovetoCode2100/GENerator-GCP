@@ -1,0 +1,96 @@
+# Example Terraform variables file for Virtuoso API CLI
+# Copy this to terraform.tfvars and fill in your values
+
+# Required: GCP Project Configuration
+project_id = "your-gcp-project-id"
+# organization_id = "your-org-id" # Optional, only needed for org policies
+
+# Environment Configuration
+environment = "development" # Options: development, staging, production
+region      = "us-central1"
+
+# Domain Configuration (for HTTPS and Load Balancer)
+# Leave empty to use Cloud Run URL directly
+api_domains = [
+  # "api.example.com",
+  # "api-staging.example.com"
+]
+
+# API Configuration
+virtuoso_api_key = "your-virtuoso-api-key" # Will be stored in Secret Manager
+
+# Cloud Run Configuration
+cloud_run_min_instances = 0    # Scale to zero when idle
+cloud_run_max_instances = 100  # Adjust based on expected load
+cloud_run_cpu           = "2"  # Number of vCPUs
+cloud_run_memory        = "4Gi" # Memory allocation
+
+# Container Image (optional - will build if not provided)
+# api_image_url = "us-central1-docker.pkg.dev/your-project/your-repo/virtuoso-api-cli:latest"
+
+# Redis Configuration
+redis_tier      = "BASIC"     # BASIC for dev/staging, STANDARD_HA for production
+redis_memory_gb = 1           # Start small, scale as needed
+
+# Networking
+subnet_cidr              = "10.0.0.0/24"
+vpc_connector_cidr       = "10.1.0.0/28"
+vpc_connector_machine_type = "e2-micro" # Smallest instance type
+
+# Security Features
+allow_public_access    = true  # Set to false for internal-only access
+enable_cloud_armor     = true  # DDoS protection
+enable_identity_platform = false # API key management
+enable_binary_authorization = false # Container security (production only)
+enable_security_center = false # Security monitoring (requires org)
+enable_vpc_service_controls = false # Enhanced network security
+enable_private_service_connect = false # Private endpoints
+
+# Feature Flags
+enable_workflows = false # Complex orchestration
+enable_bigquery  = true  # Analytics and log storage
+enable_slos      = false # Service Level Objectives
+
+# Data Retention
+data_retention_days = "30" # How long to keep logs and data
+
+# Monitoring and Alerts
+alert_email_addresses = [
+  # "alerts@example.com",
+  # "oncall@example.com"
+]
+
+# Slack Integration (optional)
+# slack_webhook_url  = "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+# slack_channel_name = "#virtuoso-alerts"
+# slack_auth_token   = "xoxb-your-token"
+
+# Cost Optimization
+use_preemptible_instances = true # Use cheaper instances where possible
+
+# Resource Labels
+common_labels = {
+  app         = "virtuoso-api-cli"
+  environment = "development"
+  team        = "platform"
+  cost_center = "engineering"
+  managed_by  = "terraform"
+}
+
+# Multi-region Configuration (for production)
+# backup_location    = "US"       # Multi-region backup location
+# bigquery_location  = "US"       # BigQuery dataset location
+# firestore_location = "us-central" # Firestore location
+
+# Advanced Configuration (usually not needed)
+# cors_origins = ["https://app.example.com", "http://localhost:3000"]
+# notification_channels = ["projects/your-project/notificationChannels/123456"]
+# access_policy_id = "your-access-policy-id" # For VPC Service Controls
+
+# Development Overrides
+# Uncomment these for local development to save costs:
+# cloud_run_min_instances = 0
+# redis_tier = "BASIC"
+# redis_memory_gb = 1
+# enable_cloud_armor = false
+# enable_bigquery = false

@@ -1,0 +1,258 @@
+# Cloud Build configuration for Terraform infrastructure updates
+# This configuration manages infrastructure as code deployments
+
+timeout: 1800s
+
+options:
+  machineType: 'E2_STANDARD_2'
+  logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _TERRAFORM_VERSION: '1.6.0'
+  _ENVIRONMENT: '${_ENVIRONMENT}'
+  _ACTION: '${_ACTION}' # plan or apply
+  _TERRAFORM_DIR: 'gcp/terraform'
+
+steps:
+  # Step 1: Download Terraform
+  - name: 'gcr.io/cloud-builders/wget'
+    id: 'download-terraform'
+    args:
+      - 'https://releases.hashicorp.com/terraform/${_TERRAFORM_VERSION}/terraform_${_TERRAFORM_VERSION}_linux_amd64.zip'
+
+  # Step 2: Install Terraform
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'install-terraform'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        apt-get update && apt-get install -y unzip
+        unzip terraform_${_TERRAFORM_VERSION}_linux_amd64.zip
+        chmod +x terraform
+        mv terraform /usr/local/bin/
+
+  # Step 3: Initialize Terraform
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'terraform-init'
+    dir: '${_TERRAFORM_DIR}'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        terraform init \
+          -backend-config="bucket=${PROJECT_ID}-terraform-state" \
+          -backend-config="prefix=virtuoso/${_ENVIRONMENT}"
+
+  # Step 4: Select workspace
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'terraform-workspace'
+    dir: '${_TERRAFORM_DIR}'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        terraform workspace select ${_ENVIRONMENT} || terraform workspace new ${_ENVIRONMENT}
+
+  # Step 5: Validate Terraform configuration
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'terraform-validate'
+    dir: '${_TERRAFORM_DIR}'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        terraform fmt -check=true -diff=true
+        terraform validate
+
+  # Step 6: Run security scan on Terraform
+  - name: 'aquasec/tfsec:latest'
+    id: 'tfsec-scan'
+    args:
+      - '${_TERRAFORM_DIR}'
+      - '--format=json'
+      - '--out=tfsec-results.json'
+
+  # Step 7: Cost estimation
+  - name: 'infracost/infracost:latest'
+    id: 'cost-estimate'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        cd ${_TERRAFORM_DIR}
+        infracost breakdown \
+          --path . \
+          --format json \
+          --out-file /tmp/infracost.json
+
+  # Step 8: Terraform plan
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'terraform-plan'
+    dir: '${_TERRAFORM_DIR}'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        terraform plan \
+          -var="project_id=${PROJECT_ID}" \
+          -var="region=${_REGION}" \
+          -var="environment=${_ENVIRONMENT}" \
+          -var-file="environments/${_ENVIRONMENT}.tfvars" \
+          -out=tfplan \
+          -input=false
+
+  # Step 9: Convert plan to JSON for analysis
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'plan-to-json'
+    dir: '${_TERRAFORM_DIR}'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        terraform show -json tfplan > tfplan.json
+
+  # Step 10: Analyze plan for risky changes
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'analyze-plan'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        cd ${_TERRAFORM_DIR}
+        # Check for destructive changes
+        DESTROY_COUNT=$(jq '[.resource_changes[] | select(.change.actions[] == "delete")] | length' tfplan.json)
+        REPLACE_COUNT=$(jq '[.resource_changes[] | select(.change.actions[] == "replace")] | length' tfplan.json)
+
+        echo "=== Terraform Plan Analysis ==="
+        echo "Resources to destroy: ${DESTROY_COUNT}"
+        echo "Resources to replace: ${REPLACE_COUNT}"
+
+        if [ ${DESTROY_COUNT} -gt 0 ] || [ ${REPLACE_COUNT} -gt 0 ]; then
+          echo "WARNING: Plan contains destructive changes!"
+          if [ "${_ENVIRONMENT}" == "prod" ] && [ "${_ACTION}" == "apply" ]; then
+            echo "ERROR: Cannot auto-apply destructive changes to production"
+            exit 1
+          fi
+        fi
+
+  # Step 11: Generate plan summary
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'plan-summary'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        cd ${_TERRAFORM_DIR}
+        cat > plan-summary.md << EOF
+        ## Terraform Plan Summary
+
+        **Environment:** ${_ENVIRONMENT}
+        **Build ID:** ${BUILD_ID}
+        **Triggered by:** ${_ACTION}
+
+        ### Resource Changes
+        $(terraform show -no-color tfplan | grep -E "^  # |^    [+-~]" | head -20)
+
+        ### Cost Impact
+        $(cat /tmp/infracost.json | jq -r '.projects[0].breakdown.totalMonthlyCost')
+
+        ### Security Scan Results
+        $(cat ../tfsec-results.json | jq -r '.results | length') issues found
+        EOF
+
+        gsutil cp plan-summary.md gs://${PROJECT_ID}-terraform-plans/${BUILD_ID}/
+
+  # Step 12: Apply (conditional)
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'terraform-apply'
+    dir: '${_TERRAFORM_DIR}'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if [ "${_ACTION}" == "apply" ]; then
+          echo "Applying Terraform changes..."
+
+          # For production, ensure approval
+          if [ "${_ENVIRONMENT}" == "prod" ]; then
+            echo "Production deployment requires manual approval"
+            # Check for approval (would integrate with approval system)
+          fi
+
+          # Apply with auto-approve
+          terraform apply -auto-approve tfplan
+
+          # Generate outputs
+          terraform output -json > outputs.json
+          gsutil cp outputs.json gs://${PROJECT_ID}-terraform-state/outputs/${_ENVIRONMENT}.json
+        else
+          echo "Plan only - skipping apply"
+        fi
+
+  # Step 13: Post-apply validation
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'validate-infrastructure'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if [ "${_ACTION}" == "apply" ]; then
+          echo "Validating infrastructure..."
+
+          # Run infrastructure tests
+          cd ${_TERRAFORM_DIR}
+
+          # Check that key resources exist
+          gcloud run services describe virtuoso-api-cli --region=${_REGION} || exit 1
+          gcloud sql instances describe virtuoso-db-${_ENVIRONMENT} || exit 1
+
+          # Verify connectivity
+          SERVICE_URL=$(gcloud run services describe virtuoso-api-cli \
+            --region=${_REGION} \
+            --format='value(status.url)')
+
+          curl -f ${SERVICE_URL}/health || exit 1
+        fi
+
+  # Step 14: Update documentation
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'update-docs'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if [ "${_ACTION}" == "apply" ]; then
+          cd ${_TERRAFORM_DIR}
+
+          # Generate resource inventory
+          terraform state list > resource-inventory.txt
+
+          # Generate dependency graph
+          terraform graph | dot -Tpng > infrastructure-graph.png
+
+          # Upload documentation
+          gsutil cp resource-inventory.txt gs://${PROJECT_ID}-terraform-docs/${_ENVIRONMENT}/
+          gsutil cp infrastructure-graph.png gs://${PROJECT_ID}-terraform-docs/${_ENVIRONMENT}/
+        fi
+
+  # Step 15: Backup state (for safety)
+  - name: 'gcr.io/cloud-builders/gsutil'
+    id: 'backup-state'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+        gsutil cp gs://${PROJECT_ID}-terraform-state/virtuoso/${_ENVIRONMENT}/default.tfstate \
+                  gs://${PROJECT_ID}-terraform-state-backup/${_ENVIRONMENT}/${TIMESTAMP}.tfstate || true
+
+# Store artifacts
+artifacts:
+  objects:
+    location: 'gs://${PROJECT_ID}-terraform-artifacts/${BUILD_ID}'
+    paths:
+      - '${_TERRAFORM_DIR}/tfplan'
+      - '${_TERRAFORM_DIR}/tfplan.json'
+      - 'tfsec-results.json'
+      - 'plan-summary.md'

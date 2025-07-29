@@ -1,0 +1,46 @@
+name: FIN-AP-002 - Create Purchase Order - Create and confirm purchase order
+description: 'Create and confirm purchase order (Module: Finance Operations, Suite: Accounts Payable)'
+starting_url: https://[instance].crm.dynamics.com
+steps:
+- click: Procurement and sourcing
+- click: Purchase orders
+- click: All purchase orders
+- click: New
+- select:
+    selector: Vendor account
+    option: VEND-$TIMESTAMP
+- select:
+    selector: Warehouse
+    option: Main warehouse
+- select:
+    selector: Purchase type
+    option: Standard
+- click: Lines
+- click: Add line
+- write:
+    selector: Item number
+    text: ITEM-001
+- write:
+    selector: Quantity
+    text: '100'
+- comment: Assert that "Unit price" populates
+- write:
+    selector: Procurement category
+    text: Office supplies
+- click: Add line
+- write:
+    selector: Item number
+    text: ITEM-002
+- write:
+    selector: Quantity
+    text: '50'
+- click: Purchase
+- click: Confirm
+- wait: 3
+- assert_text:
+    selector: Purchase order status
+    expected: Confirmed
+- store:
+    type: text
+    selector: Purchase order
+    variable: $purchaseOrderNumber

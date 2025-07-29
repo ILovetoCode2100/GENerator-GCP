@@ -1,0 +1,32 @@
+project: 9369
+goal: 14141
+name: FIN-AR-002 - Create Sales Order - Create and invoice sales order
+description: 'Create and invoice sales order (Module: Finance Operations, Suite: Accounts Receivable)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Sales and marketing
+- click: Sales orders
+- click: All sales orders
+- click: New
+- select:
+    selector: Customer account
+    option: CUST-$TIMESTAMP
+- select:
+    selector: Warehouse
+    option: Main warehouse
+- click: Sales order lines
+- write:
+    selector: Item number
+    text: PROD-001
+- write:
+    selector: Quantity
+    text: '10'
+- comment: Assert that "Unit price" populates
+- comment: Assert that "Net amount" calculates
+- click: Sell
+- click: Confirm sales order
+- click: OK
+- wait: 3
+- assert_text:
+    selector: Sales order status
+    expected: Confirmed

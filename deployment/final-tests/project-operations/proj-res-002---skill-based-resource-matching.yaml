@@ -1,0 +1,31 @@
+project: 9369
+goal: 14142
+name: PROJ-RES-002 - Skill-Based Resource Matching - Find resources based on required skills
+description: 'Find resources based on required skills (Module: Project Operations, Suite: Resource Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Resource Requirements
+- click: New Requirement
+- write:
+    selector: Position
+    text: Senior .NET Developer
+- select:
+    selector: Project
+    option: $projectId
+- write:
+    selector: Start Date
+    text: $DATE_PLUS_7
+- write:
+    selector: End Date
+    text: $DATE_PLUS_60
+- write:
+    selector: Hours/Week
+    text: '40'
+- click: Required Skills
+- comment: Add skill "C#" with proficiency "Expert"
+- comment: Add skill "Azure" with proficiency "Intermediate"
+- comment: Add skill "D365" with proficiency "Beginner"
+- click: Find Matching Resources
+- wait: 3
+- comment: Assert that element "Matching Resources" shows results
+- comment: Assert that each result has required skills

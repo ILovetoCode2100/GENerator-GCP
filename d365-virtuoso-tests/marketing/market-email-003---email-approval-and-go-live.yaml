@@ -1,0 +1,60 @@
+name: MARKET-EMAIL-003 - Email Approval and Go Live - Submit email for approval and go live
+description: 'Submit email for approval and go live (Module: Marketing, Suite: Email Marketing)'
+project: D365 Test Automation
+goal: Marketing Tests
+journey: Email Marketing
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Ready to send
+- type: wait
+  command: time
+  value: 2
+- type: assert
+  command: exists
+  target: Validation passed
+- type: interact
+  command: click
+  target: Submit for approval
+- type: interact
+  command: write
+  target: Comments
+  value: Email ready for monthly newsletter
+- type: interact
+  command: click
+  target: Submit
+- type: wait
+  command: time
+  value: 2
+- type: assert
+  command: text
+  target: Status
+  expected: In approval
+- type: interact
+  command: click
+  target: Approve
+- type: interact
+  command: write
+  target: Approval notes
+  value: Content approved
+- type: interact
+  command: click
+  target: Approve
+- type: interact
+  command: click
+  target: Go live
+- type: wait
+  command: time
+  value: 2
+- type: interact
+  command: click
+  target: Go live
+- type: wait
+  command: time
+  value: 3
+- type: assert
+  command: text
+  target: Status
+  expected: Live

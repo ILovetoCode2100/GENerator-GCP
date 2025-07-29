@@ -1,0 +1,48 @@
+name: SALES-PIPE-002 - Sales Forecasting - Review and update sales forecast
+description: 'Review and update sales forecast (Module: Sales Module, Suite: Pipeline and Forecasting)'
+project: D365 Test Automation
+goal: Sales Module Tests
+journey: Pipeline and Forecasting
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Forecasts
+- type: wait
+  command: time
+  value: 2
+- type: interact
+  command: select
+  target: Forecast Period
+  value: FY2024 Q1
+- stepType: assertValue
+  target: Quota
+  operator: greaterThan
+  expectedValue: '"0"'
+- type: assert
+  command: exists
+  target: Committed
+- type: assert
+  command: exists
+  target: Best case
+- type: assert
+  command: exists
+  target: Pipeline
+- type: interact
+  command: click
+  target: Edit Forecast
+- type: interact
+  command: write
+  target: Committed
+  value: '275000'
+- type: interact
+  command: write
+  target: Best case
+  value: '350000'
+- type: interact
+  command: click
+  target: Save
+- type: assert
+  command: exists
+  target: Forecast saved

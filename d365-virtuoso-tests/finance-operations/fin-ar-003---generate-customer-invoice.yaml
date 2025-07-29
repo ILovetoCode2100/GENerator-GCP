@@ -1,0 +1,59 @@
+name: FIN-AR-003 - Generate Customer Invoice - Post customer invoice from sales order
+description: 'Post customer invoice from sales order (Module: Finance Operations, Suite: Accounts Receivable)'
+project: D365 Test Automation
+goal: Finance Operations Tests
+journey: Accounts Receivable
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Pick and pack
+- type: interact
+  command: click
+  target: Post packing slip
+- type: interact
+  command: write
+  target: Packing slip
+  value: PACK-$TIMESTAMP
+- type: interact
+  command: click
+  target: OK
+- type: wait
+  command: time
+  value: 3
+- type: interact
+  command: click
+  target: Invoice
+- type: interact
+  command: click
+  target: Invoice
+- type: interact
+  command: click
+  target: 'Default from: Packing slip quantity'
+- type: interact
+  command: click
+  target: Post
+- type: wait
+  command: time
+  value: 3
+- type: assert
+  command: exists
+  target: Posted sales invoice
+- type: store
+  command: text
+  target: Invoice
+  variable: invoiceNumber
+- type: interact
+  command: click
+  target: Print
+- type: interact
+  command: click
+  target: Invoice
+- type: interact
+  command: select
+  target: Print destination
+  value: Screen
+- type: interact
+  command: click
+  target: OK

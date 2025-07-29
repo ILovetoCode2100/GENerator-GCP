@@ -1,0 +1,19 @@
+project: 9369
+goal: 14138
+name: SERVICE-CASE-004 - Knowledge Base Search - Search and link knowledge articles
+description: 'Search and link knowledge articles (Module: Customer Service, Suite: Case Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Knowledge Search
+- comment: Write "password reset" in search field
+- key: '"ENTER"'
+- wait: 2
+- assert: Search Results
+- click: first "Article Title"
+- click: Link to Case
+- wait: 2
+- comment: Assert that element "Linked Articles" contains "1"
+- click: Copy Content
+- click: Resolution
+- key: '"CTRL_v"'
+- comment: Assert that element "Resolution" is not empty

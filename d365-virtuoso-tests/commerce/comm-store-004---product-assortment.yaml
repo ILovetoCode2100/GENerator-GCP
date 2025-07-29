@@ -1,0 +1,67 @@
+name: COMM-STORE-004 - Product Assortment - Configure product catalog for online store
+description: 'Configure product catalog for online store (Module: Commerce, Suite: E-Commerce Store Setup)'
+project: D365 Test Automation
+goal: Commerce Tests
+journey: E-Commerce Store Setup
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Assortments
+- type: interact
+  command: click
+  target: New
+- type: interact
+  command: write
+  target: Name
+  value: Online Product Catalog - $TIMESTAMP
+- type: interact
+  command: select
+  target: Channel
+  value: $channelId
+- type: interact
+  command: write
+  target: Effective date
+  value: $TODAY
+- type: interact
+  command: write
+  target: Expiration date
+  value: $DATE_PLUS_365
+- type: interact
+  command: click
+  target: Products
+- type: interact
+  command: click
+  target: Add category
+- type: interact
+  command: click
+  target: Add
+- type: interact
+  command: click
+  target: Add category
+- type: interact
+  command: click
+  target: Add
+- type: interact
+  command: click
+  target: Add products
+- type: interact
+  command: click
+  target: Add
+- type: interact
+  command: click
+  target: Validate
+- type: wait
+  command: time
+  value: 3
+- type: assert
+  command: exists
+  target: Validation passed
+- type: interact
+  command: click
+  target: Publish
+- type: assert
+  command: text
+  target: Status
+  expected: Published

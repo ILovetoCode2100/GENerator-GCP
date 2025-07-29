@@ -1,0 +1,253 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: virtuoso-health-check
+  namespace: virtuoso-api
+  labels:
+    app: virtuoso-api-cli
+    component: health-check
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: virtuoso-health-check
+  namespace: virtuoso-api
+  labels:
+    app: virtuoso-api-cli
+    component: health-check
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services", "endpoints"]
+  verbs: ["get", "list"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "statefulsets"]
+  verbs: ["get", "list"]
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list", "create", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: virtuoso-health-check
+  namespace: virtuoso-api
+  labels:
+    app: virtuoso-api-cli
+    component: health-check
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: virtuoso-health-check
+subjects:
+- kind: ServiceAccount
+  name: virtuoso-health-check
+  namespace: virtuoso-api
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: virtuoso-health-check
+  namespace: virtuoso-api
+  labels:
+    app: virtuoso-api-cli
+    component: health-check
+spec:
+  schedule: "*/15 * * * *"  # Every 15 minutes
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app: virtuoso-api-cli
+        component: health-check
+    spec:
+      backoffLimit: 0  # Don't retry, just report failure
+      activeDeadlineSeconds: 300  # 5 minutes timeout
+      template:
+        metadata:
+          labels:
+            app: virtuoso-api-cli
+            component: health-check
+        spec:
+          serviceAccountName: virtuoso-health-check
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            fsGroup: 1000
+          containers:
+          - name: health-check
+            image: curlimages/curl:8.5.0
+            imagePullPolicy: IfNotPresent
+            command: ["/bin/sh", "-c"]
+            args:
+            - |
+              set -e
+
+              # Configuration
+              API_ENDPOINT="http://virtuoso-api-cli:8000"
+              HEALTH_ENDPOINT="${API_ENDPOINT}/health"
+              METRICS_ENDPOINT="${API_ENDPOINT}/metrics"
+              REDIS_HOST="virtuoso-redis"
+              REDIS_PORT="6379"
+              WEBHOOK_URL="${NOTIFICATION_WEBHOOK_URL}"
+
+              # Initialize status
+              OVERALL_STATUS="healthy"
+              ISSUES=""
+
+              # Function to check endpoint
+              check_endpoint() {
+                  local name=$1
+                  local url=$2
+                  local expected_status=${3:-200}
+
+                  echo "Checking ${name} at ${url}..."
+                  response=$(curl -s -o /dev/null -w "%{http_code}" "${url}" || echo "000")
+
+                  if [ "${response}" = "${expected_status}" ]; then
+                      echo "✓ ${name} is healthy (HTTP ${response})"
+                      return 0
+                  else
+                      echo "✗ ${name} is unhealthy (HTTP ${response})"
+                      OVERALL_STATUS="unhealthy"
+                      ISSUES="${ISSUES}\n- ${name} returned HTTP ${response}"
+                      return 1
+                  fi
+              }
+
+              # Function to check Redis
+              check_redis() {
+                  echo "Checking Redis connectivity..."
+                  if timeout 5 nc -zv "${REDIS_HOST}" "${REDIS_PORT}" 2>&1 | grep -q "succeeded"; then
+                      echo "✓ Redis is accessible"
+                      return 0
+                  else
+                      echo "✗ Redis is not accessible"
+                      OVERALL_STATUS="unhealthy"
+                      ISSUES="${ISSUES}\n- Redis connection failed"
+                      return 1
+                  fi
+              }
+
+              # Function to check Kubernetes resources
+              check_k8s_resources() {
+                  echo "Checking Kubernetes resources..."
+
+                  # Check deployment
+                  READY_REPLICAS=$(kubectl get deployment virtuoso-api-cli -n virtuoso-api -o jsonpath='{.status.readyReplicas}' || echo "0")
+                  DESIRED_REPLICAS=$(kubectl get deployment virtuoso-api-cli -n virtuoso-api -o jsonpath='{.spec.replicas}' || echo "0")
+
+                  if [ "${READY_REPLICAS}" -lt "${DESIRED_REPLICAS}" ]; then
+                      echo "✗ Deployment has ${READY_REPLICAS}/${DESIRED_REPLICAS} ready replicas"
+                      OVERALL_STATUS="degraded"
+                      ISSUES="${ISSUES}\n- Only ${READY_REPLICAS}/${DESIRED_REPLICAS} replicas are ready"
+                  else
+                      echo "✓ Deployment has ${READY_REPLICAS}/${DESIRED_REPLICAS} ready replicas"
+                  fi
+
+                  # Check endpoints
+                  ENDPOINTS=$(kubectl get endpoints virtuoso-api-cli -n virtuoso-api -o jsonpath='{.subsets[*].addresses[*].ip}' | wc -w || echo "0")
+                  if [ "${ENDPOINTS}" -eq 0 ]; then
+                      echo "✗ No service endpoints available"
+                      OVERALL_STATUS="unhealthy"
+                      ISSUES="${ISSUES}\n- No service endpoints available"
+                  else
+                      echo "✓ Service has ${ENDPOINTS} endpoints"
+                  fi
+              }
+
+              # Run all checks
+              echo "Starting health checks for Virtuoso API CLI..."
+              echo "================================================"
+
+              # Check API health endpoint
+              check_endpoint "API Health" "${HEALTH_ENDPOINT}"
+
+              # Check metrics endpoint
+              check_endpoint "Metrics" "${METRICS_ENDPOINT}"
+
+              # Check Redis
+              check_redis
+
+              # Check Kubernetes resources
+              check_k8s_resources
+
+              # Perform synthetic transaction test
+              echo ""
+              echo "Performing synthetic transaction test..."
+              TEST_RESPONSE=$(curl -s -X POST "${API_ENDPOINT}/api/v1/test" \
+                  -H "Content-Type: application/json" \
+                  -H "Authorization: Bearer ${API_TEST_TOKEN}" \
+                  -d '{"test": "health-check"}' || echo "failed")
+
+              if echo "${TEST_RESPONSE}" | grep -q "success"; then
+                  echo "✓ Synthetic transaction test passed"
+              else
+                  echo "✗ Synthetic transaction test failed"
+                  OVERALL_STATUS="degraded"
+                  ISSUES="${ISSUES}\n- Synthetic transaction test failed"
+              fi
+
+              # Store health check result
+              echo ""
+              echo "Storing health check result..."
+              TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+              kubectl create configmap health-check-status -n virtuoso-api \
+                  --from-literal=status="${OVERALL_STATUS}" \
+                  --from-literal=timestamp="${TIMESTAMP}" \
+                  --from-literal=issues="${ISSUES}" \
+                  --dry-run=client -o yaml | kubectl apply -f -
+
+              # Send notification for failures
+              if [ "${OVERALL_STATUS}" != "healthy" ] && [ -n "${WEBHOOK_URL}" ]; then
+                  echo ""
+                  echo "Sending failure notification..."
+                  NOTIFICATION_TEXT="Virtuoso API Health Check: ${OVERALL_STATUS^^}"
+                  if [ -n "${ISSUES}" ]; then
+                      NOTIFICATION_TEXT="${NOTIFICATION_TEXT}\nIssues:${ISSUES}"
+                  fi
+
+                  curl -X POST "${WEBHOOK_URL}" \
+                      -H 'Content-Type: application/json' \
+                      -d "{\"text\":\"${NOTIFICATION_TEXT}\"}" || echo "Failed to send notification"
+              fi
+
+              # Exit with appropriate code
+              echo ""
+              echo "================================================"
+              echo "Overall Status: ${OVERALL_STATUS^^}"
+
+              case "${OVERALL_STATUS}" in
+                  healthy)
+                      exit 0
+                      ;;
+                  degraded)
+                      exit 1
+                      ;;
+                  unhealthy)
+                      exit 2
+                      ;;
+              esac
+            env:
+            - name: API_TEST_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: virtuoso-api-secret
+                  key: API_TEST_TOKEN
+                  optional: true
+            - name: NOTIFICATION_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: virtuoso-api-secret
+                  key: SLACK_WEBHOOK_URL
+                  optional: true
+            resources:
+              requests:
+                memory: "64Mi"
+                cpu: "25m"
+              limits:
+                memory: "128Mi"
+                cpu: "100m"

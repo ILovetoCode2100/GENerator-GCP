@@ -1,0 +1,282 @@
+# D365 Test Automation Suite - Master Project Configuration
+# This file defines the complete test automation suite for Microsoft Dynamics 365
+# with all modules organized as goals containing their respective test journeys
+
+project:
+  name: "D365 Test Automation Suite"
+  description: "Comprehensive test automation suite for Microsoft Dynamics 365 covering all major modules"
+  settings:
+    timeout: 60000
+    default_wait: 5000
+    screenshot_on_failure: true
+    retry_failed_steps: true
+    max_retries: 2
+
+# Configuration variables that can be overridden
+variables:
+  d365_base_url: "${D365_BASE_URL:-https://your-org.crm.dynamics.com}"
+  username: "${D365_USERNAME:-testuser@your-org.onmicrosoft.com}"
+  password: "${D365_PASSWORD:-your-password}"
+  test_data_path: "${TEST_DATA_PATH:-./test-data}"
+  results_path: "${RESULTS_PATH:-./test-results}"
+
+# Module 1: Sales Module Tests
+goals:
+  - name: "Sales Module Tests"
+    description: "Complete test coverage for D365 Sales functionality"
+    journeys:
+      - name: "Lead Management Tests"
+        test_file: "sales/lead-management.yaml"
+        tags: ["sales", "leads", "critical"]
+
+      - name: "Opportunity Management Tests"
+        test_file: "sales/opportunity-management.yaml"
+        tags: ["sales", "opportunities", "critical"]
+
+      - name: "Order Management Tests"
+        test_file: "sales/order-management.yaml"
+        tags: ["sales", "orders", "critical"]
+
+      - name: "Pipeline and Forecasting Tests"
+        test_file: "sales/pipeline-and-forecasting.yaml"
+        tags: ["sales", "analytics", "reporting"]
+
+      - name: "Sales Integration Tests"
+        test_file: "sales/integration-tests.yaml"
+        tags: ["sales", "integration", "e2e"]
+
+  # Module 2: Customer Service Module Tests
+  - name: "Customer Service Module Tests"
+    description: "Complete test coverage for D365 Customer Service functionality"
+    journeys:
+      - name: "Case Management Tests"
+        test_file: "customer-service/case-management.yaml"
+        tags: ["service", "cases", "critical"]
+
+      - name: "Queue Management Tests"
+        test_file: "customer-service/queue-management.yaml"
+        tags: ["service", "queues", "workflow"]
+
+      - name: "Service Level Agreements Tests"
+        test_file: "customer-service/service-level-agreements.yaml"
+        tags: ["service", "sla", "critical"]
+
+      - name: "Knowledge Management Tests"
+        test_file: "customer-service/knowledge-management.yaml"
+        tags: ["service", "knowledge", "content"]
+
+      - name: "Omnichannel Integration Tests"
+        test_file: "customer-service/omnichannel-integration.yaml"
+        tags: ["service", "omnichannel", "integration"]
+
+      - name: "Customer Satisfaction Tests"
+        test_file: "customer-service/customer-satisfaction.yaml"
+        tags: ["service", "satisfaction", "metrics"]
+
+  # Module 3: Field Service Module Tests
+  - name: "Field Service Module Tests"
+    description: "Complete test coverage for D365 Field Service functionality"
+    journeys:
+      - name: "Work Order Management Tests"
+        test_file: "field-service/work-order-management.yaml"
+        tags: ["field-service", "work-orders", "critical"]
+
+      - name: "Scheduling and Dispatch Tests"
+        test_file: "field-service/scheduling-and-dispatch.yaml"
+        tags: ["field-service", "scheduling", "critical"]
+
+      - name: "Mobile Field Service Tests"
+        test_file: "field-service/mobile-field-service.yaml"
+        tags: ["field-service", "mobile", "integration"]
+
+      - name: "Inventory Management Tests"
+        test_file: "field-service/inventory-management.yaml"
+        tags: ["field-service", "inventory", "critical"]
+
+      - name: "Preventive Maintenance Tests"
+        test_file: "field-service/preventive-maintenance.yaml"
+        tags: ["field-service", "maintenance", "automation"]
+
+      - name: "Connected Field Service IoT Tests"
+        test_file: "field-service/connected-field-service-iot.yaml"
+        tags: ["field-service", "iot", "integration"]
+
+  # Module 4: Marketing Module Tests
+  - name: "Marketing Module Tests"
+    description: "Complete test coverage for D365 Marketing functionality"
+    journeys:
+      - name: "Customer Journeys Tests"
+        test_file: "marketing/customer-journeys.yaml"
+        tags: ["marketing", "journeys", "critical"]
+
+      - name: "Email Marketing Tests"
+        test_file: "marketing/email-marketing.yaml"
+        tags: ["marketing", "email", "campaigns"]
+
+      - name: "Marketing Pages and Forms Tests"
+        test_file: "marketing/marketing-pages-and-forms.yaml"
+        tags: ["marketing", "forms", "web"]
+
+      - name: "Lead Scoring Tests"
+        test_file: "marketing/lead-scoring.yaml"
+        tags: ["marketing", "leads", "automation"]
+
+      - name: "Event Management Tests"
+        test_file: "marketing/event-management.yaml"
+        tags: ["marketing", "events", "registration"]
+
+      - name: "Marketing Analytics Tests"
+        test_file: "marketing/marketing-analytics.yaml"
+        tags: ["marketing", "analytics", "reporting"]
+
+  # Module 5: Finance Operations Module Tests
+  - name: "Finance Operations Module Tests"
+    description: "Complete test coverage for D365 Finance Operations functionality"
+    journeys:
+      - name: "General Ledger Tests"
+        test_file: "finance-operations/general-ledger.yaml"
+        tags: ["finance", "gl", "critical"]
+
+      - name: "Accounts Payable Tests"
+        test_file: "finance-operations/accounts-payable.yaml"
+        tags: ["finance", "ap", "critical"]
+
+      - name: "Accounts Receivable Tests"
+        test_file: "finance-operations/accounts-receivable.yaml"
+        tags: ["finance", "ar", "critical"]
+
+      - name: "Fixed Assets Tests"
+        test_file: "finance-operations/fixed-assets.yaml"
+        tags: ["finance", "assets", "depreciation"]
+
+      - name: "Budget Control Tests"
+        test_file: "finance-operations/budget-control.yaml"
+        tags: ["finance", "budget", "control"]
+
+      - name: "Financial Reporting Tests"
+        test_file: "finance-operations/financial-reporting.yaml"
+        tags: ["finance", "reporting", "compliance"]
+
+  # Module 6: Project Operations Module Tests
+  - name: "Project Operations Module Tests"
+    description: "Complete test coverage for D365 Project Operations functionality"
+    journeys:
+      - name: "Project Management Tests"
+        test_file: "project-operations/project-management.yaml"
+        tags: ["projects", "management", "critical"]
+
+      - name: "Resource Management Tests"
+        test_file: "project-operations/resource-management.yaml"
+        tags: ["projects", "resources", "scheduling"]
+
+      - name: "Time and Expense Management Tests"
+        test_file: "project-operations/time-and-expense-management.yaml"
+        tags: ["projects", "time", "expense"]
+
+      - name: "Project Financials Tests"
+        test_file: "project-operations/project-financials.yaml"
+        tags: ["projects", "finance", "billing"]
+
+      - name: "Project Templates and Automation Tests"
+        test_file: "project-operations/project-templates-and-automation.yaml"
+        tags: ["projects", "templates", "automation"]
+
+  # Module 7: Human Resources Module Tests
+  - name: "Human Resources Module Tests"
+    description: "Complete test coverage for D365 Human Resources functionality"
+    journeys:
+      - name: "Employee Management Tests"
+        test_file: "human-resources/employee-management.yaml"
+        tags: ["hr", "employees", "critical"]
+
+      - name: "Benefits Administration Tests"
+        test_file: "human-resources/benefits-administration.yaml"
+        tags: ["hr", "benefits", "enrollment"]
+
+      - name: "Leave and Absence Management Tests"
+        test_file: "human-resources/leave-and-absence-management.yaml"
+        tags: ["hr", "leave", "absence"]
+
+      - name: "Performance Management Tests"
+        test_file: "human-resources/performance-management.yaml"
+        tags: ["hr", "performance", "reviews"]
+
+      - name: "Training and Development Tests"
+        test_file: "human-resources/training-and-development.yaml"
+        tags: ["hr", "training", "development"]
+
+  # Module 8: Supply Chain Module Tests
+  - name: "Supply Chain Module Tests"
+    description: "Complete test coverage for D365 Supply Chain functionality"
+    journeys:
+      - name: "Inventory Management Tests"
+        test_file: "supply-chain/inventory-management.yaml"
+        tags: ["supply-chain", "inventory", "critical"]
+
+      - name: "Purchase Order Processing Tests"
+        test_file: "supply-chain/purchase-order-processing.yaml"
+        tags: ["supply-chain", "purchasing", "critical"]
+
+      - name: "Sales Order Processing Tests"
+        test_file: "supply-chain/sales-order-processing.yaml"
+        tags: ["supply-chain", "sales", "critical"]
+
+      - name: "Production Management Tests"
+        test_file: "supply-chain/production-management.yaml"
+        tags: ["supply-chain", "production", "manufacturing"]
+
+      - name: "Master Planning Tests"
+        test_file: "supply-chain/master-planning.yaml"
+        tags: ["supply-chain", "planning", "mrp"]
+
+      - name: "Quality Management Tests"
+        test_file: "supply-chain/quality-management.yaml"
+        tags: ["supply-chain", "quality", "inspection"]
+
+  # Module 9: Commerce Module Tests
+  - name: "Commerce Module Tests"
+    description: "Complete test coverage for D365 Commerce functionality"
+    journeys:
+      - name: "E-commerce Store Setup Tests"
+        test_file: "commerce/e-commerce-store-setup.yaml"
+        tags: ["commerce", "ecommerce", "setup"]
+
+      - name: "Product Management Tests"
+        test_file: "commerce/product-management.yaml"
+        tags: ["commerce", "products", "catalog"]
+
+      - name: "Pricing and Promotions Tests"
+        test_file: "commerce/pricing-and-promotions.yaml"
+        tags: ["commerce", "pricing", "promotions"]
+
+      - name: "POS Integration Tests"
+        test_file: "commerce/pos-integration.yaml"
+        tags: ["commerce", "pos", "integration"]
+
+      - name: "Customer Experience Tests"
+        test_file: "commerce/customer-experience.yaml"
+        tags: ["commerce", "customer", "experience"]
+
+      - name: "B2B Commerce Tests"
+        test_file: "commerce/b2b-commerce.yaml"
+        tags: ["commerce", "b2b", "wholesale"]
+
+# Test execution settings
+execution:
+  parallel_goals: false  # Run goals sequentially
+  parallel_journeys: true  # Run journeys within a goal in parallel
+  max_parallel_threads: 4
+  continue_on_failure: true
+  generate_html_report: true
+  generate_junit_xml: true
+
+# Reporting configuration
+reporting:
+  output_directory: "./test-results"
+  include_screenshots: true
+  include_logs: true
+  summary_format: "detailed"
+  email_notifications:
+    enabled: false
+    recipients: []
+    on_failure_only: true

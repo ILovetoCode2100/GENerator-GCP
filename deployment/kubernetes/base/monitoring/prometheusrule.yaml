@@ -1,0 +1,197 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: virtuoso-api-cli
+  namespace: virtuoso-api
+  labels:
+    app: virtuoso-api-cli
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+  - name: virtuoso-api.rules
+    interval: 30s
+    rules:
+    # SLA Monitoring - 99.9% uptime
+    - alert: VirtuosoAPIHighErrorRate
+      expr: |
+        (
+          sum(rate(http_requests_total{app="virtuoso-api-cli",status=~"5.."}[5m]))
+          /
+          sum(rate(http_requests_total{app="virtuoso-api-cli"}[5m]))
+        ) > 0.001
+      for: 5m
+      labels:
+        severity: critical
+        component: api
+      annotations:
+        summary: "High error rate on Virtuoso API ({{ $value | humanizePercentage }})"
+        description: "Error rate is above 0.1% SLA threshold. Current error rate: {{ $value | humanizePercentage }}"
+        runbook_url: "https://wiki.company.com/virtuoso-api-runbook#high-error-rate"
+
+    - alert: VirtuosoAPIDown
+      expr: up{app="virtuoso-api-cli",component="api"} == 0
+      for: 1m
+      labels:
+        severity: critical
+        component: api
+      annotations:
+        summary: "Virtuoso API instance is down"
+        description: "Instance {{ $labels.instance }} has been down for more than 1 minute"
+        runbook_url: "https://wiki.company.com/virtuoso-api-runbook#api-down"
+
+    # Performance Monitoring
+    - alert: VirtuosoAPIHighLatency
+      expr: |
+        histogram_quantile(0.95,
+          sum(rate(http_request_duration_seconds_bucket{app="virtuoso-api-cli"}[5m])) by (le, method, path)
+        ) > 1
+      for: 5m
+      labels:
+        severity: warning
+        component: api
+      annotations:
+        summary: "High API latency detected"
+        description: "95th percentile latency for {{ $labels.method }} {{ $labels.path }} is {{ $value }}s"
+        runbook_url: "https://wiki.company.com/virtuoso-api-runbook#high-latency"
+
+    - alert: VirtuosoAPIVeryHighLatency
+      expr: |
+        histogram_quantile(0.95,
+          sum(rate(http_request_duration_seconds_bucket{app="virtuoso-api-cli"}[5m])) by (le, method, path)
+        ) > 5
+      for: 5m
+      labels:
+        severity: critical
+        component: api
+      annotations:
+        summary: "Very high API latency detected"
+        description: "95th percentile latency for {{ $labels.method }} {{ $labels.path }} is {{ $value }}s"
+        runbook_url: "https://wiki.company.com/virtuoso-api-runbook#very-high-latency"
+
+    # Resource Utilization
+    - alert: VirtuosoAPIHighMemoryUsage
+      expr: |
+        (
+          container_memory_working_set_bytes{pod=~"virtuoso-api-cli-.*",container="api"}
+          /
+          container_spec_memory_limit_bytes{pod=~"virtuoso-api-cli-.*",container="api"}
+        ) > 0.8
+      for: 5m
+      labels:
+        severity: warning
+        component: api
+      annotations:
+        summary: "High memory usage on Virtuoso API"
+        description: "Pod {{ $labels.pod }} memory usage is above 80% ({{ $value | humanizePercentage }})"
+        runbook_url: "https://wiki.company.com/virtuoso-api-runbook#high-memory"
+
+    - alert: VirtuosoAPIHighCPUUsage
+      expr: |
+        (
+          rate(container_cpu_usage_seconds_total{pod=~"virtuoso-api-cli-.*",container="api"}[5m])
+          /
+          container_spec_cpu_quota{pod=~"virtuoso-api-cli-.*",container="api"}
+        ) > 0.8
+      for: 5m
+      labels:
+        severity: warning
+        component: api
+      annotations:
+        summary: "High CPU usage on Virtuoso API"
+        description: "Pod {{ $labels.pod }} CPU usage is above 80% ({{ $value | humanizePercentage }})"
+        runbook_url: "https://wiki.company.com/virtuoso-api-runbook#high-cpu"
+
+    # Command Execution Monitoring
+    - alert: VirtuosoCommandExecutionFailures
+      expr: |
+        sum(rate(virtuoso_command_executions_total{status="failure"}[5m])) by (command)
+        > 0.1
+      for: 5m
+      labels:
+        severity: warning
+        component: api
+      annotations:
+        summary: "High command failure rate"
+        description: "Command {{ $labels.command }} has failure rate of {{ $value }} per second"
+        runbook_url: "https://wiki.company.com/virtuoso-api-runbook#command-failures"
+
+    - alert: VirtuosoCommandExecutionSlow
+      expr: |
+        histogram_quantile(0.95,
+          sum(rate(virtuoso_command_duration_seconds_bucket[5m])) by (le, command)
+        ) > 10
+      for: 5m
+      labels:
+        severity: warning
+        component: api
+      annotations:
+        summary: "Slow command execution"
+        description: "Command {{ $labels.command }} 95th percentile duration is {{ $value }}s"
+        runbook_url: "https://wiki.company.com/virtuoso-api-runbook#slow-commands"
+
+    # Redis Monitoring
+    - alert: VirtuosoRedisDown
+      expr: redis_up{app="virtuoso-api-cli"} == 0
+      for: 1m
+      labels:
+        severity: critical
+        component: redis
+      annotations:
+        summary: "Redis is down"
+        description: "Redis instance {{ $labels.instance }} has been down for more than 1 minute"
+        runbook_url: "https://wiki.company.com/virtuoso-api-runbook#redis-down"
+
+    - alert: VirtuosoRedisHighMemoryUsage
+      expr: |
+        redis_memory_used_bytes{app="virtuoso-api-cli"}
+        /
+        redis_memory_max_bytes{app="virtuoso-api-cli"} > 0.8
+      for: 5m
+      labels:
+        severity: warning
+        component: redis
+      annotations:
+        summary: "Redis high memory usage"
+        description: "Redis memory usage is above 80% ({{ $value | humanizePercentage }})"
+        runbook_url: "https://wiki.company.com/virtuoso-api-runbook#redis-memory"
+
+    - alert: VirtuosoRedisHighLatency
+      expr: redis_latency_spike_milliseconds{app="virtuoso-api-cli"} > 100
+      for: 5m
+      labels:
+        severity: warning
+        component: redis
+      annotations:
+        summary: "Redis high latency"
+        description: "Redis latency spike detected: {{ $value }}ms"
+        runbook_url: "https://wiki.company.com/virtuoso-api-runbook#redis-latency"
+
+    # Pod Availability
+    - alert: VirtuosoAPIInsufficientReplicas
+      expr: |
+        kube_deployment_status_replicas_available{deployment="virtuoso-api-cli",namespace="virtuoso-api"}
+        <
+        kube_deployment_spec_replicas{deployment="virtuoso-api-cli",namespace="virtuoso-api"} * 0.75
+      for: 5m
+      labels:
+        severity: warning
+        component: api
+      annotations:
+        summary: "Insufficient API replicas available"
+        description: "Only {{ $value }} replicas available, expected at least 75% of desired replicas"
+        runbook_url: "https://wiki.company.com/virtuoso-api-runbook#insufficient-replicas"
+
+    # Certificate Expiry
+    - alert: VirtuosoAPICertificateExpiringSoon
+      expr: |
+        certmanager_certificate_expiration_timestamp_seconds{name="virtuoso-api-tls",namespace="virtuoso-api"} - time()
+        < 7 * 24 * 3600
+      for: 1h
+      labels:
+        severity: warning
+        component: api
+      annotations:
+        summary: "TLS certificate expiring soon"
+        description: "TLS certificate will expire in {{ $value | humanizeDuration }}"
+        runbook_url: "https://wiki.company.com/virtuoso-api-runbook#certificate-expiry"

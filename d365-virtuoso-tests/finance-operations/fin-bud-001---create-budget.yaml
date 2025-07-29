@@ -1,0 +1,79 @@
+name: FIN-BUD-001 - Create Budget - Create and activate budget
+description: 'Create and activate budget (Module: Finance Operations, Suite: Budget Control)'
+project: D365 Test Automation
+goal: Finance Operations Tests
+journey: Budget Control
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Budgeting
+- type: interact
+  command: click
+  target: Budget register entries
+- type: interact
+  command: click
+  target: New
+- type: interact
+  command: select
+  target: Budget model
+  value: Original budget
+- type: interact
+  command: select
+  target: Budget code
+  value: Operating
+- type: interact
+  command: write
+  target: Description
+  value: FY2024 Operating Budget
+- type: interact
+  command: click
+  target: Budget account entries
+- type: interact
+  command: click
+  target: Add line
+- type: interact
+  command: write
+  target: Ledger account
+  value: 606100-001-CORP
+- type: interact
+  command: write
+  target: Amount
+  value: '60000'
+- type: interact
+  command: write
+  target: Description
+  value: Annual rent budget
+- type: interact
+  command: click
+  target: Add line
+- type: interact
+  command: write
+  target: Ledger account
+  value: 606200-001-CORP
+- type: interact
+  command: write
+  target: Amount
+  value: '24000'
+- type: interact
+  command: write
+  target: Description
+  value: Utilities budget
+- type: interact
+  command: click
+  target: Workflow
+- type: interact
+  command: click
+  target: Submit
+- type: interact
+  command: write
+  target: Comment
+  value: Please approve FY2024 budget
+- type: interact
+  command: click
+  target: Submit
+- type: assert
+  command: text
+  target: Workflow status
+  expected: Submitted

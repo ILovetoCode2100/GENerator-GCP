@@ -1,0 +1,23 @@
+name: SCM-PROD-002 - Estimate Production Order - Run estimation and check material availability
+description: 'Run estimation and check material availability (Module: Supply Chain, Suite: Production Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Estimate
+- wait: 2
+- comment: Toggle "Update BOM status" to on
+- click: OK
+- wait: 3
+- click: View
+- click: Estimated costs
+- assert: Material cost
+- assert: Labor cost
+- assert: Overhead cost
+- store:
+    type: element_value
+    selector: Total cost
+    variable: $estimatedCost
+- click: Material availability
+- comment: Look for any line where "Available" is less than "Requirement"
+- comment: If found
+- comment: Assert that element "Shortage" indicator exists
+- comment: Note materials to order

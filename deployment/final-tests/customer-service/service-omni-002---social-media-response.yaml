@@ -1,0 +1,20 @@
+project: 9369
+goal: 14138
+name: SERVICE-OMNI-002 - Social Media Response - Respond to social media inquiry
+description: 'Respond to social media inquiry (Module: Customer Service, Suite: Omnichannel Integration)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Social
+- click: first "Twitter" mention
+- click: Create Case
+- wait: 2
+- assert_text:
+    selector: Origin
+    expected: Twitter
+- comment: Assert that element "Social Profile" is not empty
+- assert: Sentiment
+- click: Reply
+- write:
+    selector: Response
+    text: Thank you for reaching out. We're looking into this issue and will update you shortly. Your case number is $caseNumber
+- click: Send

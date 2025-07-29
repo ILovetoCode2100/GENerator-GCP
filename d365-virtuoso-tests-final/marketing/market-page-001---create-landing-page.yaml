@@ -1,0 +1,39 @@
+name: MARKET-PAGE-001 - Create Landing Page - Build marketing landing page
+description: 'Build marketing landing page (Module: Marketing, Suite: Marketing Pages and Forms)'
+starting_url: https://[instance].crm.dynamics.com
+steps:
+- click: Marketing pages
+- click: New
+- select:
+    selector: Type
+    option: Landing page
+- click: Product promotion
+- click: Select
+- write:
+    selector: Name
+    text: Summer Product Sale - $TIMESTAMP
+- write:
+    selector: Partial URL
+    text: summer-sale
+- double_click: Headline
+- comment: Write "Save 25% on All Products This Summer!" in editor
+- comment: Click outside editor
+- comment: Drag "Marketing form" from toolbox to content area
+- select:
+    selector: Form
+    option: Newsletter signup
+- click: Place
+- click: SEO
+- write:
+    selector: Page title
+    text: Summer Sale - 25% Off All Products | Contoso
+- write:
+    selector: Meta description
+    text: Shop our summer sale and save 25% on all products. Limited time offer.
+- write:
+    selector: Keywords
+    text: summer sale, discount, products
+- click: Save
+- click: Preview
+- comment: Assert that page renders correctly
+- comment: Close preview

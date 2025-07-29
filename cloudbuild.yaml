@@ -1,0 +1,13 @@
+steps:
+  # Build the Docker image with the CLI binary included
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/virtuoso-api:latest', '-t', 'gcr.io/$PROJECT_ID/virtuoso-api:$BUILD_ID', '-f', 'Dockerfile', '.']
+    timeout: '1200s'
+
+  # Push both tags
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', '--all-tags', 'gcr.io/$PROJECT_ID/virtuoso-api']
+
+options:
+  machineType: 'E2_HIGHCPU_8'
+timeout: '1800s'

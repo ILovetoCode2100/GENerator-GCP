@@ -1,0 +1,68 @@
+name: COMM-B2B-001 - Business Account Setup - Create B2B customer account
+description: 'Create B2B customer account (Module: Commerce, Suite: B2B Commerce)'
+project: D365 Test Automation
+goal: Commerce Tests
+journey: B2B Commerce
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: navigate
+  target: Commerce headquarters
+- type: interact
+  command: click
+  target: Customers
+- type: interact
+  command: click
+  target: All customers
+- type: interact
+  command: click
+  target: New
+- type: interact
+  command: select
+  target: Account type
+  value: Organization
+- type: interact
+  command: write
+  target: Name
+  value: Northwind Traders - $TIMESTAMP
+- type: interact
+  command: write
+  target: Account number
+  value: NW-$TIMESTAMP
+- type: interact
+  command: write
+  target: Tax ID
+  value: 12-3456789
+- type: interact
+  command: select
+  target: Payment terms
+  value: Net 30
+- type: interact
+  command: write
+  target: Credit limit
+  value: '500000'
+- type: interact
+  command: click
+  target: Contacts
+- type: interact
+  command: click
+  target: Add contact
+- type: interact
+  command: write
+  target: Name
+  value: Sarah Buyer
+- type: interact
+  command: write
+  target: Email
+  value: buyer@northwind.com
+- type: interact
+  command: write
+  target: Phone
+  value: 425-555-0200
+- type: interact
+  command: select
+  target: Title
+  value: Purchasing Manager
+- type: interact
+  command: click
+  target: Save

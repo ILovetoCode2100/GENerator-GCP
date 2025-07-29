@@ -1,0 +1,31 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: virtuoso-api-cli
+  namespace: virtuoso-api
+  labels:
+    app: virtuoso-api-cli
+    component: pdb
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: virtuoso-api-cli
+      component: api
+  unhealthyPodEvictionPolicy: AlwaysAllow
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: virtuoso-redis
+  namespace: virtuoso-api
+  labels:
+    app: virtuoso-redis
+    component: pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: virtuoso-redis
+      component: cache
+  unhealthyPodEvictionPolicy: AlwaysAllow

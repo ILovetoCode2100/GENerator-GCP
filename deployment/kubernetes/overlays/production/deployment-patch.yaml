@@ -1,0 +1,122 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: virtuoso-api-cli
+  annotations:
+    # Production deployment annotations
+    fluxcd.io/automated: "false"  # Manual promotion only
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9090"
+    prometheus.io/path: "/metrics"
+spec:
+  replicas: 5  # Base replicas, HPA will scale
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 0  # Zero downtime deployments
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: api
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: ENVIRONMENT
+          value: "production"
+        - name: PRODUCTION_MODE
+          value: "true"
+        - name: GIN_MODE
+          value: "release"
+        ports:
+        - containerPort: 9090
+          protocol: TCP
+          name: metrics
+        resources:
+          requests:
+            cpu: 500m      # Production baseline
+            memory: 1Gi
+          limits:
+            cpu: 2000m     # Allow bursting
+            memory: 2Gi
+        # Strict production probes
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+            httpHeaders:
+            - name: X-Health-Check
+              value: liveness
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+          successThreshold: 1
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http
+            httpHeaders:
+            - name: X-Health-Check
+              value: readiness
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 3
+          successThreshold: 2
+        startupProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 0
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 30
+        # Production security context
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1000
+          capabilities:
+            drop:
+            - ALL
+      # Production node preferences
+      nodeSelector:
+        node-role.kubernetes.io/worker: "true"
+        workload-type: "api"
+      # Strict pod anti-affinity for HA
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - virtuoso-api-cli
+            topologyKey: kubernetes.io/hostname
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - virtuoso-api-cli
+              topologyKey: topology.kubernetes.io/zone
+      # Production tolerations
+      tolerations:
+      - key: "workload-type"
+        operator: "Equal"
+        value: "api"
+        effect: "NoSchedule"
+      # Longer termination for connection draining
+      terminationGracePeriodSeconds: 60
+      # Priority class
+      priorityClassName: high-priority

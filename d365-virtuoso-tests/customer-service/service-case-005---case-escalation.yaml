@@ -1,0 +1,44 @@
+name: SERVICE-CASE-005 - Case Escalation - Escalate case to supervisor
+description: 'Escalate case to supervisor (Module: Customer Service, Suite: Case Management)'
+project: D365 Test Automation
+goal: Customer Service Tests
+journey: Case Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: assert
+  command: text
+  target: SLA Status
+  expected: Warning
+- type: interact
+  command: click
+  target: Escalate
+- type: wait
+  command: time
+  value: 2
+- type: interact
+  command: select
+  target: Escalation Type
+  value: Technical Escalation
+- type: interact
+  command: select
+  target: Escalate To
+  value: Supervisor Queue
+- type: interact
+  command: write
+  target: Escalation Notes
+  value: Customer is premium account, needs immediate attention
+- type: interact
+  command: click
+  target: Escalate
+- type: wait
+  command: time
+  value: 2
+- type: assert
+  command: text
+  target: Owner
+  expected: Supervisor Queue
+- type: assert
+  command: text
+  target: Priority
+  expected: Critical

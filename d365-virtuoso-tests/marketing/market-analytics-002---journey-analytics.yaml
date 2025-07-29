@@ -1,0 +1,27 @@
+name: MARKET-ANALYTICS-002 - Journey Analytics - Analyze customer journey performance
+description: 'Analyze customer journey performance (Module: Marketing, Suite: Marketing Analytics)'
+project: D365 Test Automation
+goal: Marketing Tests
+journey: Marketing Analytics
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Customer journey insights
+- type: interact
+  command: select
+  target: Journey
+  value: New Customer Onboarding
+- type: wait
+  command: time
+  value: 3
+- type: assert
+  command: exists
+  target: Average time to complete
+- type: interact
+  command: click
+  target: Journey paths
+- type: interact
+  command: click
+  target: Goals

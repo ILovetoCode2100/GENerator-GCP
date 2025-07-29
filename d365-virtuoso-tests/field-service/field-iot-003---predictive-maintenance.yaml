@@ -1,0 +1,27 @@
+name: FIELD-IOT-003 - Predictive Maintenance - Review predictive maintenance recommendations
+description: 'Review predictive maintenance recommendations (Module: Field Service, Suite: Connected Field Service (IoT))'
+project: D365 Test Automation
+goal: Field Service Tests
+journey: Connected Field Service (IoT)
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: IoT Analytics
+- type: interact
+  command: click
+  target: Predictive Maintenance
+- type: interact
+  command: click
+  target: HVAC-Unit-102
+- type: interact
+  command: click
+  target: Create Preventive Work Order
+- type: interact
+  command: select
+  target: Schedule Window
+  value: Within 2 Weeks
+- type: interact
+  command: click
+  target: Create

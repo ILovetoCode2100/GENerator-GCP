@@ -1,0 +1,28 @@
+name: FIELD-INV-002 - Inventory Adjustment - Adjust inventory after physical count
+description: 'Adjust inventory after physical count (Module: Field Service, Suite: Inventory Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Inventory
+- click: Adjustments
+- click: New Adjustment
+- select:
+    selector: Warehouse
+    option: North Truck 01
+- select:
+    selector: Reason
+    option: Physical Count
+- click: Add Product
+- select:
+    selector: Product
+    option: HVAC Belt A50
+- write:
+    selector: Quantity
+    text: '-2'
+- write:
+    selector: Notes
+    text: Physical count shows 2 less than system
+- click: Post
+- assert_text:
+    selector: Status
+    expected: Posted
+- comment: Assert that element affects inventory levels

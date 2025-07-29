@@ -1,0 +1,24 @@
+name: SCM-QM-003 - Close Quality Order - Complete quality order processing
+description: 'Complete quality order processing (Module: Supply Chain, Suite: Quality Management)'
+project: D365 Test Automation
+goal: Supply Chain Tests
+journey: Quality Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Close
+- type: interact
+  command: select
+  target: Disposition
+  value: Accept
+- type: interact
+  command: write
+  target: Notes
+  value: All tests passed
+- type: interact
+  command: click
+  target: OK
+- type: navigate
+  target: On-hand inventory

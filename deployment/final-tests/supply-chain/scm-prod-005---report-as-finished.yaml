@@ -1,0 +1,25 @@
+project: 9369
+goal: 14144
+name: SCM-PROD-005 - Report as Finished - Complete production order
+description: 'Complete production order (Module: Supply Chain, Suite: Production Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Report as finished
+- write:
+    selector: Good quantity
+    text: '50'
+- write:
+    selector: Error quantity
+    text: '0'
+- select:
+    selector: Put-away location
+    option: A-05-01
+- comment: Toggle "End job" to on
+- click: OK
+- wait: 3
+- assert_text:
+    selector: Status
+    expected: Reported as finished
+- navigate: On-hand inventory
+- comment: Search for "FG-001"
+- comment: Assert that quantity increased by "50"

@@ -1,0 +1,60 @@
+project: 9369
+goal: 14140
+name: MARKET-EVENT-001 - Create Marketing Event - Set up webinar event with registration
+description: 'Set up webinar event with registration (Module: Marketing, Suite: Event Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Events
+- click: New
+- write:
+    selector: Event name
+    text: Product Launch Webinar - $TIMESTAMP
+- select:
+    selector: Format
+    option: Webinar
+- write:
+    selector: Capacity
+    text: '100'
+- write:
+    selector: Event start date
+    text: $DATE_PLUS_14
+- write:
+    selector: Start time
+    text: 2:00 PM
+- write:
+    selector: Duration (hours)
+    text: '1'
+- select:
+    selector: Venue
+    option: Teams Live Event
+- write:
+    selector: Streaming URL
+    text: https://teams.microsoft.com/meet/...
+- click: Registration
+- select:
+    selector: Registration requirement
+    option: Required
+- select:
+    selector: Event type
+    option: Free
+- comment: Toggle "Enable waitlist" to on
+- write:
+    selector: Waitlist percentage
+    text: '10'
+- click: Speakers
+- click: Add speaker
+- select:
+    selector: Speaker
+    option: Jane Smith
+- write:
+    selector: Title
+    text: Product Manager
+- upload:
+    file: jane-smith.jpg
+    selector: Photo
+- click: Save
+- click: Save
+- store:
+    type: text
+    selector: Event ID
+    variable: $eventId

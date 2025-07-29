@@ -1,0 +1,53 @@
+name: FIN-FA-002 - Run Depreciation - Calculate and post depreciation
+description: 'Calculate and post depreciation (Module: Finance Operations, Suite: Fixed Assets)'
+project: D365 Test Automation
+goal: Finance Operations Tests
+journey: Fixed Assets
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Fixed assets
+- type: interact
+  command: click
+  target: Journal entries
+- type: interact
+  command: click
+  target: Fixed assets journal
+- type: interact
+  command: click
+  target: New
+- type: interact
+  command: select
+  target: Name
+  value: FADep
+- type: interact
+  command: click
+  target: Lines
+- type: interact
+  command: click
+  target: Proposals
+- type: interact
+  command: click
+  target: Depreciation proposal
+- type: interact
+  command: write
+  target: To date
+  value: $MONTH_END_DATE
+- type: interact
+  command: select
+  target: Fixed asset group
+  value: All
+- type: interact
+  command: click
+  target: OK
+- type: wait
+  command: time
+  value: 5
+- type: interact
+  command: click
+  target: Post
+- type: wait
+  command: time
+  value: 3

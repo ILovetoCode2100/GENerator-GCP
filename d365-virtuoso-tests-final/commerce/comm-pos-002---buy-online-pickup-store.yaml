@@ -1,0 +1,31 @@
+name: COMM-POS-002 - Buy Online Pickup Store - Process BOPIS order
+description: 'Process BOPIS order (Module: Commerce, Suite: POS Integration)'
+starting_url: https://[instance].crm.dynamics.com
+steps:
+- navigate: online store
+- comment: Add product to cart
+- click: Checkout
+- select:
+    selector: Delivery method
+    option: Store pickup
+- select:
+    selector: Store
+    option: Contoso Store 001
+- select:
+    selector: Pickup time
+    option: Tomorrow 2:00 PM
+- comment: Complete checkout
+- navigate: Store Commerce
+- click: Online orders
+- comment: Look for "Ready for pickup" orders
+- click: order
+- comment: Assert that customer info displays
+- comment: Assert that items to pick listed
+- click: Customer arrived
+- write:
+    selector: ID verification
+    text: DL-123456
+- click: Release items
+- comment: Get customer signature
+- click: Complete pickup
+- comment: Assert that order status updates

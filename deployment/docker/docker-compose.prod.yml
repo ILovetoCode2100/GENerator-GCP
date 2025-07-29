@@ -1,0 +1,176 @@
+version: '3.8'
+
+services:
+  # FastAPI service (production)
+  api:
+    image: virtuoso-api:latest
+    container_name: virtuoso-api
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      - APP_NAME=Virtuoso API
+      - APP_VERSION=${APP_VERSION:-1.0.0}
+      - DEBUG=false
+      - LOG_LEVEL=INFO
+      - REDIS_URL=redis://redis:6379/0
+      - API_KEY=${API_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      - RATE_LIMIT_REQUESTS=${RATE_LIMIT_REQUESTS:-100}
+      - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-60}
+      - CLI_PATH=/app/bin/api-cli
+      - VIRTUOSO_API_KEY=${VIRTUOSO_API_KEY}
+      - VIRTUOSO_ORG_ID=${VIRTUOSO_ORG_ID}
+      - WORKERS=${API_WORKERS:-4}
+    volumes:
+      - api-logs:/app/logs
+      - cli-binary:/app/bin:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - virtuoso-net
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # Redis for caching and rate limiting
+  redis:
+    image: redis:7-alpine
+    container_name: virtuoso-redis
+    expose:
+      - "6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - virtuoso-net
+    restart: always
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory ${REDIS_MAX_MEMORY:-512mb}
+      --maxmemory-policy allkeys-lru
+      --requirepass ${REDIS_PASSWORD}
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  # PostgreSQL (production)
+  postgres:
+    image: postgres:16-alpine
+    container_name: virtuoso-postgres
+    expose:
+      - "5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - virtuoso-net
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    container_name: virtuoso-nginx
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - nginx-logs:/var/log/nginx
+    depends_on:
+      - api
+    networks:
+      - virtuoso-net
+    restart: always
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 64M
+
+  # CLI builder (build once and extract binary)
+  cli-builder:
+    image: virtuoso-cli-builder:latest
+    container_name: virtuoso-cli-builder
+    volumes:
+      - cli-binary:/output
+    command: |
+      sh -c "
+        cp /app/api-cli /output/api-cli
+        echo 'CLI binary copied to volume'
+      "
+    networks:
+      - virtuoso-net
+    profiles:
+      - build
+
+networks:
+  virtuoso-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  redis-data:
+    driver: local
+  postgres-data:
+    driver: local
+  api-logs:
+    driver: local
+  nginx-logs:
+    driver: local
+  cli-binary:
+    driver: local

@@ -1,0 +1,28 @@
+name: FIELD-INV-003 - Purchase Order Creation - Create PO for low inventory
+description: 'Create PO for low inventory (Module: Field Service, Suite: Inventory Management)'
+project: D365 Test Automation
+goal: Field Service Tests
+journey: Inventory Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Inventory
+- type: interact
+  command: click
+  target: Products
+- type: interact
+  command: click
+  target: Create Purchase Order
+- type: interact
+  command: select
+  target: Vendor
+  value: HVAC Parts Supplier
+- type: interact
+  command: write
+  target: Requested Delivery
+  value: $DATE_PLUS_7
+- type: interact
+  command: click
+  target: Submit

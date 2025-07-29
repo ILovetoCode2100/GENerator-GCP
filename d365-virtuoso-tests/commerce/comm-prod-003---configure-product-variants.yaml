@@ -1,0 +1,42 @@
+name: COMM-PROD-003 - Configure Product Variants - Set up product variants for different configurations
+description: 'Set up product variants for different configurations (Module: Commerce, Suite: Product Management)'
+project: D365 Test Automation
+goal: Commerce Tests
+journey: Product Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Product variants
+- type: interact
+  command: click
+  target: Generate variants
+- type: interact
+  command: select
+  target: Dimension 1
+  value: Color
+- type: interact
+  command: select
+  target: Dimension 2
+  value: Storage
+- type: interact
+  command: click
+  target: Generate
+- type: assert
+  command: exists
+  target: 6 variants created
+- type: interact
+  command: click
+  target: Platinum - 512GB
+- type: interact
+  command: write
+  target: Price
+  value: '1299.99'
+- type: interact
+  command: write
+  target: On-hand quantity
+  value: '50'
+- type: interact
+  command: click
+  target: Save

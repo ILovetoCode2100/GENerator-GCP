@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // CommandValidator validates and auto-corrects command syntax
@@ -259,7 +260,7 @@ func (cv *CommandValidator) validateFlags(cmd *cobra.Command) error {
 
 	// Check each flag that was set
 	invalidFlags := []string{}
-	cmd.Flags().Visit(func(flag *cobra.Flag) {
+	cmd.Flags().Visit(func(flag *pflag.Flag) {
 		if flag.Name == "help" || flag.Name == "config" || flag.Name == "output" || flag.Name == "verbose" {
 			return // Skip global flags
 		}

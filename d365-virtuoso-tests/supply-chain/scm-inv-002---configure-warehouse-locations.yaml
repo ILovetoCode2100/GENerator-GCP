@@ -1,0 +1,90 @@
+name: SCM-INV-002 - Configure Warehouse Locations - Set up warehouse bin locations
+description: 'Set up warehouse bin locations (Module: Supply Chain, Suite: Inventory Management)'
+project: D365 Test Automation
+goal: Supply Chain Tests
+journey: Inventory Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Warehouse management
+- type: interact
+  command: click
+  target: Setup
+- type: interact
+  command: click
+  target: Warehouse
+- type: interact
+  command: click
+  target: Locations
+- type: interact
+  command: click
+  target: New
+- type: interact
+  command: select
+  target: Warehouse
+  value: WH-001
+- type: interact
+  command: write
+  target: Location
+  value: A-01-01
+- type: interact
+  command: select
+  target: Location profile
+  value: BULK
+- type: interact
+  command: select
+  target: Location type
+  value: Floor
+- type: interact
+  command: write
+  target: Max volume
+  value: '10000'
+- type: interact
+  command: write
+  target: Max weight
+  value: '5000'
+- type: interact
+  command: write
+  target: Aisle
+  value: '1'
+- type: interact
+  command: write
+  target: Rack
+  value: '1'
+- type: interact
+  command: write
+  target: Shelf
+  value: '1'
+- type: interact
+  command: write
+  target: Bin
+  value: '1'
+- type: interact
+  command: click
+  target: Save
+- type: assert
+  command: exists
+  target: Location created
+- type: interact
+  command: click
+  target: Location wizard
+- type: interact
+  command: select
+  target: Action
+  value: Create multiple locations
+- type: interact
+  command: write
+  target: Location pattern
+  value: A-[01-05]-[01-10]
+- type: interact
+  command: select
+  target: Location profile
+  value: BULK
+- type: interact
+  command: click
+  target: Create
+- type: assert
+  command: exists
+  target: 50 locations created

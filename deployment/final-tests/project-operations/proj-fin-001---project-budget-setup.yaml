@@ -1,0 +1,43 @@
+project: 9369
+goal: 14142
+name: PROJ-FIN-001 - Project Budget Setup - Configure project budget and cost categories
+description: 'Configure project budget and cost categories (Module: Project Operations, Suite: Project Financials)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Projects
+- click: $projectId
+- click: Budget
+- click: Setup Budget
+- click: Add Budget Line
+- select:
+    selector: Category
+    option: Labor
+- write:
+    selector: Budget Amount
+    text: '200000'
+- write:
+    selector: Budget Hours
+    text: '2000'
+- select:
+    selector: Distribution
+    option: Monthly
+- click: Save
+- click: Add Budget Line
+- select:
+    selector: Category
+    option: Travel & Expenses
+- write:
+    selector: Budget Amount
+    text: '50000'
+- click: Save
+- click: Add Budget Line
+- select:
+    selector: Category
+    option: Materials
+- write:
+    selector: Budget Amount
+    text: '100000'
+- click: Save
+- assert_text:
+    selector: Total Budget
+    expected: '350000'

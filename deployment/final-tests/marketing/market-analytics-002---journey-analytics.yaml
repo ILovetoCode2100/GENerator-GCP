@@ -1,0 +1,20 @@
+project: 9369
+goal: 14140
+name: MARKET-ANALYTICS-002 - Journey Analytics - Analyze customer journey performance
+description: 'Analyze customer journey performance (Module: Marketing, Suite: Marketing Analytics)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Customer journey insights
+- select:
+    selector: Journey
+    option: New Customer Onboarding
+- wait: 3
+- comment: Assert that element "Contacts processed" shows count
+- comment: Assert that element "Success rate" shows percentage
+- assert: Average time to complete
+- click: Journey paths
+- comment: Assert that element shows "Most common path"
+- comment: Assert that element shows "Drop-off points"
+- click: Goals
+- comment: Assert that "Email clicked" goal shows progress
+- comment: Assert that percentage is displayed

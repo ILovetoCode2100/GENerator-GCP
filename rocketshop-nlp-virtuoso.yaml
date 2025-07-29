@@ -1,0 +1,63 @@
+name: "Rocketshop NLP Purchase Test"
+url: "https://rocketshop.virtuoso.qa"
+steps:
+  - action: "navigate"
+    value: "https://rocketshop.virtuoso.qa"
+
+  - action: "assert"
+    value: "Border Not Found"
+
+  - action: "wait"
+    value: 20000
+
+  - action: "click"
+    value: "Add to Bag"
+
+  - action: "click"
+    value: "Shopping Bag"
+
+  - action: "assert"
+    value: "Shopping Bag"
+
+  - action: "click"
+    value: "Go to Checkout"
+
+  - action: "write"
+    value: "John Doe"
+    target: "Full name"
+
+  - action: "write"
+    value: "johndoe@example.com"
+    target: "Email"
+
+  - action: "write"
+    value: "123 Elm Street"
+    target: "Address"
+
+  - action: "write"
+    value: "555-1234"
+    target: "Phone numbers"
+
+  - action: "write"
+    value: "90210"
+    target: "ZIP code"
+
+  - action: "write"
+    value: "4111 1111 1111 1111"
+    target: "Card number"
+
+  - action: "write"
+    value: "234"
+    target: "CVV"
+
+  - action: "click"
+    value: "Confirm and Pay"
+
+  - action: "wait"
+    value: 20000
+
+  - action: "assert"
+    value: "Purchase Confirmed!"
+
+  - action: "click"
+    value: "Download Confirmation"

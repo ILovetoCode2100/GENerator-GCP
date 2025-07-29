@@ -1,0 +1,26 @@
+name: COMM-CX-002 - Product Search and Browse - Test search functionality and filters
+description: 'Test search functionality and filters (Module: Commerce, Suite: Customer Experience)'
+starting_url: https://[instance].crm.dynamics.com
+steps:
+- click: Search
+- comment: Write "Surface Pro" in search box
+- key: '"ENTER"'
+- wait: 2
+- comment: Assert that search results appear
+- assert: Results (15)
+- comment: Assert that product tiles show image, name, price
+- click: Filter
+- select:
+    selector: Price range
+    option: $500-$1000
+- comment: Check "In stock" from "Availability"
+- select:
+    selector: Rating
+    option: 4 stars & up
+- click: Apply filters
+- comment: Assert that results are filtered
+- comment: Assert that result count decreased
+- select:
+    selector: Sort by
+    option: 'Price: Low to High'
+- comment: Assert that products reorder by price

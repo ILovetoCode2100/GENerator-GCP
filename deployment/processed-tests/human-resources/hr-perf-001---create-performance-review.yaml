@@ -1,0 +1,33 @@
+name: HR-PERF-001 - Create Performance Review - Initiate annual performance review
+description: 'Initiate annual performance review (Module: Human Resources, Suite: Performance Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Performance
+- click: Reviews
+- click: New Review
+- select:
+    selector: Review Type
+    option: Annual Review
+- select:
+    selector: Employee
+    option: John Anderson
+- select:
+    selector: Review Period
+    option: '2024'
+- write:
+    selector: Review Date
+    text: $TODAY
+- select:
+    selector: Reviewer
+    option: Sarah Manager
+- click: Add Goals
+- comment: Select "Q1 Project Delivery"
+- comment: Select "Customer Satisfaction"
+- comment: Select "Technical Skills Development"
+- click: Add Selected
+- click: Create Review
+- assert: Review Created
+- store:
+    type: text
+    selector: Review ID
+    variable: $reviewId

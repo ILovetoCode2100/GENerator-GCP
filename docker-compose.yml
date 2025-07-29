@@ -1,0 +1,139 @@
+version: '3.8'
+
+services:
+  # CLI builder service (for development)
+  cli-builder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    container_name: virtuoso-cli-builder
+    volumes:
+      - ./bin:/build/bin
+      - ./pkg:/build/pkg
+      - ./cmd:/build/cmd
+      - go-cache:/go/pkg/mod
+    command: |
+      sh -c "
+        while true; do
+          echo 'Building API CLI...'
+          go build -o /build/bin/api-cli ./cmd/api-cli
+          echo 'Build complete. Watching for changes...'
+          sleep 5
+        done
+      "
+    networks:
+      - virtuoso-net
+
+  # FastAPI service
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile.api
+    container_name: virtuoso-api
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_NAME=Virtuoso API
+      - APP_VERSION=1.0.0
+      - DEBUG=${DEBUG:-false}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - REDIS_URL=redis://redis:6379/0
+      - API_KEY=${API_KEY:-}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-secret-key-change-in-production}
+      - JWT_ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+      - RATE_LIMIT_REQUESTS=100
+      - RATE_LIMIT_WINDOW=60
+      - CLI_PATH=/app/bin/api-cli
+      - VIRTUOSO_API_KEY=${VIRTUOSO_API_KEY}
+      - VIRTUOSO_ORG_ID=${VIRTUOSO_ORG_ID}
+    volumes:
+      - ./api/app:/app/app:ro
+      - ./bin:/app/bin:ro
+      - api-logs:/app/logs
+      - ./examples:/app/examples:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - virtuoso-net
+    restart: unless-stopped
+
+  # Redis for caching and rate limiting
+  redis:
+    image: redis:7-alpine
+    container_name: virtuoso-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - virtuoso-net
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+
+  # PostgreSQL (optional for future use)
+  postgres:
+    image: postgres:16-alpine
+    container_name: virtuoso-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-virtuoso}
+      - POSTGRES_USER=${POSTGRES_USER:-virtuoso}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-virtuoso_password}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-virtuoso}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - virtuoso-net
+    restart: unless-stopped
+    profiles:
+      - with-db
+
+  # CLI runtime (for testing)
+  cli:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: virtuoso-cli
+    environment:
+      - VIRTUOSO_API_KEY=${VIRTUOSO_API_KEY}
+      - VIRTUOSO_ORG_ID=${VIRTUOSO_ORG_ID}
+      - VIRTUOSO_SESSION_ID=${VIRTUOSO_SESSION_ID:-}
+      - DEBUG=${DEBUG:-false}
+    volumes:
+      - ./examples:/app/examples:ro
+      - cli-config:/home/virtuoso/.api-cli
+    networks:
+      - virtuoso-net
+    profiles:
+      - cli-test
+    command: ["list-commands"]
+
+networks:
+  virtuoso-net:
+    driver: bridge
+
+volumes:
+  go-cache:
+  redis-data:
+  postgres-data:
+  api-logs:
+  cli-config:

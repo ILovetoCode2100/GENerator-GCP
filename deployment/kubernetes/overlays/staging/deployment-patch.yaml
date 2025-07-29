@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: virtuoso-api-cli
+spec:
+  replicas: 2  # Moderate replicas for staging
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0  # No downtime during updates
+  template:
+    spec:
+      containers:
+      - name: api
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: ENVIRONMENT
+          value: "staging"
+        - name: STAGING_FEATURES
+          value: "true"
+        resources:
+          requests:
+            cpu: 250m      # Moderate resources
+            memory: 512Mi
+          limits:
+            cpu: 750m
+            memory: 1Gi
+        # Standard probes with moderate settings
+        livenessProbe:
+          initialDelaySeconds: 45
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 5
+        readinessProbe:
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 5
+        startupProbe:
+          failureThreshold: 40
+      # Prefer spreading pods but not required
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 50
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - virtuoso-api-cli
+              topologyKey: kubernetes.io/hostname
+      # Standard termination grace period
+      terminationGracePeriodSeconds: 30

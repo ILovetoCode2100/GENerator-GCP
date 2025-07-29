@@ -1,0 +1,50 @@
+name: SCM-QM-001 - Create Quality Order - Create quality order for incoming inspection
+description: 'Create quality order for incoming inspection (Module: Supply Chain, Suite: Quality Management)'
+project: D365 Test Automation
+goal: Supply Chain Tests
+journey: Quality Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Inventory management
+- type: interact
+  command: click
+  target: Quality management
+- type: interact
+  command: click
+  target: Quality orders
+- type: interact
+  command: click
+  target: New
+- type: interact
+  command: select
+  target: Reference type
+  value: Purchase
+- type: interact
+  command: select
+  target: Reference number
+  value: $purchaseOrder
+- type: interact
+  command: select
+  target: Item number
+  value: $itemNumber
+- type: interact
+  command: write
+  target: Sample size
+  value: '10'
+- type: interact
+  command: select
+  target: Test group
+  value: Incoming inspection
+- type: interact
+  command: click
+  target: OK
+- type: wait
+  command: time
+  value: 2
+- type: store
+  command: text
+  target: Quality order
+  variable: qualityOrder

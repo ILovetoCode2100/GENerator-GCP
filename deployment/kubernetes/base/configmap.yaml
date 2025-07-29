@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: virtuoso-api-config
+  namespace: virtuoso-api
+  labels:
+    app: virtuoso-api-cli
+    component: config
+data:
+  # API Configuration
+  API_BASE_URL: "https://api-app2.virtuoso.qa/api"
+  API_TIMEOUT: "30s"
+  API_MAX_RETRIES: "3"
+
+  # Redis Configuration
+  REDIS_HOST: "virtuoso-redis"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+  REDIS_POOL_SIZE: "10"
+  REDIS_MAX_RETRIES: "3"
+
+  # Logging Configuration
+  LOG_LEVEL: "info"
+  LOG_FORMAT: "json"
+  LOG_TIMESTAMP: "true"
+  LOG_CALLER: "false"
+
+  # Server Configuration
+  SERVER_READ_TIMEOUT: "30s"
+  SERVER_WRITE_TIMEOUT: "30s"
+  SERVER_IDLE_TIMEOUT: "120s"
+  SERVER_MAX_HEADER_BYTES: "1048576"
+
+  # Rate Limiting
+  RATE_LIMIT_ENABLED: "true"
+  RATE_LIMIT_REQUESTS_PER_MINUTE: "60"
+  RATE_LIMIT_BURST: "10"
+
+  # CORS Configuration
+  CORS_ALLOWED_ORIGINS: "*"
+  CORS_ALLOWED_METHODS: "GET,POST,PUT,DELETE,OPTIONS"
+  CORS_ALLOWED_HEADERS: "Authorization,Content-Type"
+  CORS_MAX_AGE: "86400"
+
+  # Health Check Configuration
+  HEALTH_CHECK_INTERVAL: "30s"
+  HEALTH_CHECK_TIMEOUT: "5s"
+
+  # Metrics Configuration
+  METRICS_ENABLED: "true"
+  METRICS_PATH: "/metrics"
+
+  # Feature Flags
+  FEATURE_SESSION_MANAGEMENT: "true"
+  FEATURE_ASYNC_EXECUTION: "true"
+  FEATURE_WEBHOOK_NOTIFICATIONS: "false"

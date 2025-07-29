@@ -1,0 +1,68 @@
+name: FIELD-INV-001 - Inventory Transfer - Transfer parts between warehouses
+description: 'Transfer parts between warehouses (Module: Field Service, Suite: Inventory Management)'
+project: D365 Test Automation
+goal: Field Service Tests
+journey: Inventory Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Inventory
+- type: interact
+  command: click
+  target: Transfers
+- type: interact
+  command: click
+  target: New Transfer
+- type: interact
+  command: select
+  target: Source Warehouse
+  value: Main Warehouse
+- type: interact
+  command: select
+  target: Destination
+  value: North Truck 01
+- type: interact
+  command: write
+  target: Description
+  value: Stock truck for tomorrow's routes
+- type: interact
+  command: click
+  target: Add Product
+- type: interact
+  command: select
+  target: Product
+  value: HVAC Filter 20x25
+- type: interact
+  command: write
+  target: Quantity
+  value: '10'
+- type: interact
+  command: click
+  target: Add
+- type: interact
+  command: click
+  target: Add Product
+- type: interact
+  command: select
+  target: Product
+  value: Refrigerant R410A
+- type: interact
+  command: write
+  target: Quantity
+  value: '5'
+- type: interact
+  command: click
+  target: Add
+- type: interact
+  command: click
+  target: Ship
+- type: assert
+  command: text
+  target: Status
+  expected: Shipped
+- type: store
+  command: text
+  target: Transfer Number
+  variable: transferNumber

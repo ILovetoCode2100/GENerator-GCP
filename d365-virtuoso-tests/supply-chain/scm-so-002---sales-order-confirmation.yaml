@@ -1,0 +1,41 @@
+name: SCM-SO-002 - Sales Order Confirmation - Confirm sales order and check credit
+description: 'Confirm sales order and check credit (Module: Supply Chain, Suite: Sales Order Processing)'
+project: D365 Test Automation
+goal: Supply Chain Tests
+journey: Sales Order Processing
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Sell
+- type: interact
+  command: click
+  target: Credit management
+- type: interact
+  command: click
+  target: Check credit limit
+- type: wait
+  command: time
+  value: 2
+- type: assert
+  command: text
+  target: Credit check
+  expected: Passed
+- stepType: assertValue
+  target: Available credit
+  operator: greaterThan
+  expectedValue: order amount
+- type: interact
+  command: click
+  target: Confirm sales order
+- type: interact
+  command: click
+  target: OK
+- type: wait
+  command: time
+  value: 3
+- type: assert
+  command: text
+  target: Status
+  expected: Confirmed

@@ -1,0 +1,44 @@
+project: 9369
+goal: 14143
+name: HR-PERF-003 - Manager Performance Evaluation - Manager completes performance evaluation
+description: 'Manager completes performance evaluation (Module: Human Resources, Suite: Performance Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- navigate: Team Reviews
+- click: $reviewId
+- click: Start Evaluation
+- click: Q1 Project Delivery
+- assert_text:
+    selector: Self Rating
+    expected: Exceeded
+- select:
+    selector: Manager Rating
+    option: Exceeded
+- write:
+    selector: Manager Comments
+    text: Excellent project management and delivery
+- click: Competencies
+- comment: Rate "Technical Skills" as "4"
+- comment: Rate "Communication" as "5"
+- comment: Rate "Teamwork" as "5"
+- comment: Rate "Innovation" as "4"
+- comment: Rate "Leadership" as "3"
+- click: Overall Rating
+- select:
+    selector: Overall Performance
+    option: Exceeds Expectations
+- write:
+    selector: Summary
+    text: John has been a valuable contributor to the team with consistent high-quality deliverables
+- click: Development Plan
+- write:
+    selector: Development Goal
+    text: Cloud Architecture Certification
+- write:
+    selector: Target Date
+    text: Q3 2024
+- write:
+    selector: Support Needed
+    text: Company will cover certification costs
+- click: Complete Review
+- assert: Review Completed

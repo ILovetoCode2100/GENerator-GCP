@@ -1,0 +1,69 @@
+name: SCM-INV-004 - Inventory Movement - Transfer inventory between locations
+description: 'Transfer inventory between locations (Module: Supply Chain, Suite: Inventory Management)'
+project: D365 Test Automation
+goal: Supply Chain Tests
+journey: Inventory Management
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Inventory management
+- type: interact
+  command: click
+  target: Journal entries
+- type: interact
+  command: click
+  target: Movement
+- type: interact
+  command: click
+  target: New
+- type: interact
+  command: select
+  target: Name
+  value: Movement
+- type: interact
+  command: select
+  target: Warehouse
+  value: WH-001
+- type: interact
+  command: click
+  target: OK
+- type: interact
+  command: click
+  target: Lines
+- type: interact
+  command: click
+  target: New
+- type: interact
+  command: select
+  target: Item number
+  value: $itemNumber
+- type: interact
+  command: write
+  target: Quantity
+  value: '20'
+- type: interact
+  command: select
+  target: From location
+  value: A-01-01
+- type: interact
+  command: select
+  target: To location
+  value: A-02-05
+- type: interact
+  command: write
+  target: Description
+  value: Rebalancing inventory
+- type: interact
+  command: click
+  target: Validate
+- type: assert
+  command: exists
+  target: No errors
+- type: interact
+  command: click
+  target: Post
+- type: assert
+  command: exists
+  target: Posted

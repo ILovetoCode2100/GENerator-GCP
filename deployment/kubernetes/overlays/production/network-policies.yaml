@@ -1,0 +1,157 @@
+# Strict network policies for production
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: virtuoso-api-cli-ingress
+  namespace: virtuoso-api
+  labels:
+    app: virtuoso-api-cli
+    component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: virtuoso-api-cli
+      component: api
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow from ingress controller
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 8000
+  # Allow from monitoring namespace
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    - podSelector:
+        matchLabels:
+          app: prometheus
+    ports:
+    - protocol: TCP
+      port: 9090
+  # Allow internal pod communication
+  - from:
+    - podSelector:
+        matchLabels:
+          app: virtuoso-api-cli
+    ports:
+    - protocol: TCP
+      port: 8000
+  egress:
+  # Allow DNS
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    - podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+  # Allow to Redis
+  - to:
+    - podSelector:
+        matchLabels:
+          app: virtuoso-redis
+    ports:
+    - protocol: TCP
+      port: 6379
+  # Allow external API calls
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 80
+  # Allow to external services (restricted by CIDR if needed)
+  - to:
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 80
+---
+# Redis network policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: virtuoso-redis-ingress
+  namespace: virtuoso-api
+  labels:
+    app: virtuoso-redis
+    component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: virtuoso-redis
+      component: cache
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Only allow from API pods
+  - from:
+    - podSelector:
+        matchLabels:
+          app: virtuoso-api-cli
+          component: api
+    ports:
+    - protocol: TCP
+      port: 6379
+  # Allow Redis cluster communication
+  - from:
+    - podSelector:
+        matchLabels:
+          app: virtuoso-redis
+    ports:
+    - protocol: TCP
+      port: 6379
+    - protocol: TCP
+      port: 16379  # Cluster bus port
+  egress:
+  # Allow DNS
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    - podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+  # Allow Redis cluster communication
+  - to:
+    - podSelector:
+        matchLabels:
+          app: virtuoso-redis
+    ports:
+    - protocol: TCP
+      port: 6379
+    - protocol: TCP
+      port: 16379
+---
+# Default deny all for namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: virtuoso-api
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress

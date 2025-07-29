@@ -1,0 +1,119 @@
+{{- if .Values.prometheusRule.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "virtuoso-api-cli.fullname" . }}
+  labels:
+    {{- include "virtuoso-api-cli.labels" . | nindent 4 }}
+    {{- with .Values.prometheusRule.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  groups:
+    - name: {{ include "virtuoso-api-cli.fullname" . }}
+      interval: 30s
+      rules:
+        # High error rate
+        - alert: VirtuosoAPIHighErrorRate
+          expr: |
+            (
+              sum(rate(http_requests_total{job="{{ include "virtuoso-api-cli.fullname" . }}", status=~"5.."}[5m]))
+              /
+              sum(rate(http_requests_total{job="{{ include "virtuoso-api-cli.fullname" . }}"}[5m]))
+            ) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+            component: api
+          annotations:
+            summary: High error rate detected for Virtuoso API CLI
+            description: "Error rate is {{ $value | humanizePercentage }} for {{ $labels.namespace }}/{{ $labels.pod }}"
+
+        # High latency
+        - alert: VirtuosoAPIHighLatency
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_seconds_bucket{job="{{ include "virtuoso-api-cli.fullname" . }}"}[5m])) by (le)
+            ) > 1
+          for: 5m
+          labels:
+            severity: warning
+            component: api
+          annotations:
+            summary: High latency detected for Virtuoso API CLI
+            description: "95th percentile latency is {{ $value }}s for {{ $labels.namespace }}/{{ $labels.pod }}"
+
+        # Pod down
+        - alert: VirtuosoAPIPodDown
+          expr: |
+            up{job="{{ include "virtuoso-api-cli.fullname" . }}"} == 0
+          for: 5m
+          labels:
+            severity: critical
+            component: api
+          annotations:
+            summary: Virtuoso API CLI pod is down
+            description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} has been down for more than 5 minutes"
+
+        # High memory usage
+        - alert: VirtuosoAPIHighMemoryUsage
+          expr: |
+            (
+              container_memory_working_set_bytes{pod=~"{{ include "virtuoso-api-cli.fullname" . }}-.*", container!=""}
+              /
+              container_spec_memory_limit_bytes{pod=~"{{ include "virtuoso-api-cli.fullname" . }}-.*", container!=""}
+            ) > 0.9
+          for: 5m
+          labels:
+            severity: warning
+            component: api
+          annotations:
+            summary: High memory usage for Virtuoso API CLI
+            description: "Memory usage is {{ $value | humanizePercentage }} for {{ $labels.namespace }}/{{ $labels.pod }}"
+
+        # High CPU usage
+        - alert: VirtuosoAPIHighCPUUsage
+          expr: |
+            (
+              rate(container_cpu_usage_seconds_total{pod=~"{{ include "virtuoso-api-cli.fullname" . }}-.*", container!=""}[5m])
+              /
+              container_spec_cpu_quota{pod=~"{{ include "virtuoso-api-cli.fullname" . }}-.*", container!=""} * 100000
+            ) > 0.9
+          for: 5m
+          labels:
+            severity: warning
+            component: api
+          annotations:
+            summary: High CPU usage for Virtuoso API CLI
+            description: "CPU usage is {{ $value | humanizePercentage }} for {{ $labels.namespace }}/{{ $labels.pod }}"
+
+        {{- if .Values.redis.enabled }}
+        # Redis down
+        - alert: VirtuosoAPIRedisDown
+          expr: |
+            redis_up{job="{{ include "virtuoso-api-cli.fullname" . }}-redis"} == 0
+          for: 5m
+          labels:
+            severity: critical
+            component: redis
+          annotations:
+            summary: Redis is down for Virtuoso API CLI
+            description: "Redis instance {{ $labels.namespace }}/{{ $labels.pod }} has been down for more than 5 minutes"
+
+        # Redis high memory usage
+        - alert: VirtuosoAPIRedisHighMemory
+          expr: |
+            redis_memory_used_bytes{job="{{ include "virtuoso-api-cli.fullname" . }}-redis"} / redis_memory_max_bytes{job="{{ include "virtuoso-api-cli.fullname" . }}-redis"} > 0.9
+          for: 5m
+          labels:
+            severity: warning
+            component: redis
+          annotations:
+            summary: Redis high memory usage for Virtuoso API CLI
+            description: "Redis memory usage is {{ $value | humanizePercentage }} for {{ $labels.namespace }}/{{ $labels.pod }}"
+        {{- end }}
+
+        {{- with .Values.prometheusRule.additionalRules }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+{{- end }}

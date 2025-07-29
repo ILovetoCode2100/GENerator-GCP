@@ -1,0 +1,34 @@
+name: MARKET-EVENT-002 - Create Registration Form - Build custom registration form
+description: 'Build custom registration form (Module: Marketing, Suite: Event Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Registration form
+- click: New form
+- write:
+    selector: Form name
+    text: Webinar Registration
+- comment: Drag "First name" to form canvas
+- comment: Drag "Last name" to form canvas
+- comment: Drag "Email" to form canvas
+- comment: Drag "Company" to form canvas
+- click: Add field
+- select:
+    selector: Field type
+    option: Single line text
+- write:
+    selector: Label
+    text: Job title
+- comment: Toggle "Required" to on
+- click: Add
+- comment: Drag "Consent" field to form
+- write:
+    selector: Consent text
+    text: I agree to receive marketing communications
+- click: Submission
+- write:
+    selector: Success message
+    text: Thank you for registering! You'll receive a confirmation email shortly.
+- comment: Toggle "Send confirmation email" to on
+- click: Save
+- click: Publish
+- assert: Form published

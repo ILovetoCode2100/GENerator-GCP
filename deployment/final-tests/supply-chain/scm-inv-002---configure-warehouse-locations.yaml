@@ -1,0 +1,55 @@
+project: 9369
+goal: 14144
+name: SCM-INV-002 - Configure Warehouse Locations - Set up warehouse bin locations
+description: 'Set up warehouse bin locations (Module: Supply Chain, Suite: Inventory Management)'
+starting_url: https://virtuoso-test.crm.dynamics.com
+steps:
+- click: Warehouse management
+- click: Setup
+- click: Warehouse
+- click: Locations
+- click: New
+- select:
+    selector: Warehouse
+    option: WH-001
+- write:
+    selector: Location
+    text: A-01-01
+- select:
+    selector: Location profile
+    option: BULK
+- select:
+    selector: Location type
+    option: Floor
+- write:
+    selector: Max volume
+    text: '10000'
+- write:
+    selector: Max weight
+    text: '5000'
+- write:
+    selector: Aisle
+    text: '1'
+- write:
+    selector: Rack
+    text: '1'
+- write:
+    selector: Shelf
+    text: '1'
+- write:
+    selector: Bin
+    text: '1'
+- click: Save
+- assert: Location created
+- click: Location wizard
+- select:
+    selector: Action
+    option: Create multiple locations
+- write:
+    selector: Location pattern
+    text: A-[01-05]-[01-10]
+- select:
+    selector: Location profile
+    option: BULK
+- click: Create
+- assert: 50 locations created

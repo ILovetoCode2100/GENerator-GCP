@@ -1,0 +1,6 @@
+functions-framework==3.*
+google-cloud-firestore==2.11.*
+google-cloud-secret-manager==2.16.*
+redis[hiredis]==5.0.*
+aiohttp==3.9.*
+flask==3.0.*

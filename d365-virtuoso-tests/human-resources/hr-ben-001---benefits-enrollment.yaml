@@ -1,0 +1,93 @@
+name: HR-BEN-001 - Benefits Enrollment - New employee benefits enrollment
+description: 'New employee benefits enrollment (Module: Human Resources, Suite: Benefits Administration)'
+project: D365 Test Automation
+goal: Human Resources Tests
+journey: Benefits Administration
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Benefits
+- type: interact
+  command: click
+  target: New Enrollment
+- type: interact
+  command: select
+  target: Employee
+  value: John Anderson
+- type: assert
+  command: text
+  target: Enrollment Window
+  expected: Open
+- type: interact
+  command: click
+  target: Medical Insurance
+- type: interact
+  command: select
+  target: Plan Options
+  value: PPO Plus Plan
+- type: interact
+  command: select
+  target: Coverage Level
+  value: Employee + Spouse
+- type: interact
+  command: write
+  target: Coverage Start Date
+  value: $FIRST_OF_MONTH
+- type: interact
+  command: click
+  target: Add Dependents
+- type: interact
+  command: write
+  target: Dependent Name
+  value: Jane Anderson
+- type: interact
+  command: select
+  target: Relationship
+  value: Spouse
+- type: interact
+  command: write
+  target: SSN
+  value: 987-65-4321
+- type: interact
+  command: click
+  target: Save
+- type: interact
+  command: click
+  target: Dental Insurance
+- type: interact
+  command: select
+  target: Plan
+  value: Standard Dental
+- type: interact
+  command: select
+  target: Coverage Level
+  value: Employee + Spouse
+- type: interact
+  command: click
+  target: Select
+- type: interact
+  command: click
+  target: 401k Retirement
+- type: interact
+  command: write
+  target: Employee Contribution %
+  value: '6'
+- type: interact
+  command: select
+  target: Investment Option
+  value: Target Date 2055
+- type: assert
+  command: text
+  target: Company Match
+  expected: 4%
+- type: interact
+  command: click
+  target: Calculate Costs
+- type: interact
+  command: click
+  target: Submit Enrollment
+- type: assert
+  command: exists
+  target: Enrollment Confirmed

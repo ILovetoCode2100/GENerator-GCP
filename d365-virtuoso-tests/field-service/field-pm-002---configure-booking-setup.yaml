@@ -1,0 +1,63 @@
+name: FIELD-PM-002 - Configure Booking Setup - Define recurring maintenance schedule
+description: 'Define recurring maintenance schedule (Module: Field Service, Suite: Preventive Maintenance)'
+project: D365 Test Automation
+goal: Field Service Tests
+journey: Preventive Maintenance
+infrastructure:
+  starting_url: https://[instance].crm.dynamics.com
+steps:
+- type: interact
+  command: click
+  target: Booking Setups
+- type: interact
+  command: click
+  target: New Booking Setup
+- type: interact
+  command: write
+  target: Name
+  value: Monthly HVAC Inspection
+- type: interact
+  command: select
+  target: Recurrence Pattern
+  value: Monthly
+- type: interact
+  command: select
+  target: Day of Month
+  value: 1st Monday
+- type: interact
+  command: select
+  target: Preferred Time
+  value: 9:00 AM
+- type: interact
+  command: select
+  target: Duration
+  value: 2 hours
+- type: interact
+  command: select
+  target: Generate Work Order Days in Advance
+  value: 30 days
+- type: interact
+  command: select
+  target: Preferred Resource
+  value: HVAC Team
+- type: interact
+  command: click
+  target: Save
+- type: interact
+  command: click
+  target: New Booking Setup
+- type: interact
+  command: write
+  target: Name
+  value: Quarterly Deep Service
+- type: interact
+  command: select
+  target: Recurrence
+  value: Every 3 Months
+- type: interact
+  command: select
+  target: Duration
+  value: 4 hours
+- type: interact
+  command: click
+  target: Save
