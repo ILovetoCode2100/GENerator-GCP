@@ -104,3 +104,4 @@ final-test-*.log
 step-verification-*.log
 test-output.log
 full-test-output.log
+__pycache__/

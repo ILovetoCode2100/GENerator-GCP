@@ -13,43 +13,116 @@ from pydantic import BaseModel, Field
 from ..config import settings
 from ..utils.logger import get_logger
 from ..services.auth_service import AuthUser
-from ..services.cli_executor import CLIExecutor, CommandContext, OutputFormat
 from ..middleware.auth import get_authenticated_user
 from ..middleware.rate_limit import rate_limit, RateLimitStrategy
 
-# GCP imports
-if settings.is_gcp_enabled:
-    from ..gcp.cloud_tasks_client import CloudTasksClient
-    from ..gcp.cloud_storage_client import CloudStorageClient
-    from ..gcp.firestore_client import FirestoreClient
-    from ..gcp.pubsub_client import PubSubClient
-
-router = APIRouter()
+# Initialize logger first
 logger = get_logger(__name__)
 
-# Initialize CLI executor
-try:
-    cli_executor = CLIExecutor()
-    logger.info(f"CLI executor initialized successfully at {cli_executor.cli_path}")
-except Exception as e:
-    logger.error(f"Failed to initialize CLI executor: {e}")
-    cli_executor = None
+# CLI executor imports with error handling
+CLIExecutor = None
+CommandContext = None
+OutputFormat = None
 
-# Initialize GCP clients if enabled
+try:
+    from ..services.cli_executor import CLIExecutor, CommandContext, OutputFormat
+except ImportError as e:
+    logger.warning(f"Failed to import CLI executor components: {e}")
+    # Define fallback classes if needed
+    class DummyCommandContext:
+        def __init__(self, **kwargs):
+            pass
+    
+    class DummyOutputFormat:
+        JSON = "json"
+    
+    CommandContext = DummyCommandContext if CommandContext is None else CommandContext
+    OutputFormat = DummyOutputFormat if OutputFormat is None else OutputFormat
+
+# GCP imports with error handling
+CloudTasksClient = None
+CloudStorageClient = None
+FirestoreClient = None
+PubSubClient = None
+
+if settings.is_gcp_enabled:
+    try:
+        from ..gcp.cloud_tasks_client import CloudTasksClient
+    except ImportError as e:
+        logger.warning(f"Failed to import CloudTasksClient: {e}")
+        CloudTasksClient = None
+    
+    try:
+        from ..gcp.cloud_storage_client import CloudStorageClient
+    except ImportError as e:
+        logger.warning(f"Failed to import CloudStorageClient: {e}")
+        CloudStorageClient = None
+    
+    try:
+        from ..gcp.firestore_client import FirestoreClient
+    except ImportError as e:
+        logger.warning(f"Failed to import FirestoreClient: {e}")
+        FirestoreClient = None
+    
+    try:
+        from ..gcp.pubsub_client import PubSubClient
+    except ImportError as e:
+        logger.warning(f"Failed to import PubSubClient: {e}")
+        PubSubClient = None
+
+router = APIRouter()
+
+# Initialize CLI executor with comprehensive error handling
+cli_executor = None
+if CLIExecutor is not None:
+    try:
+        cli_executor = CLIExecutor()
+        logger.info(f"CLI executor initialized successfully at {cli_executor.cli_path}")
+    except ImportError as e:
+        logger.warning(f"CLI executor import failed (dependencies missing): {e}")
+    except FileNotFoundError as e:
+        logger.warning(f"CLI executor binary not found: {e}")
+    except PermissionError as e:
+        logger.warning(f"CLI executor permission error: {e}")
+    except Exception as e:
+        logger.warning(f"Failed to initialize CLI executor: {e}")
+else:
+    logger.warning("CLI executor class not available, skipping initialization")
+
+# Initialize GCP clients if enabled with individual error handling
 tasks_client = None
 storage_client = None
 firestore_client = None
 pubsub_client = None
 
 if settings.is_gcp_enabled:
-    if settings.USE_CLOUD_TASKS:
-        tasks_client = CloudTasksClient()
-    if settings.USE_CLOUD_STORAGE:
-        storage_client = CloudStorageClient()
-    if settings.USE_FIRESTORE:
-        firestore_client = FirestoreClient()
-    if settings.USE_PUBSUB:
-        pubsub_client = PubSubClient()
+    if settings.USE_CLOUD_TASKS and CloudTasksClient is not None:
+        try:
+            tasks_client = CloudTasksClient()
+            logger.info("Cloud Tasks client initialized successfully")
+        except Exception as e:
+            logger.warning(f"Failed to initialize Cloud Tasks client: {e}")
+    
+    if settings.USE_CLOUD_STORAGE and CloudStorageClient is not None:
+        try:
+            storage_client = CloudStorageClient()
+            logger.info("Cloud Storage client initialized successfully")
+        except Exception as e:
+            logger.warning(f"Failed to initialize Cloud Storage client: {e}")
+    
+    if settings.USE_FIRESTORE and FirestoreClient is not None:
+        try:
+            firestore_client = FirestoreClient()
+            logger.info("Firestore client initialized successfully")
+        except Exception as e:
+            logger.warning(f"Failed to initialize Firestore client: {e}")
+    
+    if settings.USE_PUBSUB and PubSubClient is not None:
+        try:
+            pubsub_client = PubSubClient()
+            logger.info("PubSub client initialized successfully")
+        except Exception as e:
+            logger.warning(f"Failed to initialize PubSub client: {e}")
 
 
 class TestDefinition(BaseModel):

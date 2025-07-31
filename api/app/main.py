@@ -21,11 +21,7 @@ except ImportError:
     # OpenTelemetry is optional
     opentelemetry = None
 
-# Import routers directly to avoid circular import
-from app.routes import commands
-from app.routes import tests  
-from app.routes import sessions
-from app.routes import health
+# Routers are imported where needed to avoid circular imports
 from app.config import settings
 from app.utils.logger import setup_logger
 
@@ -455,10 +451,15 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
 
 
 # Include routers
-app.include_router(health.router, prefix="/health", tags=["health"])
-app.include_router(commands.router, prefix="/api/v1/commands", tags=["commands"])
-app.include_router(tests.router, prefix="/api/v1/tests", tags=["tests"])
-app.include_router(sessions.router, prefix="/api/v1/sessions", tags=["sessions"])
+from app.routes.health import router as health_router
+from app.routes.commands import router as commands_router
+from app.routes.tests import router as tests_router
+from app.routes.sessions import router as sessions_router
+
+app.include_router(health_router, prefix="/health", tags=["health"])
+app.include_router(commands_router, prefix="/api/v1/commands", tags=["commands"])
+app.include_router(tests_router, prefix="/api/v1/tests", tags=["tests"])
+app.include_router(sessions_router, prefix="/api/v1/sessions", tags=["sessions"])
 
 
 # Root endpoint

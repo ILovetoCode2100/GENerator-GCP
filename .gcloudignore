@@ -1,27 +1,12 @@
-# Include everything by default
-# This file overrides the default gcloudignore behavior
-
-# Exclude only specific files
+# Ignore files for Cloud Build
 .git
 .gitignore
 *.md
-docs/
-test-*
-*_test.go
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
 .DS_Store
-Thumbs.db
-*.log
-tmp/
-temp/
-*.tmp
-
-# Explicitly include bin directory and api directory
-!bin/
-!bin/api-cli
-!api/
-!api/**
+test-*
+test_*
+examples/
+docs/
+deployment-info.txt
+*.sh
+!api/app/routes/tests.py

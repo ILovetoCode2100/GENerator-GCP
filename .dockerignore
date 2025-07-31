@@ -8,7 +8,8 @@ LICENSE
 docs/
 
 # Test files
-test-*
+test-*.sh
+test-*.py
 *_test.go
 test-scripts/
 test-commands/

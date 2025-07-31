@@ -60,6 +60,7 @@ RUN chmod +x /bin/api-cli
 # Copy API code maintaining module structure
 COPY api/app /app/app
 COPY api/requirements.txt /app/requirements.txt
+COPY api/debug_startup.py /app/debug_startup.py
 
 # Create necessary directories
 RUN mkdir -p /root/.api-cli /var/log/api
@@ -67,9 +68,10 @@ RUN mkdir -p /root/.api-cli /var/log/api
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    API_HOST=0.0.0.0 \
-    API_PORT=8080 \
-    CLI_BINARY_PATH=/bin/api-cli \
+    PYTHONPATH=/app:$PYTHONPATH \
+    HOST=0.0.0.0 \
+    PORT=8080 \
+    CLI_PATH=/bin/api-cli \
     API_PATH=/api \
     LOG_DIR=/var/log/api \
     CONFIG_DIR=/root/.api-cli
@@ -82,4 +84,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
 EXPOSE 8080
 
 # Run the FastAPI app
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "1"]
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
