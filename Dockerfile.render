@@ -2,7 +2,7 @@
 # Combines both CLI and API in a single container
 
 # Stage 1: Build Go CLI
-FROM golang:1.21-alpine AS cli-builder
+FROM golang:1.24-alpine AS cli-builder
 
 # Install build dependencies
 RUN apk add --no-cache git make
