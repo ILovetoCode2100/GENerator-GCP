@@ -2,172 +2,221 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Project Overview
+
+This repository contains a multi-deployment Virtuoso API proxy implementation that simplifies and standardizes access to the Virtuoso test automation platform. The project supports three deployment targets:
+- **AWS**: CDK-based Lambda + API Gateway deployment
+- **GCP**: Cloud Run + Cloud Functions deployment
+- **Local/Docker**: FastAPI-based REST service
+
 ## Commands
 
-### Build & Development
+### AWS CDK Deployment
 
 ```bash
-# Build the CLI binary
+# Navigate to CDK directory
+cd cdk
+
+# Install dependencies
+npm install
+
+# Build TypeScript
+npm run build
+
+# Deploy stack (requires proper AWS credentials)
+npm run deploy
+
+# Other CDK commands
+npm run synth    # Synthesize CloudFormation template
+npm run diff     # Show deployment differences
+npm run destroy  # Remove all resources
+npm run test     # Run CDK tests
+```
+
+### GCP Deployment
+
+```bash
+# Navigate to GCP directory
+cd gcp
+
+# Quick deployment (interactive wizard)
+./deploy-wizard.sh
+
+# One-click deployment
+./one-click-deploy.sh
+
+# Manual deployment steps
+./setup-project.sh --project-id PROJECT_ID --create-project
+./secrets-setup.sh
+./deploy.sh --skip-monitoring
+
+# Local development
+./deploy-local.sh
+
+# Rollback if needed
+./rollback.sh --type all
+```
+
+### Local API Development
+
+```bash
+# Navigate to API directory
+cd api
+
+# Install Python dependencies
+pip install -r requirements.txt
+
+# Run development server
+uvicorn app.main:app --reload --port 8000
+
+# Run tests
+pytest
+pytest --cov=app tests/
+
+# Docker deployment
+docker build -f Dockerfile.api -t virtuoso-api .
+docker run -p 8000:8000 --env-file .env virtuoso-api
+```
+
+### CLI Binary Commands
+
+```bash
+# Build CLI binary
 make build
 
-# Run all quality checks and build
+# Run quality checks
 make check
-
-# Format code
+make lint
 make fmt
 
-# Run linter
-make lint
-
-# Clean build artifacts
-make clean
-```
-
-### Testing
-
-```bash
-# Unit tests
+# Run tests
 make test
-go test -v ./pkg/api-cli/commands/...  # Test specific package
+make test-commands
+make test-library
 
-# Integration tests (requires API access)
-./test-scripts/test-all-69-commands.sh [checkpoint-id]    # Full test suite
-./test-all-commands-simple.sh [checkpoint-id]              # Quick validation
-./test-commands/test-yaml-end-to-end.sh                   # YAML functionality
-
-# Make targets for specific tests
-make test-commands       # Test CLI commands
-make test-library        # Test library commands
-```
-
-### Common Development Tasks
-
-```bash
-# Create and run a test
-./bin/api-cli run-test test.yaml
-
-# Use session context for multiple commands
-export VIRTUOSO_SESSION_ID=12345
-./bin/api-cli step-navigate to "https://example.com"
-./bin/api-cli step-interact click "button"
-
-# Get command help
-./bin/api-cli --help
-./bin/api-cli step-assert --help
+# Integration tests
+./test-scripts/test-all-69-commands.sh [checkpoint-id]
+./test-all-commands-simple.sh [checkpoint-id]
 ```
 
 ## Architecture
 
-### Codebase Structure
-
-The project follows a consolidated architecture where related commands are grouped into single files:
-
-- **Entry Point**: `cmd/api-cli/main.go` - CLI initialization
-- **Core Package**: `pkg/api-cli/` - Main implementation
-  - `client/` - API client with 120+ methods using context-aware patterns
-  - `commands/` - ~20 files (reduced from 35+) containing all CLI commands
-  - `config/` - Configuration management using Viper
-  - `constants/` - Shared constants and types
-  - `yaml-layer/` - YAML test definition parsing and execution
-
-### Command Consolidation Pattern
-
-Commands are organized into logical groups to reduce code duplication:
-
-1. **`interaction_commands.go`** - All user interactions (click, write, mouse, select)
-2. **`browser_commands.go`** - Browser operations (navigate, scroll, window)
-3. **`list.go`** - Generic list operations for all entities
-4. **`project_management.go`** - CRUD operations for projects/goals/journeys
-5. **`execution_management.go`** - Test execution workflow
-
-Individual step commands remain in separate files (`step_*.go`) for clarity.
-
-### Key Patterns
-
-#### Command Structure
-
-All commands follow the unified positional syntax:
+### Repository Structure
 
 ```
-api-cli <command> <subcommand> [checkpoint-id] <args...> [position]
+api-lambdav2/
+├── cdk/                    # AWS CDK infrastructure
+│   ├── lib/               # CDK stack definitions
+│   ├── lambda/            # Lambda function handlers
+│   └── scripts/           # Deployment scripts
+├── gcp/                    # Google Cloud Platform deployment
+│   ├── terraform/         # Infrastructure as code
+│   ├── functions/         # Cloud Functions
+│   └── cloudbuild/        # CI/CD configurations
+├── api/                    # FastAPI REST service
+│   ├── app/               # Application code
+│   │   ├── routes/        # API endpoints
+│   │   ├── services/      # Business logic
+│   │   └── middleware/    # Request processing
+│   └── tests/             # API tests
+├── pkg/api-cli/           # Go CLI implementation
+│   ├── client/            # Virtuoso API client
+│   ├── commands/          # CLI commands
+│   └── yaml-layer/        # YAML test parser
+└── examples/              # Usage examples
 ```
 
-Commands implement the `StepCommand` interface and extend `BaseCommand` for shared functionality.
+### Deployment Architecture
 
-#### Session Context
+#### AWS Architecture
+- **API Gateway (HTTP API)**: Cost-efficient routing layer at ~$1/million requests
+- **Lambda Functions**: One function per endpoint, Node.js 20.x on ARM64
+- **Secrets Manager**: Secure storage for Virtuoso API keys
+- **CloudWatch**: Logging and monitoring
+- **Custom Authorizer**: Bearer token validation
 
-The CLI supports session-based checkpoint management via `VIRTUOSO_SESSION_ID` environment variable, eliminating the need to specify checkpoint IDs repeatedly.
+#### GCP Architecture
+- **Cloud Run**: Main API service with auto-scaling
+- **Cloud Functions**: Background tasks and webhooks
+- **Firestore**: Session and test data storage
+- **Secret Manager**: Credential management
+- **Cloud Build**: CI/CD pipeline
+- **Monitoring**: Integrated logging and metrics
 
-#### Error Handling
+#### Local/Docker Architecture
+- **FastAPI**: High-performance Python web framework
+- **Uvicorn**: ASGI server
+- **Session Management**: In-memory or Redis-backed
+- **Rate Limiting**: Configurable per-endpoint limits
 
-Structured error types (`APIError`, `ClientError`) with consistent exit codes:
+### Key Design Patterns
 
-- 0: Success
-- 1: General error
-- 3: Authentication error
-- 5: Not found error
+1. **Proxy Pattern**: All deployments act as a simplified proxy to the complex Virtuoso API
+2. **Request Simplification**: Strip unnecessary fields, provide defaults
+3. **Response Minimization**: Return only essential data
+4. **Unified Error Handling**: Consistent error format across deployments
+5. **Session Context**: Maintain state across multiple API calls
 
-#### Output Formats
+## API Simplification Strategy
 
-All commands support multiple output formats via the `--output` flag:
+### Example: Goal Execution Endpoint
 
-- `human` - Default readable format
-- `json` - Structured data
-- `yaml` - Configuration format
-- `ai` - AI-optimized with context
+**Original Virtuoso API Request**:
+```json
+{
+  "goalId": "123",
+  "startingUrl": "https://example.com",
+  "includeDataDrivenJourneys": true,
+  "includeDisabledJourneys": false,
+  "parallelExecution": true,
+  "maxParallelExecutions": 5,
+  "environment": "production",
+  "initialData": {...},
+  "headers": {...},
+  "cookies": [...]
+}
+```
 
-### YAML Test Layer
+**Simplified API Request**:
+```json
+{
+  "startingUrl": "https://example.com"  // Optional, all other fields use defaults
+}
+```
 
-The `run-test` command provides a simplified interface for test creation:
-
-- Auto-creates all required infrastructure (project, goal, journey, checkpoint)
-- Supports multiple input formats (simplified, extended, compact)
-- Progressive disclosure from simple to complex test definitions
-- Comprehensive validation with helpful error messages
-
-## Important Implementation Details
-
-### API Client
-
-- All methods are context-aware for timeout/cancellation support
-- Automatic retry logic for transient failures
-- Structured response handling with type safety
-- Session management handled transparently
-
-### Command Validation
-
-The CLI includes an intelligent validator that:
-
-- Auto-corrects common syntax errors (missing hyphens, deprecated commands)
-- Validates flag compatibility
-- Provides migration guidance for deprecated features
-- Handles format conversions automatically
-
-### Variable Handling
-
-- Variables in commands should NOT include the `$` prefix (added automatically by the API)
-- Store operations create variables that can be referenced in subsequent steps
-- Variable names should be descriptive and follow camelCase convention
-
-### Known Limitations
-
-1. File upload commands only support URLs, not local file paths
-2. Some browser navigation commands (back, forward, refresh) are not supported by the API
-3. Window close and frame switching by index/name are not available
-4. Library commands use checkpoint IDs (not journey IDs) for the `add` operation
+**Simplified Response**:
+```json
+{
+  "jobId": "job123",
+  "status": "started"
+}
+```
 
 ## Configuration
 
-The CLI uses a hierarchical configuration system:
+### AWS Configuration
+```bash
+# Required IAM permissions (see iam-policy-virtuoso-cdk.json)
+- CloudFormation full access
+- Lambda management
+- API Gateway v2 management
+- IAM role creation
+- S3 for CDK assets
+- Secrets Manager access
+```
 
-1. CLI flags (highest priority)
-2. Environment variables
-3. Config file (`~/.api-cli/virtuoso-config.yaml`)
-4. Default values
+### GCP Configuration
+```bash
+# Environment variables
+export GCP_PROJECT_ID="your-project-id"
+export VIRTUOSO_API_KEY="your-api-key"
+export VIRTUOSO_ORG_ID="your-org-id"
+export GCP_REGION="us-central1"
+```
 
-Key configuration:
-
+### Local API Configuration
 ```yaml
+# virtuoso-config.yaml
 api:
   auth_token: your-api-key-here
   base_url: https://api-app2.virtuoso.qa/api
@@ -175,62 +224,115 @@ organization:
   id: "2242"
 ```
 
-## Testing Guidelines
+## Common Development Tasks
 
-When adding new features:
+### Adding a New Endpoint
 
-1. Add unit tests in the appropriate `*_test.go` file
-2. Update integration tests in `test-scripts/test-all-69-commands.sh`
-3. Test all output formats (human, json, yaml, ai)
-4. Verify session context support
-5. Ensure backward compatibility with legacy syntax
-6. Add examples to `examples/` directory
+1. **AWS Lambda Handler**:
+   ```typescript
+   // Copy pattern from cdk/lambda/handlers/execute-goal.ts
+   // Implement request simplification
+   // Add to endpoint list in virtuoso-api-stack.ts
+   ```
 
-## Recent Changes (January 2025)
+2. **GCP Function**:
+   ```go
+   // Add handler in functions/
+   // Update terraform configuration
+   // Deploy with ./deploy.sh
+   ```
 
-### Major Improvements
+3. **FastAPI Route**:
+   ```python
+   # Add route in api/app/routes/
+   # Implement service in api/app/services/
+   # Add tests in api/tests/
+   ```
 
-- **Context Support**: 80+ context-aware methods for better reliability
-- **Command Validator**: Auto-correction of common syntax errors
-- **Unified Test Runner**: `run-test` command for simplified test creation
-- **Code Consolidation**: 43% file reduction through logical grouping
-- **100% Success Rate**: All 69 commands tested and working
+### Testing Changes
 
-### Migration Notes
+```bash
+# Test specific endpoint locally
+curl -X POST http://localhost:8000/api/v1/commands/execute \
+  -H "X-API-Key: your-key" \
+  -H "Content-Type: application/json" \
+  -d '{"command": "step-navigate", "args": ["to", "https://example.com"]}'
 
-- Dialog commands now use hyphenated syntax (e.g., `dismiss-alert` instead of `alert accept`)
-- Mouse and select commands moved under `step-interact` parent command
-- Wait time commands expect milliseconds (auto-conversion from seconds)
-- Store commands simplified (e.g., `store element-text` → `store text`)
+# Run full test suite
+./test-scripts/test-all-69-commands.sh
 
-## Update: 2025-07-29 20:17:20
-
-### Changes Summary
-
-- Added: 121 files
-- Modified: 1 files
-- Deleted: 0 files
-
-### Repository: virtuoso-GENerator
-
-### Modified Components
-
-```
-CLAUDE.md                                          | 554 ++++++---------------
- pkg/api-cli/client/client.go                       |  41 +-
- pkg/api-cli/client/client_fixes.go                 | 115 -----
- pkg/api-cli/client/execute_goal_robust.go          | 205 --------
- pkg/api-cli/client/response_handler.go             |  10 +-
- pkg/api-cli/client/response_handler_integration.go | 209 --------
- pkg/api-cli/commands/command_validator.go          |   3 +-
- pkg/api-cli/commands/execute_goal_fixed.go         | 152 ------
- pkg/api-cli/commands/manage_lists.go               |   6 +-
- pkg/api-cli/commands/register.go                   |   4 +-
- 10 files changed, 180 insertions(+), 1119 deletions(-)
+# Test YAML functionality
+./bin/api-cli run-test examples/simple-login-test.yaml
 ```
 
-### Notes for Claude Code
+## Deployment Considerations
 
-- Automated commit at 2025-07-29 20:17:20
-- Security scan passed
-- All changes reviewed
+### AWS Deployment Issues
+- Requires extensive IAM permissions
+- CDK bootstrap needed (can fail with limited permissions)
+- Use `virtuoso-dev` profile or create new IAM user
+- Alternative: Export CDK template and deploy manually
+
+### GCP Deployment (Recommended)
+- Simpler permission model
+- Built-in monitoring and logging
+- Free tier available
+- One-click deployment scripts
+
+### Production Checklist
+1. Set appropriate API rate limits
+2. Configure CORS for your domains
+3. Enable monitoring and alerting
+4. Rotate API keys regularly
+5. Use custom domain with SSL
+6. Set up backup procedures
+7. Configure auto-scaling limits
+
+## Known Limitations
+
+1. **File Uploads**: Only URL-based uploads supported (no local files)
+2. **Browser Navigation**: `back`, `forward`, `refresh` not supported by API
+3. **Window Operations**: Close and frame switching by index/name unavailable
+4. **CDK Bootstrap**: May fail with insufficient IAM permissions
+5. **Rate Limits**: Virtuoso API has undocumented rate limits
+
+## Troubleshooting
+
+### AWS CDK Errors
+```bash
+# TypeScript compilation errors
+npm run build  # Check for syntax errors
+
+# Permission errors
+aws sts get-caller-identity  # Verify credentials
+# Use admin credentials or fix IAM permissions
+
+# Bootstrap failures
+# Delete failed stack in CloudFormation console
+# Re-run with proper permissions
+```
+
+### GCP Deployment Errors
+```bash
+# Check prerequisites
+./pre-deployment-check.sh
+
+# View logs
+gcloud logging read "severity>=ERROR" --limit 50
+
+# Check service status
+gcloud run services describe virtuoso-api-cli --region us-central1
+```
+
+### API Development Issues
+```bash
+# Module import errors
+pip install -r requirements.txt
+
+# CLI binary not found
+export CLI_PATH=/path/to/api-cli
+# Or copy binary to expected location
+
+# Session errors
+# Check VIRTUOSO_SESSION_ID environment variable
+```

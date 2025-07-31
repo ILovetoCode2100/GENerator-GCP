@@ -1,0 +1,14 @@
+{
+  "name": "virtuoso-lambda-functions",
+  "version": "1.0.0",
+  "description": "Lambda functions for Virtuoso API proxy",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "@aws-sdk/client-secrets-manager": "^3.478.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.130",
+    "@types/node": "^20.10.5",
+    "typescript": "^5.3.3"
+  }
+}
