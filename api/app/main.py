@@ -21,8 +21,11 @@ except ImportError:
     # OpenTelemetry is optional
     opentelemetry = None
 
-# Import routers
-from app.routes import commands, tests, sessions, health
+# Import routers directly to avoid circular import
+from app.routes import commands
+from app.routes import tests  
+from app.routes import sessions
+from app.routes import health
 from app.config import settings
 from app.utils.logger import setup_logger
 
@@ -66,7 +69,6 @@ async def lifespan(app: FastAPI):
 
     # Import monitoring utilities
     from app.utils.monitoring import start_metrics_background_task
-    from app.routes.health import check_cli_availability, check_redis_connection
 
     # Validate GCP settings if enabled
     if settings.is_gcp_enabled:
@@ -190,6 +192,7 @@ async def lifespan(app: FastAPI):
     logger.info("Performing startup checks...")
 
     # Check CLI binary
+    from app.routes.health import check_cli_availability
     cli_check = await check_cli_availability()
     if cli_check.get("healthy", False):
         logger.info(
@@ -204,6 +207,7 @@ async def lifespan(app: FastAPI):
 
     # Check Redis if rate limiting is enabled and not using Firestore
     if settings.RATE_LIMIT_ENABLED and not settings.USE_FIRESTORE:
+        from app.routes.health import check_redis_connection
         redis_check = await check_redis_connection()
         if redis_check.get("healthy", False):
             logger.info(f"Redis connected: {redis_check.get('version', 'unknown')}")
