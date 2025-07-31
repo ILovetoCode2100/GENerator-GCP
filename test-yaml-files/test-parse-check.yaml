@@ -1,5 +1,0 @@
-name: "Parse Check Test"
-project: 8753
-starting_url: "https://example.com"
-steps:
-  - navigate: "https://example.com"

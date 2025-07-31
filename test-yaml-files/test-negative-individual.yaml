@@ -1,6 +1,0 @@
-name: "Test Invalid Navigate Command"
-description: "Test navigate with invalid URL"
-project: "12345" # Use a valid project ID
-starting_url: "https://example.com"
-steps:
-  - navigate: "not-a-valid-url" # Should fail with invalid URL error

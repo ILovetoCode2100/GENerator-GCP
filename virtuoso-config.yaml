@@ -1,5 +1,0 @@
-api:
-  auth_token: ${VIRTUOSO_API_TOKEN}
-  base_url: https://api-app2.virtuoso.qa/api
-organization:
-  id: "2242"

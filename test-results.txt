@@ -1,9 +1,0 @@
-Virtuoso Test Results
-====================
-
-✗ User Login Test (0s)
-  ERROR: Execution error: step 1 failed: API error NOT_FOUND (status 404): {"success":false,"error":{"code":"2500","message":"Checkpoint not found"}}
-  WARNING: Possible hardcoded credential
-
-
-Summary: 0 passed, 1 failed

@@ -2,235 +2,125 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Project Overview
+
+This repository contains a Lambda API Generator for the Virtuoso API, which converts Virtuoso API endpoints into AWS Lambda functions with automated deployment.
+
+- **Purpose**: Transform Virtuoso API endpoints into grouped AWS Lambda functions
+- **Main Components**: Lambda function generator, deployment scripts, test suite
+- **Language**: JavaScript (Node.js) for Lambda functions
+- **Infrastructure**: AWS Lambda, API Gateway, SSM Parameter Store, CloudFormation/SAM
+
 ## Commands
 
-### Build & Development
+### Build and Generate
 
 ```bash
-# Build the CLI binary
-make build
+# Generate Lambda functions from Virtuoso API endpoints
+node generate-lambdas.js
 
-# Run all quality checks and build
-make check
+# Update all Lambda functions with latest code
+node update-all-lambdas.js
 
-# Format code
-make fmt
-
-# Run linter
-make lint
-
-# Clean build artifacts
-make clean
+# Quick start - generates everything
+./QUICK_START_LAMBDA.sh
 ```
 
-### Testing
+### Deploy
 
 ```bash
-# Unit tests
-make test
-go test -v ./pkg/api-cli/commands/...  # Test specific package
+# Deploy to AWS with SAM CLI
+./deploy.sh YOUR_VIRTUOSO_API_TOKEN
 
-# Integration tests (requires API access)
-./test-scripts/test-all-69-commands.sh [checkpoint-id]    # Full test suite
-./test-all-commands-simple.sh [checkpoint-id]              # Quick validation
-./test-commands/test-yaml-end-to-end.sh                   # YAML functionality
+# Deploy to specific region
+AWS_REGION=eu-west-1 ./deploy.sh YOUR_API_TOKEN
 
-# Make targets for specific tests
-make test-commands       # Test CLI commands
-make test-library        # Test library commands
+# Redeploy Lambda functions (without SAM)
+./redeploy-lambdas.sh
+
+# Deploy with custom stack name
+STACK_NAME=virtuoso-prod ./deploy.sh YOUR_API_TOKEN
+
 ```
 
-### Common Development Tasks
+### Test
 
 ```bash
-# Create and run a test
-./bin/api-cli run-test test.yaml
+# Run Lambda API test suite
+node test-virtuoso-api.js
 
-# Use session context for multiple commands
-export VIRTUOSO_SESSION_ID=12345
-./bin/api-cli step-navigate to "https://example.com"
-./bin/api-cli step-interact click "button"
-
-# Get command help
-./bin/api-cli --help
-./bin/api-cli step-assert --help
+# Run holy grail test (GET /testsuites/{journeyId})
+node test-holy-grail.js
 ```
 
 ## Architecture
 
-### Codebase Structure
+### Lambda API Generator
 
-The project follows a consolidated architecture where related commands are grouped into single files:
+The system organizes 29 Virtuoso API endpoints into 9 Lambda functions by resource type:
 
-- **Entry Point**: `cmd/api-cli/main.go` - CLI initialization
-- **Core Package**: `pkg/api-cli/` - Main implementation
-  - `client/` - API client with 120+ methods using context-aware patterns
-  - `commands/` - ~20 files (reduced from 35+) containing all CLI commands
-  - `config/` - Configuration management using Viper
-  - `constants/` - Shared constants and types
-  - `yaml-layer/` - YAML test definition parsing and execution
+1. **VirtuosoProjectHandler** - Project management (3 endpoints)
+2. **VirtuosoGoalHandler** - Goal operations (3 endpoints)  
+3. **VirtuosoJourneyHandler** - Journey/testsuite operations (7 endpoints)
+4. **VirtuosoCheckpointHandler** - Checkpoint/testcase operations (5 endpoints)
+5. **VirtuosoStepHandler** - Test step operations (5 endpoints)
+6. **VirtuosoExecutionHandler** - Test execution (3 endpoints)
+7. **VirtuosoLibraryHandler** - Library management (5 endpoints)
+8. **VirtuosoDataHandler** - Test data operations (3 endpoints)
+9. **VirtuosoEnvironmentHandler** - Environment configuration (1 endpoint)
 
-### Command Consolidation Pattern
+### Shared Layer Architecture
 
-Commands are organized into logical groups to reduce code duplication:
+The Lambda functions share a common layer (`/opt/nodejs/`) containing:
+- **Authentication**: `utils/auth.js` - Retrieves API token from SSM
+- **Error Handling**: `utils/error-handler.js` - Standardized error responses
+- **Retry Logic**: `utils/retry.js` - Automatic retry with exponential backoff
+- **Logging**: `utils/logger.js` - AWS Lambda Powertools integration
+- **Configuration**: `config.js` - Centralized configuration
 
-1. **`interaction_commands.go`** - All user interactions (click, write, mouse, select)
-2. **`browser_commands.go`** - Browser operations (navigate, scroll, window)
-3. **`list.go`** - Generic list operations for all entities
-4. **`project_management.go`** - CRUD operations for projects/goals/journeys
-5. **`execution_management.go`** - Test execution workflow
 
-Individual step commands remain in separate files (`step_*.go`) for clarity.
+## Key Implementation Details
 
-### Key Patterns
+### Lambda Function Generation
 
-#### Command Structure
+The `generate-lambdas.js` script:
+1. Defines endpoint groups in `endpointGroups` object
+2. Generates Lambda functions with API Gateway integration
+3. Creates SAM template for deployment
+4. Packages shared utilities in Lambda layer
 
-All commands follow the unified positional syntax:
+### Authentication Flow
 
-```
-api-cli <command> <subcommand> [checkpoint-id] <args...> [position]
-```
+1. API token stored in AWS Systems Manager Parameter Store at `/virtuoso/api-token`
+2. Lambda functions retrieve token using `getApiToken()`
+3. Token added to Authorization header for Virtuoso API calls
 
-Commands implement the `StepCommand` interface and extend `BaseCommand` for shared functionality.
 
-#### Session Context
+## Important Endpoints
 
-The CLI supports session-based checkpoint management via `VIRTUOSO_SESSION_ID` environment variable, eliminating the need to specify checkpoint IDs repeatedly.
+### Holy Grail Endpoint
 
-#### Error Handling
-
-Structured error types (`APIError`, `ClientError`) with consistent exit codes:
-
-- 0: Success
-- 1: General error
-- 3: Authentication error
-- 5: Not found error
-
-#### Output Formats
-
-All commands support multiple output formats via the `--output` flag:
-
-- `human` - Default readable format
-- `json` - Structured data
-- `yaml` - Configuration format
-- `ai` - AI-optimized with context
-
-### YAML Test Layer
-
-The `run-test` command provides a simplified interface for test creation:
-
-- Auto-creates all required infrastructure (project, goal, journey, checkpoint)
-- Supports multiple input formats (simplified, extended, compact)
-- Progressive disclosure from simple to complex test definitions
-- Comprehensive validation with helpful error messages
-
-## Important Implementation Details
-
-### API Client
-
-- All methods are context-aware for timeout/cancellation support
-- Automatic retry logic for transient failures
-- Structured response handling with type safety
-- Session management handled transparently
-
-### Command Validation
-
-The CLI includes an intelligent validator that:
-
-- Auto-corrects common syntax errors (missing hyphens, deprecated commands)
-- Validates flag compatibility
-- Provides migration guidance for deprecated features
-- Handles format conversions automatically
-
-### Variable Handling
-
-- Variables in commands should NOT include the `$` prefix (added automatically by the API)
-- Store operations create variables that can be referenced in subsequent steps
-- Variable names should be descriptive and follow camelCase convention
-
-### Known Limitations
-
-1. File upload commands only support URLs, not local file paths
-2. Some browser navigation commands (back, forward, refresh) are not supported by the API
-3. Window close and frame switching by index/name are not available
-4. Library commands use checkpoint IDs (not journey IDs) for the `add` operation
+`GET /testsuites/{journeyId}` - Returns complete test structure including:
+- Journey/TestSuite details
+- List of checkpoints/test cases
+- List of steps within each checkpoint
 
 ## Configuration
 
-The CLI uses a hierarchical configuration system:
+### Environment Variables
 
-1. CLI flags (highest priority)
-2. Environment variables
-3. Config file (`~/.api-cli/virtuoso-config.yaml`)
-4. Default values
+- `VIRTUOSO_API_URL` - Base URL for Virtuoso API
+- `API_TOKEN_PARAM` - SSM parameter name
+- `VIRTUOSO_SESSION_ID` - Session checkpoint ID
+- `AWS_REGION` - AWS region for deployment
 
-Key configuration:
 
-```yaml
-api:
-  auth_token: your-api-key-here
-  base_url: https://api-app2.virtuoso.qa/api
-organization:
-  id: "2242"
-```
+## Testing Strategy
 
-## Testing Guidelines
+1. **Lambda Tests**: `test-virtuoso-api.js`, `test-holy-grail.js`
+2. **Integration Tests**: Test scripts verify Lambda function deployment and API Gateway routes
 
-When adding new features:
+## Known Issues
 
-1. Add unit tests in the appropriate `*_test.go` file
-2. Update integration tests in `test-scripts/test-all-69-commands.sh`
-3. Test all output formats (human, json, yaml, ai)
-4. Verify session context support
-5. Ensure backward compatibility with legacy syntax
-6. Add examples to `examples/` directory
-
-## Recent Changes (January 2025)
-
-### Major Improvements
-
-- **Context Support**: 80+ context-aware methods for better reliability
-- **Command Validator**: Auto-correction of common syntax errors
-- **Unified Test Runner**: `run-test` command for simplified test creation
-- **Code Consolidation**: 43% file reduction through logical grouping
-- **100% Success Rate**: All 69 commands tested and working
-
-### Migration Notes
-
-- Dialog commands now use hyphenated syntax (e.g., `dismiss-alert` instead of `alert accept`)
-- Mouse and select commands moved under `step-interact` parent command
-- Wait time commands expect milliseconds (auto-conversion from seconds)
-- Store commands simplified (e.g., `store element-text` → `store text`)
-
-## Update: 2025-07-29 20:17:20
-
-### Changes Summary
-
-- Added: 121 files
-- Modified: 1 files
-- Deleted: 0 files
-
-### Repository: virtuoso-GENerator
-
-### Modified Components
-
-```
-CLAUDE.md                                          | 554 ++++++---------------
- pkg/api-cli/client/client.go                       |  41 +-
- pkg/api-cli/client/client_fixes.go                 | 115 -----
- pkg/api-cli/client/execute_goal_robust.go          | 205 --------
- pkg/api-cli/client/response_handler.go             |  10 +-
- pkg/api-cli/client/response_handler_integration.go | 209 --------
- pkg/api-cli/commands/command_validator.go          |   3 +-
- pkg/api-cli/commands/execute_goal_fixed.go         | 152 ------
- pkg/api-cli/commands/manage_lists.go               |   6 +-
- pkg/api-cli/commands/register.go                   |   4 +-
- 10 files changed, 180 insertions(+), 1119 deletions(-)
-```
-
-### Notes for Claude Code
-
-- Automated commit at 2025-07-29 20:17:20
-- Security scan passed
-- All changes reviewed
+1. **API Gateway Routes**: Some routes may return 403 if not properly configured
+2. **Cold Start Latency**: Initial Lambda invocations may have higher latency
