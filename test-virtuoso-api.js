@@ -4,8 +4,9 @@ const https = require('https');
 const { URL } = require('url');
 
 // Configuration
-const API_GATEWAY_ENDPOINT = 'https://4sswk1wyv9.execute-api.us-east-1.amazonaws.com/Prod/virtuoso';
-const API_TOKEN = 'f7a55516-5cc4-4529-b2ae-8e106a7d164e';
+const API_GATEWAY_ENDPOINT = process.env.API_GATEWAY_ENDPOINT || 'https://4sswk1wyv9.execute-api.us-east-1.amazonaws.com/Prod/virtuoso';
+// Note: Authentication is handled by Lambda functions via SSM Parameter Store
+// API tokens should never be hardcoded in source files
 
 // Test data storage
 const testData = {

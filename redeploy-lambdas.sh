@@ -9,9 +9,23 @@ echo "=========================================="
 echo ""
 
 # Configuration
-STACK_NAME="virtuoso-api-stack"
-REGION="us-east-1"
-S3_BUCKET="virtuoso-deployment-986639207129-1753922127"
+STACK_NAME=${STACK_NAME:-"virtuoso-api-stack"}
+REGION=${AWS_REGION:-"us-east-1"}
+
+# Get S3 bucket from CloudFormation stack outputs
+S3_BUCKET=$(aws cloudformation describe-stacks \
+    --stack-name $STACK_NAME \
+    --region $REGION \
+    --query 'Stacks[0].Outputs[?OutputKey==`DeploymentBucket`].OutputValue' \
+    --output text 2>/dev/null)
+
+if [ -z "$S3_BUCKET" ]; then
+    echo "❌ Error: Could not find deployment S3 bucket from stack $STACK_NAME"
+    echo "   Make sure the stack is deployed or set S3_BUCKET environment variable"
+    exit 1
+fi
+
+echo "📦 Using S3 bucket: $S3_BUCKET"
 
 # Colors
 GREEN='\033[0;32m'
@@ -94,7 +108,7 @@ echo "🔄 Updating Lambda layer..."
 LAYER_ARN=$(aws lambda publish-layer-version \
     --layer-name virtuoso-lambda-layer \
     --content S3Bucket=$S3_BUCKET,S3Key=layers/lambda-layer.zip \
-    --compatible-runtimes nodejs18.x \
+    --compatible-runtimes nodejs22.x \
     --region $REGION \
     --query 'LayerVersionArn' \
     --output text)
@@ -114,8 +128,18 @@ done
 echo ""
 echo "✅ Deployment complete!"
 echo ""
-echo "🌐 API Gateway Endpoint:"
-echo "   https://4sswk1wyv9.execute-api.us-east-1.amazonaws.com/Prod/virtuoso"
+
+# Get API Gateway endpoint from CloudFormation stack
+API_ENDPOINT=$(aws cloudformation describe-stacks \
+    --stack-name $STACK_NAME \
+    --region $REGION \
+    --query 'Stacks[0].Outputs[?OutputKey==`ApiGatewayEndpoint`].OutputValue' \
+    --output text 2>/dev/null)
+
+if [ -n "$API_ENDPOINT" ]; then
+    echo "🌐 API Gateway Endpoint:"
+    echo "   $API_ENDPOINT"
+fi
 echo ""
 echo "📝 Next step: Run the test suite"
 echo "   node test-virtuoso-api.js"

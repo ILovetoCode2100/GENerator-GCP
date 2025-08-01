@@ -7,46 +7,32 @@ const config = require('/opt/config');
 
 const logger = createLogger('VirtuosoLibraryHandler');
 
-// Initialize axios instance for Virtuoso API
-const virtuosoApi = axios.create({
+// Initialize axios instance
+const api = axios.create({
   baseURL: config.baseUrl,
   timeout: config.timeout,
   headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json'
+    'Content-Type': 'application/json'
   }
 });
 
 // Add auth interceptor
-virtuosoApi.interceptors.request.use(async (config) => {
+api.interceptors.request.use(async (config) => {
   const token = await getApiToken();
   config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
-// Route mapping
-const routes = {
-  'POST /library/checkpoints': 'addToLibrary',
-  'GET /library/checkpoints/{libraryCheckpointId}': 'getLibraryCheckpoint',
-  'PUT /library/checkpoints/{libraryCheckpointId}': 'updateLibraryCheckpoint',
-  'DELETE /library/checkpoints/{libraryCheckpointId}/steps/{testStepId}': 'removeLibraryStep',
-  'POST /library/checkpoints/{libraryCheckpointId}/steps/{testStepId}/move': 'moveLibraryStep'
-};
-
 // Handler implementations
 
 const addToLibrary = async (event) => {
-  const { pathParameters = {}, body: bodyString, queryStringParameters } = event;
-  const body = bodyString ? JSON.parse(bodyString) : null;
-  
+  const { params = {}, body, queryStringParameters } = event;
   let url = '/library/checkpoints';
   
   // Replace path parameters
-  if (pathParameters) {
-    Object.keys(pathParameters).forEach(key => {
-      url = url.replace(`{${key}}`, pathParameters[key]);
-    });
-  }
+  Object.keys(params).forEach(key => {
+    url = url.replace(`{${key}}`, params[key]);
+  });
   
   // Add query parameters
   if (queryStringParameters) {
@@ -59,33 +45,22 @@ const addToLibrary = async (event) => {
     url
   };
   
-  if (body && ['POST', 'PUT', 'PATCH'].includes('POST')) {
+  if (body) {
     requestConfig.data = body;
   }
   
-  logger.info('Making Virtuoso API request', { method: 'POST', url, body });
-  
-  try {
-    const response = await virtuosoApi(requestConfig);
-    return response.data;
-  } catch (error) {
-    logger.error('Virtuoso API error', { error: error.response?.data || error.message });
-    throw error;
-  }
+  const response = await api(requestConfig);
+  return response.data;
 };
 
 const getLibraryCheckpoint = async (event) => {
-  const { pathParameters = {}, body: bodyString, queryStringParameters } = event;
-  const body = bodyString ? JSON.parse(bodyString) : null;
-  
+  const { params = {}, body, queryStringParameters } = event;
   let url = '/library/checkpoints/{libraryCheckpointId}';
   
   // Replace path parameters
-  if (pathParameters) {
-    Object.keys(pathParameters).forEach(key => {
-      url = url.replace(`{${key}}`, pathParameters[key]);
-    });
-  }
+  Object.keys(params).forEach(key => {
+    url = url.replace(`{${key}}`, params[key]);
+  });
   
   // Add query parameters
   if (queryStringParameters) {
@@ -98,33 +73,22 @@ const getLibraryCheckpoint = async (event) => {
     url
   };
   
-  if (body && ['POST', 'PUT', 'PATCH'].includes('GET')) {
+  if (body) {
     requestConfig.data = body;
   }
   
-  logger.info('Making Virtuoso API request', { method: 'GET', url, body });
-  
-  try {
-    const response = await virtuosoApi(requestConfig);
-    return response.data;
-  } catch (error) {
-    logger.error('Virtuoso API error', { error: error.response?.data || error.message });
-    throw error;
-  }
+  const response = await api(requestConfig);
+  return response.data;
 };
 
 const updateLibraryCheckpoint = async (event) => {
-  const { pathParameters = {}, body: bodyString, queryStringParameters } = event;
-  const body = bodyString ? JSON.parse(bodyString) : null;
-  
+  const { params = {}, body, queryStringParameters } = event;
   let url = '/library/checkpoints/{libraryCheckpointId}';
   
   // Replace path parameters
-  if (pathParameters) {
-    Object.keys(pathParameters).forEach(key => {
-      url = url.replace(`{${key}}`, pathParameters[key]);
-    });
-  }
+  Object.keys(params).forEach(key => {
+    url = url.replace(`{${key}}`, params[key]);
+  });
   
   // Add query parameters
   if (queryStringParameters) {
@@ -137,33 +101,22 @@ const updateLibraryCheckpoint = async (event) => {
     url
   };
   
-  if (body && ['POST', 'PUT', 'PATCH'].includes('PUT')) {
+  if (body) {
     requestConfig.data = body;
   }
   
-  logger.info('Making Virtuoso API request', { method: 'PUT', url, body });
-  
-  try {
-    const response = await virtuosoApi(requestConfig);
-    return response.data;
-  } catch (error) {
-    logger.error('Virtuoso API error', { error: error.response?.data || error.message });
-    throw error;
-  }
+  const response = await api(requestConfig);
+  return response.data;
 };
 
 const removeLibraryStep = async (event) => {
-  const { pathParameters = {}, body: bodyString, queryStringParameters } = event;
-  const body = bodyString ? JSON.parse(bodyString) : null;
-  
+  const { params = {}, body, queryStringParameters } = event;
   let url = '/library/checkpoints/{libraryCheckpointId}/steps/{testStepId}';
   
   // Replace path parameters
-  if (pathParameters) {
-    Object.keys(pathParameters).forEach(key => {
-      url = url.replace(`{${key}}`, pathParameters[key]);
-    });
-  }
+  Object.keys(params).forEach(key => {
+    url = url.replace(`{${key}}`, params[key]);
+  });
   
   // Add query parameters
   if (queryStringParameters) {
@@ -176,33 +129,22 @@ const removeLibraryStep = async (event) => {
     url
   };
   
-  if (body && ['POST', 'PUT', 'PATCH'].includes('DELETE')) {
+  if (body) {
     requestConfig.data = body;
   }
   
-  logger.info('Making Virtuoso API request', { method: 'DELETE', url, body });
-  
-  try {
-    const response = await virtuosoApi(requestConfig);
-    return response.data;
-  } catch (error) {
-    logger.error('Virtuoso API error', { error: error.response?.data || error.message });
-    throw error;
-  }
+  const response = await api(requestConfig);
+  return response.data;
 };
 
 const moveLibraryStep = async (event) => {
-  const { pathParameters = {}, body: bodyString, queryStringParameters } = event;
-  const body = bodyString ? JSON.parse(bodyString) : null;
-  
+  const { params = {}, body, queryStringParameters } = event;
   let url = '/library/checkpoints/{libraryCheckpointId}/steps/{testStepId}/move';
   
   // Replace path parameters
-  if (pathParameters) {
-    Object.keys(pathParameters).forEach(key => {
-      url = url.replace(`{${key}}`, pathParameters[key]);
-    });
-  }
+  Object.keys(params).forEach(key => {
+    url = url.replace(`{${key}}`, params[key]);
+  });
   
   // Add query parameters
   if (queryStringParameters) {
@@ -215,166 +157,42 @@ const moveLibraryStep = async (event) => {
     url
   };
   
-  if (body && ['POST', 'PUT', 'PATCH'].includes('POST')) {
+  if (body) {
     requestConfig.data = body;
   }
   
-  logger.info('Making Virtuoso API request', { method: 'POST', url, body });
-  
-  try {
-    const response = await virtuosoApi(requestConfig);
-    return response.data;
-  } catch (error) {
-    logger.error('Virtuoso API error', { error: error.response?.data || error.message });
-    throw error;
-  }
+  const response = await api(requestConfig);
+  return response.data;
 };
 
-// Main handler for API Gateway
+// Main handler
 exports.handler = async (event) => {
-  logger.info('Received event', { 
-    httpMethod: event.httpMethod,
-    resource: event.resource,
-    pathParameters: event.pathParameters,
-    queryStringParameters: event.queryStringParameters
-  });
+  logger.info('Received event', { event });
   
   try {
-    // Check if this is an API Gateway event
-    if (event.httpMethod && event.resource) {
-      // Normalize the resource path for matching
-      let routeKey = `${event.httpMethod} ${event.resource}`;
-      
-      // Find the matching handler
-      const handlerName = routes[routeKey];
-      
-      if (!handlerName) {
-        logger.error('No handler found for route', { routeKey, availableRoutes: Object.keys(routes) });
-        return {
-          statusCode: 404,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ error: `No handler found for ${routeKey}` })
-        };
-      }
-      
-      const handlers = {
-        'addToLibrary': addToLibrary,
-        'getLibraryCheckpoint': getLibraryCheckpoint,
-        'updateLibraryCheckpoint': updateLibraryCheckpoint,
-        'removeLibraryStep': removeLibraryStep,
-        'moveLibraryStep': moveLibraryStep
-      };
-      
-      const handler = handlers[handlerName];
-      if (!handler) {
-        throw new VirtuosoError(`Handler function not found: ${handlerName}`, 500);
-      }
-      
-      const result = await retryableRequest(
-        () => handler(event),
-        config.retryConfig
-      );
-      
-      return {
-        statusCode: 200,
-        headers: { 
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        },
-        body: JSON.stringify(result)
-      };
-    } 
-    // Support for direct Lambda invocation with action parameter
-    else if (event.action) {
-      const handlers = {
-        'addToLibrary': async () => {
-          const params = event.params || {};
-          const body = event.body;
-          const queryStringParameters = event.queryStringParameters;
-          
-          // Simulate API Gateway event
-          const apiGatewayEvent = {
-            pathParameters: params,
-            body: body ? JSON.stringify(body) : null,
-            queryStringParameters
-          };
-          
-          return addToLibrary(apiGatewayEvent);
-        },
-        'getLibraryCheckpoint': async () => {
-          const params = event.params || {};
-          const body = event.body;
-          const queryStringParameters = event.queryStringParameters;
-          
-          // Simulate API Gateway event
-          const apiGatewayEvent = {
-            pathParameters: params,
-            body: body ? JSON.stringify(body) : null,
-            queryStringParameters
-          };
-          
-          return getLibraryCheckpoint(apiGatewayEvent);
-        },
-        'updateLibraryCheckpoint': async () => {
-          const params = event.params || {};
-          const body = event.body;
-          const queryStringParameters = event.queryStringParameters;
-          
-          // Simulate API Gateway event
-          const apiGatewayEvent = {
-            pathParameters: params,
-            body: body ? JSON.stringify(body) : null,
-            queryStringParameters
-          };
-          
-          return updateLibraryCheckpoint(apiGatewayEvent);
-        },
-        'removeLibraryStep': async () => {
-          const params = event.params || {};
-          const body = event.body;
-          const queryStringParameters = event.queryStringParameters;
-          
-          // Simulate API Gateway event
-          const apiGatewayEvent = {
-            pathParameters: params,
-            body: body ? JSON.stringify(body) : null,
-            queryStringParameters
-          };
-          
-          return removeLibraryStep(apiGatewayEvent);
-        },
-        'moveLibraryStep': async () => {
-          const params = event.params || {};
-          const body = event.body;
-          const queryStringParameters = event.queryStringParameters;
-          
-          // Simulate API Gateway event
-          const apiGatewayEvent = {
-            pathParameters: params,
-            body: body ? JSON.stringify(body) : null,
-            queryStringParameters
-          };
-          
-          return moveLibraryStep(apiGatewayEvent);
-        }
-      };
-      
-      if (!handlers[event.action]) {
-        throw new VirtuosoError(`Unknown action: ${event.action}`, 400);
-      }
-      
-      const result = await retryableRequest(
-        () => handlers[event.action](),
-        config.retryConfig
-      );
-      
-      return {
-        statusCode: 200,
-        body: JSON.stringify(result)
-      };
-    } else {
-      throw new VirtuosoError('Invalid event format', 400);
+    const { action } = event;
+    
+    const handlers = {
+      'addToLibrary': addToLibrary,
+      'getLibraryCheckpoint': getLibraryCheckpoint,
+      'updateLibraryCheckpoint': updateLibraryCheckpoint,
+      'removeLibraryStep': removeLibraryStep,
+      'moveLibraryStep': moveLibraryStep
+    };
+    
+    if (!handlers[action]) {
+      throw new VirtuosoError(`Unknown action: ${action}`, 400);
     }
+    
+    const result = await retryableRequest(
+      () => handlers[action](event),
+      config.retryConfig
+    );
+    
+    return {
+      statusCode: 200,
+      body: JSON.stringify(result)
+    };
   } catch (error) {
     return handleError(error);
   }

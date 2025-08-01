@@ -1,0 +1,21 @@
+# Development files
+*.test.js
+*.spec.js
+__tests__/
+coverage/
+.eslintrc*
+jest.config.js
+
+# Build files
+scripts/
+*.log
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db

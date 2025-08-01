@@ -7,7 +7,7 @@ const { execSync } = require('child_process');
 // Configuration
 const config = {
   region: process.env.AWS_REGION || 'us-east-1',
-  runtime: 'nodejs18.x',
+  runtime: 'nodejs22.x',
   memorySize: 256,
   timeout: 30,
   baseUrl: process.env.VIRTUOSO_API_URL || 'https://api.virtuoso.qa/api',

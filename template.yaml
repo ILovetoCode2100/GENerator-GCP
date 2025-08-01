@@ -1,0 +1,348 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'Virtuoso API Lambda Functions'
+
+Globals:
+  Function:
+    Runtime: nodejs22.x
+    MemorySize: 256
+    Timeout: 30
+    Environment:
+      Variables:
+        VIRTUOSO_API_URL: https://api.virtuoso.qa/api
+        LOG_LEVEL: INFO
+        API_TOKEN_PARAM: /virtuoso/api-token
+
+Parameters:
+  ApiTokenValue:
+    Type: String
+    NoEcho: true
+    Description: Virtuoso API Token
+
+Resources:
+  # API Token Parameter
+  ApiTokenParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /virtuoso/api-token
+      Type: SecureString
+      Value: !Ref ApiTokenValue
+
+  # Shared Layer
+  VirtuosoLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: virtuoso-lambda-layer
+      Description: Shared utilities and dependencies
+      ContentUri: ./lambda-layer/
+      CompatibleRuntimes:
+        - nodejs22.x
+      RetentionPolicy: Retain
+
+
+  # VirtuosoProjectHandler
+  VirtuosoProjectHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: VirtuosoProjectHandler
+      Handler: index.handler
+      CodeUri: ./lambda-functions/project/
+      Layers:
+        - !Ref VirtuosoLayer
+      Policies:
+        - SSMParameterReadPolicy:
+            ParameterName: virtuoso/api-token
+      Events:
+        createProjectEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/projects
+            Method: post
+        listProjectsEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/projects
+            Method: get
+        listProjectGoalsEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/projects/{projectId}/goals
+            Method: get
+
+  # VirtuosoGoalHandler
+  VirtuosoGoalHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: VirtuosoGoalHandler
+      Handler: index.handler
+      CodeUri: ./lambda-functions/goal/
+      Layers:
+        - !Ref VirtuosoLayer
+      Policies:
+        - SSMParameterReadPolicy:
+            ParameterName: virtuoso/api-token
+      Events:
+        createGoalEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/goals
+            Method: post
+        getGoalVersionsEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/goals/{goalId}/versions
+            Method: get
+        executeGoalSnapshotEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/goals/{goalId}/snapshots/{snapshotId}/execute
+            Method: post
+
+  # VirtuosoJourneyHandler
+  VirtuosoJourneyHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: VirtuosoJourneyHandler
+      Handler: index.handler
+      CodeUri: ./lambda-functions/journey/
+      Layers:
+        - !Ref VirtuosoLayer
+      Policies:
+        - SSMParameterReadPolicy:
+            ParameterName: virtuoso/api-token
+      Events:
+        createJourneyEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/testsuites
+            Method: post
+        createJourneyAltEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/journeys
+            Method: post
+        listJourneysWithStatusEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/testsuites/latest_status
+            Method: get
+        getJourneyDetailsEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/testsuites/{journeyId}
+            Method: get
+        updateJourneyEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/testsuites/{journeyId}
+            Method: put
+        attachCheckpointEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/testsuites/{journeyId}/checkpoints/attach
+            Method: post
+        attachLibraryCheckpointEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/journeys/attach-library
+            Method: post
+
+  # VirtuosoCheckpointHandler
+  VirtuosoCheckpointHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: VirtuosoCheckpointHandler
+      Handler: index.handler
+      CodeUri: ./lambda-functions/checkpoint/
+      Layers:
+        - !Ref VirtuosoLayer
+      Policies:
+        - SSMParameterReadPolicy:
+            ParameterName: virtuoso/api-token
+      Events:
+        createCheckpointEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/testcases
+            Method: post
+        createCheckpointAltEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/checkpoints
+            Method: post
+        getCheckpointDetailsEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/testcases/{checkpointId}
+            Method: get
+        getCheckpointStepsEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/checkpoints/{checkpointId}/teststeps
+            Method: get
+        addCheckpointToLibraryEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/testcases/{checkpointId}/add-to-library
+            Method: post
+
+  # VirtuosoStepHandler
+  VirtuosoStepHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: VirtuosoStepHandler
+      Handler: index.handler
+      CodeUri: ./lambda-functions/step/
+      Layers:
+        - !Ref VirtuosoLayer
+      Policies:
+        - SSMParameterReadPolicy:
+            ParameterName: virtuoso/api-token
+      Events:
+        addTestStepEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/teststeps
+            Method: post
+        addTestStepNoEnvelopeEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/teststeps?envelope=false
+            Method: post
+        addTestStepAltEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/steps
+            Method: post
+        getStepDetailsEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/teststeps/{stepId}
+            Method: get
+        updateStepPropertiesEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/teststeps/{stepId}/properties
+            Method: put
+
+  # VirtuosoExecutionHandler
+  VirtuosoExecutionHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: VirtuosoExecutionHandler
+      Handler: index.handler
+      CodeUri: ./lambda-functions/execution/
+      Layers:
+        - !Ref VirtuosoLayer
+      Policies:
+        - SSMParameterReadPolicy:
+            ParameterName: virtuoso/api-token
+      Events:
+        executeGoalEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/executions
+            Method: post
+        getExecutionStatusEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/executions/{executionId}
+            Method: get
+        getExecutionAnalysisEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/executions/analysis/{executionId}
+            Method: get
+
+  # VirtuosoLibraryHandler
+  VirtuosoLibraryHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: VirtuosoLibraryHandler
+      Handler: index.handler
+      CodeUri: ./lambda-functions/library/
+      Layers:
+        - !Ref VirtuosoLayer
+      Policies:
+        - SSMParameterReadPolicy:
+            ParameterName: virtuoso/api-token
+      Events:
+        addToLibraryEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/library/checkpoints
+            Method: post
+        getLibraryCheckpointEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/library/checkpoints/{libraryCheckpointId}
+            Method: get
+        updateLibraryCheckpointEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/library/checkpoints/{libraryCheckpointId}
+            Method: put
+        removeLibraryStepEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/library/checkpoints/{libraryCheckpointId}/steps/{testStepId}
+            Method: delete
+        moveLibraryStepEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/library/checkpoints/{libraryCheckpointId}/steps/{testStepId}/move
+            Method: post
+
+  # VirtuosoDataHandler
+  VirtuosoDataHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: VirtuosoDataHandler
+      Handler: index.handler
+      CodeUri: ./lambda-functions/data/
+      Layers:
+        - !Ref VirtuosoLayer
+      Policies:
+        - SSMParameterReadPolicy:
+            ParameterName: virtuoso/api-token
+      Events:
+        createDataTableEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/testdata/tables/create
+            Method: post
+        getDataTableEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/testdata/tables/{tableId}
+            Method: get
+        importDataToTableEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/testdata/tables/{tableId}/import
+            Method: post
+
+  # VirtuosoEnvironmentHandler
+  VirtuosoEnvironmentHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: VirtuosoEnvironmentHandler
+      Handler: index.handler
+      CodeUri: ./lambda-functions/environment/
+      Layers:
+        - !Ref VirtuosoLayer
+      Policies:
+        - SSMParameterReadPolicy:
+            ParameterName: virtuoso/api-token
+      Events:
+        createEnvironmentEvent:
+          Type: Api
+          Properties:
+            Path: /virtuoso/environments
+            Method: post
+
+
+Outputs:
+  ApiEndpoint:
+    Description: API Gateway endpoint URL
+    Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/virtuoso'

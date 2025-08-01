@@ -1,0 +1,32 @@
+{
+  "name": "lambda-api-gen",
+  "version": "1.0.0",
+  "description": "Lambda API Generator for Virtuoso API - converts Virtuoso API endpoints into AWS Lambda functions with automated deployment",
+  "main": "generate-lambdas.js",
+  "scripts": {
+    "generate": "node generate-lambdas.js",
+    "update-lambdas": "node update-all-lambdas.js",
+    "test": "node test-virtuoso-api.js",
+    "test:holy-grail": "node test-holy-grail.js",
+    "deploy": "./deploy.sh",
+    "redeploy": "./redeploy-lambdas.sh",
+    "quick-start": "./QUICK_START_LAMBDA.sh"
+  },
+  "keywords": [
+    "aws",
+    "lambda",
+    "api-gateway",
+    "virtuoso",
+    "api",
+    "serverless"
+  ],
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "devDependencies": {
+    "aws-sdk": "^2.1539.0"
+  },
+  "dependencies": {}
+}
